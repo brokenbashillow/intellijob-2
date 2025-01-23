@@ -31,7 +31,7 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
         title: "Success!",
         description: "Your account has been created successfully.",
       });
-      navigate("/dashboard");
+      navigate("/assessment");
       onClose();
     } else {
       toast({
