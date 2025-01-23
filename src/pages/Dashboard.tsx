@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BriefcaseIcon, MessageCircle, FileText, LogOut, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Chat from "./Chat"
+import Resume from "@/components/resume/Resume"
 
 type View = "dashboard" | "chat" | "resume"
 
@@ -28,6 +29,8 @@ const Dashboard = () => {
     switch (currentView) {
       case "chat":
         return <Chat />
+      case "resume":
+        return <Resume />
       case "dashboard":
         return (
           <main className="flex-1 p-8">
