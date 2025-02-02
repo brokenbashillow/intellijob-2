@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BriefcaseIcon, MessageCircle, FileText, LogOut, Bell } from "lucide-react"
+import { BriefcaseIcon, MessageCircle, FileText, LogOut, Bell, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
