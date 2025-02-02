@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
+import EducationStep from "@/components/assessment/EducationStep";
+import ExperienceStep from "@/components/assessment/ExperienceStep";
+import SkillsStep from "@/components/assessment/SkillsStep";
 
 const HARD_SKILLS = [
   "JavaScript",
@@ -75,7 +74,7 @@ const Assessment = () => {
       return;
     }
 
-    if (currentStep === 4 && formData.softSkills.length === 0) {
+    if (currentStep === totalSteps && formData.softSkills.length === 0) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -93,23 +92,12 @@ const Assessment = () => {
   };
 
   const handleSubmit = () => {
-    // Here you would typically send the data to your backend
     console.log("Assessment submitted:", formData);
     toast({
       title: "Success!",
       description: "Your assessment has been submitted successfully.",
     });
     navigate("/dashboard");
-  };
-
-  const handleSkillToggle = (skill: string, type: "hard" | "soft") => {
-    const key = type === "hard" ? "hardSkills" : "softSkills";
-    setFormData((prev) => ({
-      ...prev,
-      [key]: prev[key].includes(skill)
-        ? prev[key].filter((s) => s !== skill)
-        : [...prev[key], skill],
-    }));
   };
 
   return (
@@ -122,87 +110,43 @@ const Assessment = () => {
 
         <div className="space-y-6">
           {currentStep === 1 && (
-            <div className="space-y-4">
-              <Label htmlFor="education">
-                What is your highest educational attainment?
-              </Label>
-              <Input
-                id="education"
-                placeholder="Bachelor's Degree in Computer Science"
-                value={formData.education}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    education: e.target.value,
-                  }))
-                }
-              />
-            </div>
+            <EducationStep
+              education={formData.education}
+              setEducation={(value) =>
+                setFormData((prev) => ({ ...prev, education: value }))
+              }
+            />
           )}
 
           {currentStep === 2 && (
-            <div className="space-y-4">
-              <Label htmlFor="experience">
-                Please describe your work experience
-              </Label>
-              <Textarea
-                id="experience"
-                placeholder="5 years as a Software Engineer at XYZ Inc."
-                value={formData.experience}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    experience: e.target.value,
-                  }))
-                }
-              />
-            </div>
+            <ExperienceStep
+              experience={formData.experience}
+              setExperience={(value) =>
+                setFormData((prev) => ({ ...prev, experience: value }))
+              }
+            />
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-4">
-              <Label>Select the hard skills that apply to you</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {HARD_SKILLS.map((skill) => (
-                  <div key={skill} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`hard-${skill}`}
-                      checked={formData.hardSkills.includes(skill)}
-                      onCheckedChange={() => handleSkillToggle(skill, "hard")}
-                    />
-                    <label
-                      htmlFor={`hard-${skill}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {skill}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SkillsStep
+              skills={formData.hardSkills}
+              setSkills={(skills) =>
+                setFormData((prev) => ({ ...prev, hardSkills: skills }))
+              }
+              skillsList={HARD_SKILLS}
+              title="Select the hard skills that apply to you"
+            />
           )}
 
           {currentStep === 4 && (
-            <div className="space-y-4">
-              <Label>Select your soft skills</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {SOFT_SKILLS.map((skill) => (
-                  <div key={skill} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`soft-${skill}`}
-                      checked={formData.softSkills.includes(skill)}
-                      onCheckedChange={() => handleSkillToggle(skill, "soft")}
-                    />
-                    <label
-                      htmlFor={`soft-${skill}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {skill}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SkillsStep
+              skills={formData.softSkills}
+              setSkills={(skills) =>
+                setFormData((prev) => ({ ...prev, softSkills: skills }))
+              }
+              skillsList={SOFT_SKILLS}
+              title="Select your soft skills"
+            />
           )}
 
           <div className="flex justify-end space-x-4">
