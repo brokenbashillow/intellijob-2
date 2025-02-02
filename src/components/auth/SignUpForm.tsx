@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -20,18 +21,19 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userType, setUserType] = useState<"employee" | "employer">("employee");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, we'll just check if all fields are filled
     if (name && email && password) {
       toast({
         title: "Success!",
         description: "Your account has been created successfully.",
       });
-      navigate("/assessment");
+      // Redirect to the appropriate assessment page based on user type
+      navigate(userType === "employee" ? "/assessment" : "/employer-assessment");
       onClose();
     } else {
       toast({
@@ -50,11 +52,34 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label>I am signing up as:</Label>
+            <RadioGroup
+              defaultValue="employee"
+              onValueChange={(value) => setUserType(value as "employee" | "employer")}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="employee" id="employee" />
+                <Label htmlFor="employee">Employee</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="employer" id="employer" />
+                <Label htmlFor="employer">Employer</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="name">
+              {userType === "employer" ? "Company Name" : "Full Name"}
+            </Label>
             <Input
               id="name"
               type="text"
-              placeholder="Enter your full name"
+              placeholder={
+                userType === "employer"
+                  ? "Enter your company name"
+                  : "Enter your full name"
+              }
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
