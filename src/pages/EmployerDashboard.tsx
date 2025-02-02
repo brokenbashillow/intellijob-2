@@ -1,8 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, MessageCircle, BriefcaseIcon, LogOut } from "lucide-react";
+import { Building, MessageCircle, BriefcaseIcon, LogOut, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
@@ -59,6 +65,25 @@ const EmployerDashboard = () => {
       <main className="flex-1 p-8">
         <div className="flex justify-end items-center mb-8">
           <div className="flex items-center gap-4">
+            <div className="relative">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative hover:bg-accent"
+                  >
+                    <Bell className="h-5 w-5" />
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      3
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Notifications coming soon</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <span className="font-medium">Company Name</span>
             <Avatar>
               <AvatarImage src="" />

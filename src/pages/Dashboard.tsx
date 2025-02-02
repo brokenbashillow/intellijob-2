@@ -2,8 +2,14 @@ import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BriefcaseIcon, MessageCircle, FileText, LogOut, ExternalLink } from "lucide-react"
+import { BriefcaseIcon, MessageCircle, FileText, LogOut, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import Chat from "./Chat"
 import Resume from "@/components/resume/Resume"
 
@@ -35,6 +41,25 @@ const Dashboard = () => {
         return (
           <main className="flex-1 p-8">
             <div className="flex justify-end items-center mb-8 gap-4">
+              <div className="relative">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative hover:bg-accent"
+                    >
+                      <Bell className="h-5 w-5" />
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        3
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Notifications coming soon</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <span className="font-medium">John Doe</span>
               <Avatar>
                 <AvatarImage src="" />
