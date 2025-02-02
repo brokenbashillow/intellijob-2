@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Assessment from "./pages/Assessment";
 import EmployerAssessment from "./pages/EmployerAssessment";
+import EmployerDashboard from "./pages/EmployerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/assessment" element={<Assessment />} />
           <Route path="/employer-assessment" element={<EmployerAssessment />} />
+          <Route path="/employer-dashboard" element={<EmployerDashboard />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
