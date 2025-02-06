@@ -1,15 +1,18 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BriefcaseIcon, MessageCircle, FileText, LogOut, Bell, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { supabase } from "@/integrations/supabase/client"
 import Chat from "./Chat"
 import Resume from "@/components/resume/Resume"
 
@@ -17,6 +20,27 @@ type View = "dashboard" | "chat" | "resume"
 
 const Dashboard = () => {
   const [currentView, setCurrentView] = useState<View>("dashboard")
+  const navigate = useNavigate()
+  const { toast } = useToast()
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+
+      toast({
+        title: "Success",
+        description: "You have been logged out successfully.",
+      })
+      navigate("/")
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred while logging out.",
+      })
+    }
+  }
 
   const assessmentData = {
     knowledge: 85,
@@ -145,7 +169,11 @@ const Dashboard = () => {
             <FileText className="h-4 w-4" />
             Resume
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={handleLogout}
+          >
             <LogOut className="h-4 w-4" />
             Log Out
           </Button>
