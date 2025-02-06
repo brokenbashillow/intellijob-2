@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SignUpFormProps {
   isOpen: boolean;
@@ -22,25 +23,53 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState<"employee" | "employer">("employee");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && email && password) {
-      toast({
-        title: "Success!",
-        description: "Your account has been created successfully.",
-      });
-      // Redirect to the appropriate assessment page based on user type
-      navigate(userType === "employee" ? "/assessment" : "/employer-assessment");
-      onClose();
-    } else {
+    if (!name || !email || !password) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Please fill in all fields.",
       });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            user_type: userType,
+            company_name: userType === "employer" ? name : null,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        toast({
+          title: "Success!",
+          description: "Your account has been created successfully.",
+        });
+        navigate(userType === "employee" ? "/assessment" : "/employer-assessment");
+        onClose();
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred during sign up.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,8 +133,8 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" className="w-full">
-            Create Account
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating Account..." : "Create Account"}
           </Button>
         </form>
       </DialogContent>

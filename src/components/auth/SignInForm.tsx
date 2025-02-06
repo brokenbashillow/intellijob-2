@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SignInFormProps {
   isOpen: boolean;
@@ -19,25 +20,58 @@ interface SignInFormProps {
 const SignInForm = ({ isOpen, onClose }: SignInFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, we'll just check if the fields are filled
-    if (email && password) {
-      toast({
-        title: "Success!",
-        description: "You have been signed in successfully.",
-      });
-      navigate("/dashboard");
-      onClose();
-    } else {
+    if (!email || !password) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Please fill in all fields.",
       });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("user_type")
+          .eq("id", data.user.id)
+          .single();
+
+        toast({
+          title: "Success!",
+          description: "You have been signed in successfully.",
+        });
+
+        // Redirect based on user type
+        if (profileData?.user_type === "employer") {
+          navigate("/employer-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+        onClose();
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred during sign in.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,8 +102,8 @@ const SignInForm = ({ isOpen, onClose }: SignInFormProps) => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" className="w-full">
-            Sign In
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Signing In..." : "Sign In"}
           </Button>
         </form>
       </DialogContent>
