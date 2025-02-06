@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BriefcaseIcon, MessageCircle, FileText, LogOut, Bell, ExternalLink } from "lucide-react"
+import { BriefcaseIcon, MessageCircle, FileText, LogOut, Bell, ExternalLink, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -12,6 +12,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { supabase } from "@/integrations/supabase/client"
 import Chat from "./Chat"
 import Resume from "@/components/resume/Resume"
@@ -38,6 +49,26 @@ const Dashboard = () => {
         variant: "destructive",
         title: "Error",
         description: error.message || "An error occurred while logging out.",
+      })
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    try {
+      const { error } = await supabase.rpc('delete_user')
+      if (error) throw error
+
+      await supabase.auth.signOut()
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been successfully deleted.",
+      })
+      navigate("/")
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred while deleting your account.",
       })
     }
   }
@@ -169,6 +200,31 @@ const Dashboard = () => {
             <FileText className="h-4 w-4" />
             Resume
           </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Trash2 className="h-4 w-4" />
+                Delete Account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your account
+                  and remove your data from our servers.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-500 hover:bg-red-600">
+                  Delete Account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <Button 
             variant="ghost" 
             className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { Eye, EyeOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ interface SignInFormProps {
 const SignInForm = ({ isOpen, onClose }: SignInFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -56,7 +58,6 @@ const SignInForm = ({ isOpen, onClose }: SignInFormProps) => {
           description: "You have been signed in successfully.",
         });
 
-        // Redirect based on user type
         if (profileData?.user_type === "employer") {
           navigate("/employer-dashboard");
         } else {
@@ -73,6 +74,10 @@ const SignInForm = ({ isOpen, onClose }: SignInFormProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -94,13 +99,28 @@ const SignInForm = ({ isOpen, onClose }: SignInFormProps) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+                onClick={togglePasswordVisibility}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing In..." : "Sign In"}

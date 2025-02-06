@@ -1,13 +1,27 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Building, MessageCircle, BriefcaseIcon, LogOut, Bell } from "lucide-react"
+import { Building, MessageCircle, BriefcaseIcon, LogOut, Bell, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { supabase } from "@/integrations/supabase/client"
 import EmployerChat from "@/components/employer/EmployerChat"
 import JobPostings from "@/components/employer/JobPostings"
 
@@ -15,6 +29,47 @@ type View = "dashboard" | "chat" | "job-postings"
 
 const EmployerDashboard = () => {
   const [currentView, setCurrentView] = useState<View>("dashboard")
+  const navigate = useNavigate()
+  const { toast } = useToast()
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+
+      toast({
+        title: "Success",
+        description: "You have been logged out successfully.",
+      })
+      navigate("/")
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred while logging out.",
+      })
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    try {
+      const { error } = await supabase.rpc('delete_user')
+      if (error) throw error
+
+      await supabase.auth.signOut()
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been successfully deleted.",
+      })
+      navigate("/")
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred while deleting your account.",
+      })
+    }
+  }
 
   const renderContent = () => {
     switch (currentView) {
@@ -77,7 +132,34 @@ const EmployerDashboard = () => {
             <BriefcaseIcon className="h-4 w-4" />
             Job Postings
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Trash2 className="h-4 w-4" />
+                Delete Account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your account
+                  and remove your data from our servers.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-500 hover:bg-red-600">
+                  Delete Account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={handleLogout}
+          >
             <LogOut className="h-4 w-4" />
             Log Out
           </Button>
