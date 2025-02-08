@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
+import LocationStep from "@/components/assessment/LocationStep";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -32,9 +35,14 @@ const EmployerAssessment = () => {
     companyType: "",
     description: "",
     employeeCount: "",
+    location: {
+      country: "",
+      province: "",
+      city: "",
+    },
   });
 
-  const totalSteps = 3;
+  const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
@@ -56,7 +64,15 @@ const EmployerAssessment = () => {
       return;
     }
 
-    if (currentStep === totalSteps) {
+    if (currentStep === 4) {
+      if (!formData.location.country || !formData.location.city) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please enter your country and city",
+        });
+        return;
+      }
       handleSubmit();
       return;
     }
@@ -64,13 +80,32 @@ const EmployerAssessment = () => {
     setCurrentStep((prev) => prev + 1);
   };
 
-  const handleSubmit = () => {
-    console.log("Assessment submitted:", formData);
-    toast({
-      title: "Success!",
-      description: "Your company profile has been created successfully.",
-    });
-    navigate("/employer-dashboard");
+  const handleSubmit = async () => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          country: formData.location.country,
+          province: formData.location.province,
+          city: formData.location.city,
+        })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+
+      console.log("Assessment submitted:", formData);
+      toast({
+        title: "Success!",
+        description: "Your company profile has been created successfully.",
+      });
+      navigate("/employer-dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to save location information.",
+      });
+    }
   };
 
   return (
@@ -141,6 +176,15 @@ const EmployerAssessment = () => {
                 }
               />
             </div>
+          )}
+
+          {currentStep === 4 && (
+            <LocationStep
+              location={formData.location}
+              setLocation={(location) =>
+                setFormData((prev) => ({ ...prev, location }))
+              }
+            />
           )}
 
           <div className="flex justify-end space-x-4">

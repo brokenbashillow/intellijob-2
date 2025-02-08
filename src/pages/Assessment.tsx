@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import EducationStep from "@/components/assessment/EducationStep";
 import ExperienceStep from "@/components/assessment/ExperienceStep";
 import CategorySkillsStep from "@/components/assessment/CategorySkillsStep";
+import LocationStep from "@/components/assessment/LocationStep";
 import type { SkillCategory, Skill } from "@/types/skills";
 
 const Assessment = () => {
@@ -21,6 +22,11 @@ const Assessment = () => {
     experience: "",
     technicalSkills: [] as string[],
     softSkills: [] as string[],
+    location: {
+      country: "",
+      province: "",
+      city: "",
+    },
   });
 
   useEffect(() => {
@@ -53,7 +59,7 @@ const Assessment = () => {
     fetchSkillsData();
   }, [toast]);
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
@@ -84,7 +90,7 @@ const Assessment = () => {
       return;
     }
 
-    if (currentStep === totalSteps && formData.softSkills.length < 3) {
+    if (currentStep === 4 && formData.softSkills.length < 3) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -93,7 +99,15 @@ const Assessment = () => {
       return;
     }
 
-    if (currentStep === totalSteps) {
+    if (currentStep === 5) {
+      if (!formData.location.country || !formData.location.city) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please enter your country and city",
+        });
+        return;
+      }
       handleSubmit();
       return;
     }
@@ -101,13 +115,32 @@ const Assessment = () => {
     setCurrentStep((prev) => prev + 1);
   };
 
-  const handleSubmit = () => {
-    console.log("Assessment submitted:", formData);
-    toast({
-      title: "Success!",
-      description: "Your assessment has been submitted successfully.",
-    });
-    navigate("/dashboard");
+  const handleSubmit = async () => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          country: formData.location.country,
+          province: formData.location.province,
+          city: formData.location.city,
+        })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+
+      console.log("Assessment submitted:", formData);
+      toast({
+        title: "Success!",
+        description: "Your assessment has been submitted successfully.",
+      });
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to save location information.",
+      });
+    }
   };
 
   return (
@@ -160,6 +193,15 @@ const Assessment = () => {
               categories={categories}
               skills={skills}
               type="soft"
+            />
+          )}
+
+          {currentStep === 5 && (
+            <LocationStep
+              location={formData.location}
+              setLocation={(location) =>
+                setFormData((prev) => ({ ...prev, location }))
+              }
             />
           )}
 
