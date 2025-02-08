@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      employer_assessments: {
+        Row: {
+          company_type: string
+          created_at: string
+          description: string
+          employee_count: number | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_type: string
+          created_at?: string
+          description: string
+          employee_count?: number | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_type?: string
+          created_at?: string
+          description?: string
+          employee_count?: number | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_profile"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -47,6 +82,38 @@ export type Database = {
           user_type?: string | null
         }
         Relationships: []
+      }
+      seeker_assessments: {
+        Row: {
+          created_at: string
+          education: string
+          experience: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          education: string
+          experience: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          education?: string
+          experience?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_profile"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skill_categories: {
         Row: {
@@ -94,6 +161,45 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "skill_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_skills: {
+        Row: {
+          created_at: string
+          id: string
+          skill_id: string
+          skill_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          skill_id: string
+          skill_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          skill_id?: string
+          skill_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_profile"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
             referencedColumns: ["id"]
           },
         ]
