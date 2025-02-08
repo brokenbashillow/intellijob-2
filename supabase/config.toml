@@ -1,5 +1,5 @@
+
 project_id = "ktuyzukgojkkiowillas"
-[
-    functions.gemini
-]
+
+[functions.gemini]
 verify_jwt = false
