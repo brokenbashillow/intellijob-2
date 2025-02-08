@@ -1,11 +1,9 @@
-
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Bot, Send } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import ReactMarkdown from "react-markdown"
@@ -29,6 +27,29 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+
+  const chatRef = useRef<HTMLDivElement>(null)
+  const [isAtBottom, setIsAtBottom] = useState(true)
+
+  const scrollToBottom = () => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight
+    }
+  }
+
+  const checkIfAtBottom = () => {
+    if (!chatRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = chatRef.current
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50 // Small offset to detect near bottom
+    setIsAtBottom(isAtBottom)
+  }
+
+  useEffect(() => {
+    // Scroll to bottom only when the user is at the bottom already or after new messages are sent
+    if (isAtBottom) {
+      scrollToBottom()
+    }
+  }, [messages])
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || isLoading) return
@@ -89,14 +110,16 @@ const Chat = () => {
           <h2 className="text-2xl font-bold">Chat Assistant</h2>
         </div>
 
-        <ScrollArea className="flex-1 p-4">
+        <div
+          className="flex-1 p-4 overflow-y-auto"
+          ref={chatRef}
+          onScroll={checkIfAtBottom}
+        >
           <div className="space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-start gap-3 ${
-                  message.sender === "user" ? "flex-row-reverse" : ""
-                }`}
+                className={`flex items-start gap-3 ${message.sender === "user" ? "flex-row-reverse" : ""}`}
               >
                 <Avatar className="h-8 w-8">
                   {message.sender === "bot" ? (
@@ -109,18 +132,14 @@ const Chat = () => {
                   )}
                 </Avatar>
                 <div
-                  className={`rounded-lg p-3 ${
-                    message.sender === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
+                  className={`rounded-lg p-3 ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                 >
                   <ReactMarkdown className="text-sm">{message.text}</ReactMarkdown>
                 </div>
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="border-t p-4">
           <div className="flex gap-2">
