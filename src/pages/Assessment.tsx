@@ -1,47 +1,57 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import EducationStep from "@/components/assessment/EducationStep";
 import ExperienceStep from "@/components/assessment/ExperienceStep";
-import SkillsStep from "@/components/assessment/SkillsStep";
-
-const HARD_SKILLS = [
-  "JavaScript",
-  "Python",
-  "Java",
-  "React",
-  "Node.js",
-  "SQL",
-  "AutoCAD",
-  "MATLAB",
-  "Excel",
-  "PowerBI",
-  "SEO",
-  "Content Creation",
-];
-
-const SOFT_SKILLS = [
-  "Communication",
-  "Problem-solving",
-  "Teamwork",
-  "Adaptability",
-  "Leadership",
-  "Time Management",
-  "Attention to Detail",
-];
+import CategorySkillsStep from "@/components/assessment/CategorySkillsStep";
+import type { SkillCategory, Skill } from "@/types/skills";
 
 const Assessment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [categories, setCategories] = useState<SkillCategory[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [formData, setFormData] = useState({
     education: "",
     experience: "",
-    hardSkills: [] as string[],
+    technicalSkills: [] as string[],
     softSkills: [] as string[],
   });
+
+  useEffect(() => {
+    const fetchSkillsData = async () => {
+      try {
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('skill_categories')
+          .select('*');
+
+        if (categoriesError) throw categoriesError;
+
+        const { data: skillsData, error: skillsError } = await supabase
+          .from('skills')
+          .select('*');
+
+        if (skillsError) throw skillsError;
+
+        setCategories(categoriesData);
+        setSkills(skillsData);
+      } catch (error) {
+        console.error('Error fetching skills data:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load skills data. Please try again.",
+        });
+      }
+    };
+
+    fetchSkillsData();
+  }, [toast]);
 
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
@@ -65,20 +75,20 @@ const Assessment = () => {
       return;
     }
 
-    if (currentStep === 3 && formData.hardSkills.length === 0) {
+    if (currentStep === 3 && formData.technicalSkills.length < 3) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please select at least one hard skill",
+        description: "Please select at least 3 technical skills",
       });
       return;
     }
 
-    if (currentStep === totalSteps && formData.softSkills.length === 0) {
+    if (currentStep === totalSteps && formData.softSkills.length < 3) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please select at least one soft skill",
+        description: "Please select at least 3 soft skills",
       });
       return;
     }
@@ -102,7 +112,7 @@ const Assessment = () => {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-3xl mx-auto space-y-8">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Skills Assessment</h1>
           <Progress value={progress} className="h-2" />
@@ -128,24 +138,28 @@ const Assessment = () => {
           )}
 
           {currentStep === 3 && (
-            <SkillsStep
-              skills={formData.hardSkills}
-              setSkills={(skills) =>
-                setFormData((prev) => ({ ...prev, hardSkills: skills }))
+            <CategorySkillsStep
+              title="Select your technical skills (min 3, max 5)"
+              selectedSkills={formData.technicalSkills}
+              setSelectedSkills={(skills) =>
+                setFormData((prev) => ({ ...prev, technicalSkills: skills }))
               }
-              skillsList={HARD_SKILLS}
-              title="Select the hard skills that apply to you"
+              categories={categories}
+              skills={skills}
+              type="technical"
             />
           )}
 
           {currentStep === 4 && (
-            <SkillsStep
-              skills={formData.softSkills}
-              setSkills={(skills) =>
+            <CategorySkillsStep
+              title="Select your soft skills (min 3, max 5)"
+              selectedSkills={formData.softSkills}
+              setSelectedSkills={(skills) =>
                 setFormData((prev) => ({ ...prev, softSkills: skills }))
               }
-              skillsList={SOFT_SKILLS}
-              title="Select your soft skills"
+              categories={categories}
+              skills={skills}
+              type="soft"
             />
           )}
 
