@@ -31,6 +31,8 @@ const Chat = () => {
   const chatRef = useRef<HTMLDivElement>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
+  const [botTyping, setBotTyping] = useState(false)  // Added state to track typing animation
+
   const scrollToBottom = () => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight
@@ -50,6 +52,18 @@ const Chat = () => {
       scrollToBottom()
     }
   }, [messages])
+
+  const typeMessage = (message: string, callback: (typedMessage: string) => void) => {
+    let index = 0
+    const interval = setInterval(() => {
+      if (index < message.length) {
+        callback(message.slice(0, index + 1)) 
+        index++
+      } else {
+        clearInterval(interval)  
+      }
+    }, 10)  
+  }
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || isLoading) return
@@ -78,11 +92,25 @@ const Chat = () => {
 
       const botResponse: Message = {
         id: messages.length + 2,
-        text: data.choices[0].message.content,
+        text: "",
         sender: "bot",
         timestamp: new Date(),
       }
-      
+
+      setBotTyping(true)  // Show that the bot is typing
+
+      // Type out the bot's message with typewriter effect
+      typeMessage(data.choices[0].message.content, (typedMessage) => {
+        setMessages((prev) => {
+          const updatedMessages = [...prev]
+          updatedMessages[updatedMessages.length - 1] = {
+            ...botResponse,
+            text: typedMessage,
+          }
+          return updatedMessages
+        })
+      })
+
       setMessages((prev) => [...prev, botResponse])
     } catch (error: any) {
       console.error('Error getting AI response:', error)
@@ -93,6 +121,7 @@ const Chat = () => {
       })
     } finally {
       setIsLoading(false)
+      setBotTyping(false)  // Hide typing status when done
     }
   }
 
