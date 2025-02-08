@@ -50,6 +50,10 @@ const EmployerChat = () => {
 
       if (error) throw error
 
+      if (!data?.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from AI')
+      }
+
       const botResponse: Message = {
         id: messages.length + 2,
         text: data.choices[0].message.content,
@@ -59,12 +63,12 @@ const EmployerChat = () => {
       
       setMessages((prev) => [...prev, botResponse])
     } catch (error: any) {
+      console.error('Error getting AI response:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to get AI response. Please try again.",
+        description: error.message || "Failed to get AI response. Please try again.",
       })
-      console.error('Error getting AI response:', error)
     } finally {
       setIsLoading(false)
     }

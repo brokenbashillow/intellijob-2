@@ -1,4 +1,4 @@
-// supabase/functions/gemini/index.ts
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
@@ -16,6 +16,10 @@ serve(async (req) => {
   try {
     const { prompt } = await req.json()
     
+    if (!prompt) {
+      throw new Error('Prompt is required')
+    }
+
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
@@ -31,11 +35,25 @@ serve(async (req) => {
       })
     })
 
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || 'Failed to get response from Gemini')
+    }
+
     const data = await response.json()
     console.log('Gemini response:', data)
 
+    // Format the response to match what the frontend expects
+    const formattedResponse = {
+      choices: [{
+        message: {
+          content: data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated'
+        }
+      }]
+    }
+
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(formattedResponse),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
