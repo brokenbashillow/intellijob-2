@@ -2,11 +2,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface JobTitleStepProps {
-  jobTitle: string;
+  JobTitle: string;
   setJobTitle: (value: string) => void;
 }
 
-const jobTitleStep = ({ jobTitle, setJobTitle }: JobTitleStepProps) => {
+const jobTitleStep = ({ JobTitle, setJobTitle }: JobTitleStepProps) => {
   return (
     <div className="space-y-4">
       <Label htmlFor="jobTitle">
@@ -15,7 +15,7 @@ const jobTitleStep = ({ jobTitle, setJobTitle }: JobTitleStepProps) => {
       <Input
         id="jobTitle"
         placeholder="Junior Software Engineer"
-        value={jobTitle}
+        value={JobTitle}
         onChange={(e) => setJobTitle(e.target.value)}
       />
     </div>
