@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
+import ReactMarkdown from "react-markdown"
 
 interface Message {
   id: number
@@ -114,7 +115,7 @@ const Chat = () => {
                       : "bg-muted"
                   }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  <ReactMarkdown className="text-sm">{message.text}</ReactMarkdown>
                 </div>
               </div>
             ))}
