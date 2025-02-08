@@ -1,10 +1,13 @@
+
 import { useState } from "react"
-import { MessageCircle, Send, Bot } from "lucide-react"
+import { Bot, Send } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Message {
   id: number
@@ -17,15 +20,17 @@ const EmployerChat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello [Company Name], How can I help you with?",
+      text: "Hello! I'm your AI assistant. I can help you with job posting suggestions, candidate evaluation, and recruitment strategies. How can I assist you today?",
       sender: "bot",
       timestamp: new Date(),
     },
   ])
   const [newMessage, setNewMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || isLoading) return
 
     const userMessage: Message = {
       id: messages.length + 1,
@@ -35,19 +40,34 @@ const EmployerChat = () => {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    setNewMessage("")
+    setIsLoading(true)
 
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('gemini', {
+        body: { prompt: newMessage }
+      })
+
+      if (error) throw error
+
       const botResponse: Message = {
         id: messages.length + 2,
-        text: "I'm here to help! Let me know if you need assistance with posting jobs or managing your listings.",
+        text: data.choices[0].message.content,
         sender: "bot",
         timestamp: new Date(),
       }
+      
       setMessages((prev) => [...prev, botResponse])
-    }, 1000)
-
-    setNewMessage("")
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to get AI response. Please try again.",
+      })
+      console.error('Error getting AI response:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -105,8 +125,13 @@ const EmployerChat = () => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={handleKeyPress}
               className="flex-1"
+              disabled={isLoading}
             />
-            <Button onClick={handleSendMessage} size="icon">
+            <Button 
+              onClick={handleSendMessage} 
+              size="icon"
+              disabled={isLoading}
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
