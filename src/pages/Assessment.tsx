@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import EducationStep from "@/components/assessment/EducationStep";
 import ExperienceStep from "@/components/assessment/ExperienceStep";
 import CategorySkillsStep from "@/components/assessment/CategorySkillsStep";
 import LocationStep from "@/components/assessment/LocationStep";
-// import JobTitleStep from "@/components/assessment/JobTitleStep";
+import JobTitleStep from "@/components/assessment/JobTitleStep";
 import type { SkillCategory, Skill } from "@/types/skills";
 
 const Assessment = () => {
@@ -28,7 +27,7 @@ const Assessment = () => {
       province: "",
       city: "",
     },
-    // jobTitle: "",
+    jobTitle: "",
   });
 
   useEffect(() => {
@@ -61,7 +60,7 @@ const Assessment = () => {
     fetchSkillsData();
   }, [toast]);
 
-  const totalSteps = 5;
+  const totalSteps = 6;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
@@ -107,6 +106,17 @@ const Assessment = () => {
           variant: "destructive",
           title: "Error",
           description: "Please enter your country and city",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 6) {
+      if (!formData.jobTitle) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please enter your desired job title",
         });
         return;
       }
@@ -207,14 +217,14 @@ const Assessment = () => {
             />
           )}
 
-          {/* {currentStep === 6 && (
+          {currentStep === 6 && (
             <JobTitleStep
               JobTitle={formData.jobTitle}
               setJobTitle={(value) =>
-                setFormData((prev) => ({ ...prev, education: value }))
+                setFormData((prev) => ({ ...prev, jobTitle: value }))
               }
             />
-          )} */}
+          )}
 
           <div className="flex justify-end space-x-4">
             {currentStep > 1 && (
