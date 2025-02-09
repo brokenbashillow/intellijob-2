@@ -89,6 +89,7 @@ export type Database = {
           education: string
           experience: string
           id: string
+          job_title: string | null
           user_id: string
         }
         Insert: {
@@ -96,6 +97,7 @@ export type Database = {
           education: string
           experience: string
           id?: string
+          job_title?: string | null
           user_id: string
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           education?: string
           experience?: string
           id?: string
+          job_title?: string | null
           user_id?: string
         }
         Relationships: [
