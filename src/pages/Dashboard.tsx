@@ -71,10 +71,10 @@ const Dashboard = () => {
         .from('seeker_assessments')
         .select(`
           *,
-          user_skills!inner(*)
+          user_skills(*)
         `)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setAssessmentData(assessment);

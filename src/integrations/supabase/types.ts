@@ -209,6 +209,7 @@ export type Database = {
       }
       user_skills: {
         Row: {
+          assessment_id: string | null
           created_at: string
           id: string
           skill_id: string
@@ -216,6 +217,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assessment_id?: string | null
           created_at?: string
           id?: string
           skill_id: string
@@ -223,6 +225,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assessment_id?: string | null
           created_at?: string
           id?: string
           skill_id?: string
@@ -235,6 +238,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_skills_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "seeker_assessments"
             referencedColumns: ["id"]
           },
           {
