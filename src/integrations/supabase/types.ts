@@ -83,6 +83,45 @@ export type Database = {
         }
         Relationships: []
       }
+      resumes: {
+        Row: {
+          certificates: string[] | null
+          created_at: string
+          education: string[] | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          reference_list: string[] | null
+          updated_at: string
+          user_id: string
+          work_experience: string[] | null
+        }
+        Insert: {
+          certificates?: string[] | null
+          created_at?: string
+          education?: string[] | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          reference_list?: string[] | null
+          updated_at?: string
+          user_id: string
+          work_experience?: string[] | null
+        }
+        Update: {
+          certificates?: string[] | null
+          created_at?: string
+          education?: string[] | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          reference_list?: string[] | null
+          updated_at?: string
+          user_id?: string
+          work_experience?: string[] | null
+        }
+        Relationships: []
+      }
       seeker_assessments: {
         Row: {
           created_at: string

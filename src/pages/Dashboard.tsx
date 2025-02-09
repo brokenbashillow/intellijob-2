@@ -1,4 +1,5 @@
-import { useState } from "react"
+
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
@@ -31,8 +32,57 @@ type View = "dashboard" | "chat" | "resume"
 
 const Dashboard = () => {
   const [currentView, setCurrentView] = useState<View>("dashboard")
+  const [userData, setUserData] = useState<any>(null)
+  const [assessmentData, setAssessmentData] = useState<any>(null)
   const navigate = useNavigate()
   const { toast } = useToast()
+
+  useEffect(() => {
+    fetchUserData();
+    fetchAssessmentData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      setUserData(profileData);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  const fetchAssessmentData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: assessment, error } = await supabase
+        .from('seeker_assessments')
+        .select(`
+          *,
+          user_skills!inner(*)
+        `)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setAssessmentData(assessment);
+    } catch (error) {
+      console.error('Error fetching assessment data:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -73,13 +123,6 @@ const Dashboard = () => {
     }
   }
 
-  const assessmentData = {
-    knowledge: 85,
-    experience: 70,
-    hardSkills: 90,
-    softSkills: 75,
-  }
-
   const jobPlatforms = [
     { name: "IntelliJob", url: "#", color: "bg-blue-500" },
     { name: "Indeed", url: "#", color: "bg-blue-600" },
@@ -115,28 +158,42 @@ const Dashboard = () => {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="font-medium">John Doe</span>
+              <span className="font-medium">{userData?.full_name}</span>
               <Avatar>
-                <AvatarImage src="" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src={userData?.avatar_url} />
+                <AvatarFallback>{userData?.full_name?.charAt(0)}</AvatarFallback>
               </Avatar>
             </div>
 
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-6">Assessment Results</h2>
-              <div className="grid gap-6">
-                {Object.entries(assessmentData).map(([key, value]) => (
-                  <div key={key} className="space-y-2">
+              {assessmentData ? (
+                <div className="grid gap-6">
+                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium capitalize">
-                        {key.replace(/([A-Z])/g, " $1").trim()}
-                      </span>
-                      <span>{value}%</span>
+                      <span className="font-medium">Education</span>
+                      <span>90%</span>
                     </div>
-                    <Progress value={value} className="h-2" />
+                    <Progress value={90} className="h-2" />
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Experience</span>
+                      <span>85%</span>
+                    </div>
+                    <Progress value={85} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Technical Skills</span>
+                      <span>{Math.min(assessmentData.user_skills?.length * 20, 100)}%</span>
+                    </div>
+                    <Progress value={Math.min(assessmentData.user_skills?.length * 20, 100)} className="h-2" />
+                  </div>
+                </div>
+              ) : (
+                <p>No assessment data available. Complete your assessment to see results.</p>
+              )}
             </section>
 
             <section>
@@ -224,21 +281,3 @@ const Dashboard = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Log Out
-          </Button>
-        </nav>
-      </aside>
-
-      {renderContent()}
-    </div>
-  )
-}
-
-export default Dashboard
