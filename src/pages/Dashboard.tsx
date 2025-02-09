@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -281,3 +280,51 @@ const Dashboard = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            Log Out
+          </Button>
+        </nav>
+      </aside>
+
+      <div className="flex-1">
+        <div className="flex justify-end items-center p-4 border-b">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative hover:bg-accent"
+                  >
+                    <Bell className="h-5 w-5" />
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      3
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Notifications coming soon</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <span className="font-medium">{userData?.full_name}</span>
+            <Avatar>
+              <AvatarImage src={userData?.avatar_url} />
+              <AvatarFallback>{userData?.full_name?.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+
+        {renderContent()}
+      </div>
+    </div>
+  )
+}
+
+export default Dashboard
