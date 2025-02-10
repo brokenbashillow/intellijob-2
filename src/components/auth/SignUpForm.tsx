@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ interface SignUpFormProps {
 }
 
 const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +33,7 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -42,14 +44,17 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
 
     setIsLoading(true);
     try {
+      const fullName = `${firstName} ${lastName}`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name,
+            name: fullName,
+            first_name: firstName,
+            last_name: lastName,
             user_type: userType,
-            company_name: userType === "employer" ? name : null,
+            company_name: userType === "employer" ? fullName : null,
           },
         },
       });
@@ -103,22 +108,45 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
               </div>
             </RadioGroup>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              {userType === "employer" ? "Company Name" : "Full Name"}
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder={
-                userType === "employer"
-                  ? "Enter your company name"
-                  : "Enter your full name"
-              }
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+          {userType === "employer" ? (
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                id="companyName"
+                type="text"
+                placeholder="Enter your company name"
+                value={`${firstName} ${lastName}`}
+                onChange={(e) => {
+                  const [first, ...rest] = e.target.value.split(" ");
+                  setFirstName(first || "");
+                  setLastName(rest.join(" ") || "");
+                }}
+              />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Enter your first name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Enter your last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
