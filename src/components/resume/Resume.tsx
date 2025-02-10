@@ -210,25 +210,25 @@ const Resume = () => {
         user_id: user.id,
         first_name: personalDetails.firstName,
         last_name: personalDetails.lastName,
-        education: education.map(edu => ({
+        education: education.map(edu => JSON.stringify({
           degree: edu.degree,
           school: edu.school,
           startDate: edu.startDate,
           endDate: edu.endDate
         })),
-        work_experience: workExperience.map(exp => ({
+        work_experience: workExperience.map(exp => JSON.stringify({
           company: exp.company,
           title: exp.title,
           startDate: exp.startDate,
           endDate: exp.endDate,
           description: exp.description
         })),
-        certificates: certificates.map(cert => ({
+        certificates: certificates.map(cert => JSON.stringify({
           name: cert.name,
           organization: cert.organization,
           dateObtained: cert.dateObtained
         })),
-        reference_list: references.map(ref => ({
+        reference_list: references.map(ref => JSON.stringify({
           name: ref.name,
           title: ref.title,
           company: ref.company,
