@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Accordion,
@@ -205,19 +206,41 @@ const Resume = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      const resumeData = {
+        user_id: user.id,
+        first_name: personalDetails.firstName,
+        last_name: personalDetails.lastName,
+        education: education.map(edu => ({
+          degree: edu.degree,
+          school: edu.school,
+          startDate: edu.startDate,
+          endDate: edu.endDate
+        })),
+        work_experience: workExperience.map(exp => ({
+          company: exp.company,
+          title: exp.title,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          description: exp.description
+        })),
+        certificates: certificates.map(cert => ({
+          name: cert.name,
+          organization: cert.organization,
+          dateObtained: cert.dateObtained
+        })),
+        reference_list: references.map(ref => ({
+          name: ref.name,
+          title: ref.title,
+          company: ref.company,
+          email: ref.email,
+          phone: ref.phone
+        }))
+      };
+
       const { error } = await supabase
         .from('resumes')
-        .upsert({
-          user_id: user.id,
-          first_name: personalDetails.firstName,
-          last_name: personalDetails.lastName,
-          education,
-          work_experience: workExperience,
-          certificates,
-          reference_list: references,
-        }, {
-          onConflict: 'user_id'
-        });
+        .upsert(resumeData)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
