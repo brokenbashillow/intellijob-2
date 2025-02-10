@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Accordion,
@@ -80,10 +79,56 @@ const Resume = () => {
           lastName: resumeData.last_name || "",
           profilePicture: "",
         });
-        setEducation(resumeData.education || []);
-        setWorkExperience(resumeData.work_experience || []);
-        setCertificates(resumeData.certificates || []);
-        setReferences(resumeData.reference_list || []);
+        
+        // Parse the arrays into their respective object types
+        setEducation(resumeData.education?.map((edu: any) => {
+          if (typeof edu === 'string') {
+            return {
+              degree: edu,
+              school: "",
+              startDate: "",
+              endDate: "",
+            };
+          }
+          return edu;
+        }) || []);
+
+        setWorkExperience(resumeData.work_experience?.map((exp: any) => {
+          if (typeof exp === 'string') {
+            return {
+              company: "",
+              title: exp,
+              startDate: "",
+              endDate: "",
+              description: "",
+            };
+          }
+          return exp;
+        }) || []);
+
+        setCertificates(resumeData.certificates?.map((cert: any) => {
+          if (typeof cert === 'string') {
+            return {
+              name: cert,
+              organization: "",
+              dateObtained: "",
+            };
+          }
+          return cert;
+        }) || []);
+
+        setReferences(resumeData.reference_list?.map((ref: any) => {
+          if (typeof ref === 'string') {
+            return {
+              name: ref,
+              title: "",
+              company: "",
+              email: "",
+              phone: "",
+            };
+          }
+          return ref;
+        }) || []);
       }
 
       // Fetch profile data
@@ -170,6 +215,8 @@ const Resume = () => {
           work_experience: workExperience,
           certificates,
           reference_list: references,
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
