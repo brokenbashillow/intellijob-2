@@ -60,9 +60,11 @@ export function useResumeData() {
         .from('resumes')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error && error.message !== "JSON object requested, multiple (or no) rows returned") {
+        throw error;
+      }
 
       if (resumeData) {
         setPersonalDetails({
@@ -72,44 +74,81 @@ export function useResumeData() {
         });
         
         setEducation(resumeData.education?.map((edu: string) => {
-          const parsed = JSON.parse(edu);
-          return {
-            degree: parsed.degree || "",
-            school: parsed.school || "",
-            startDate: parsed.startDate || "",
-            endDate: parsed.endDate || "",
-          };
+          try {
+            const parsed = JSON.parse(edu);
+            return {
+              degree: parsed.degree || "",
+              school: parsed.school || "",
+              startDate: parsed.startDate || "",
+              endDate: parsed.endDate || "",
+            };
+          } catch {
+            return {
+              degree: "",
+              school: "",
+              startDate: "",
+              endDate: "",
+            };
+          }
         }) || []);
 
         setWorkExperience(resumeData.work_experience?.map((exp: string) => {
-          const parsed = JSON.parse(exp);
-          return {
-            company: parsed.company || "",
-            title: parsed.title || "",
-            startDate: parsed.startDate || "",
-            endDate: parsed.endDate || "",
-            description: parsed.description || "",
-          };
+          try {
+            const parsed = JSON.parse(exp);
+            return {
+              company: parsed.company || "",
+              title: parsed.title || "",
+              startDate: parsed.startDate || "",
+              endDate: parsed.endDate || "",
+              description: parsed.description || "",
+            };
+          } catch {
+            return {
+              company: "",
+              title: "",
+              startDate: "",
+              endDate: "",
+              description: "",
+            };
+          }
         }) || []);
 
         setCertificates(resumeData.certificates?.map((cert: string) => {
-          const parsed = JSON.parse(cert);
-          return {
-            name: parsed.name || "",
-            organization: parsed.organization || "",
-            dateObtained: parsed.dateObtained || "",
-          };
+          try {
+            const parsed = JSON.parse(cert);
+            return {
+              name: parsed.name || "",
+              organization: parsed.organization || "",
+              dateObtained: parsed.dateObtained || "",
+            };
+          } catch {
+            return {
+              name: "",
+              organization: "",
+              dateObtained: "",
+            };
+          }
         }) || []);
 
         setReferences(resumeData.reference_list?.map((ref: string) => {
-          const parsed = JSON.parse(ref);
-          return {
-            name: parsed.name || "",
-            title: parsed.title || "",
-            company: parsed.company || "",
-            email: parsed.email || "",
-            phone: parsed.phone || "",
-          };
+          try {
+            const parsed = JSON.parse(ref);
+            return {
+              name: parsed.name || "",
+              title: parsed.title || "",
+              company: parsed.company || "",
+              email: parsed.email || "",
+              phone: parsed.phone || "",
+            };
+          } catch {
+            return {
+              name: "",
+              title: "",
+              company: "",
+              email: "",
+              phone: "",
+            };
+          }
         }) || []);
       }
 
@@ -118,7 +157,7 @@ export function useResumeData() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) throw profileError;
 
