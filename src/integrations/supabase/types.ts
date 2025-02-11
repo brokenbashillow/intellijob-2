@@ -51,8 +51,10 @@ export type Database = {
           company_name: string | null
           country: string | null
           created_at: string
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           province: string | null
           updated_at: string
           user_type: string | null
@@ -63,8 +65,10 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          first_name?: string | null
           full_name?: string | null
           id: string
+          last_name?: string | null
           province?: string | null
           updated_at?: string
           user_type?: string | null
@@ -75,8 +79,10 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           province?: string | null
           updated_at?: string
           user_type?: string | null
