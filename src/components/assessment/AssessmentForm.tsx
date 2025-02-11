@@ -24,7 +24,11 @@ interface FormData {
   jobTitle: string;
 }
 
-export const AssessmentForm = () => {
+interface AssessmentFormProps {
+  onProgressChange: (step: number) => void;
+}
+
+export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -41,9 +45,6 @@ export const AssessmentForm = () => {
     },
     jobTitle: "",
   });
-
-  const totalSteps = 6;
-  const progress = (currentStep / totalSteps) * 100;
 
   const handleSubmit = async () => {
     try {
@@ -177,7 +178,15 @@ export const AssessmentForm = () => {
       return;
     }
 
-    setCurrentStep((prev) => prev + 1);
+    const nextStep = currentStep + 1;
+    setCurrentStep(nextStep);
+    onProgressChange(nextStep);
+  };
+
+  const handlePrevious = () => {
+    const prevStep = currentStep - 1;
+    setCurrentStep(prevStep);
+    onProgressChange(prevStep);
   };
 
   return (
@@ -248,13 +257,13 @@ export const AssessmentForm = () => {
         {currentStep > 1 && (
           <Button
             variant="outline"
-            onClick={() => setCurrentStep((prev) => prev - 1)}
+            onClick={handlePrevious}
           >
             Previous
           </Button>
         )}
         <Button onClick={handleNext}>
-          {currentStep === totalSteps ? "Submit" : "Next"}
+          {currentStep === 6 ? "Submit" : "Next"}
         </Button>
       </div>
     </div>
