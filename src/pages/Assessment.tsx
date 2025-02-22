@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const Assessment = () => {
   const [progress, setProgress] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 5;
 
   return (
     <div className="min-h-screen bg-background p-6">

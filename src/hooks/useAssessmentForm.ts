@@ -14,7 +14,6 @@ interface FormData {
     province: string;
     city: string;
   };
-  jobTitle: string;
 }
 
 export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
@@ -31,7 +30,6 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
       province: "",
       city: "",
     },
-    jobTitle: "",
   });
 
   const handleSubmit = async () => {
@@ -48,7 +46,6 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
           user_id: user.data.user.id,
           education: formData.education,
           experience: formData.experience,
-          job_title: formData.jobTitle
         });
 
       if (assessmentError) throw assessmentError;
@@ -151,17 +148,6 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
         });
         return false;
       }
-    }
-
-    if (currentStep === 6) {
-      if (!formData.jobTitle) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Please enter your desired job title",
-        });
-        return false;
-      }
       return true;
     }
 
@@ -171,7 +157,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const handleNext = () => {
     if (!validateStep()) return;
 
-    if (currentStep === 6) {
+    if (currentStep === 5) {
       handleSubmit();
       return;
     }

@@ -5,7 +5,6 @@ import EducationStep from "./EducationStep";
 import ExperienceStep from "./ExperienceStep";
 import CategorySkillsStep from "./CategorySkillsStep";
 import LocationStep from "./LocationStep";
-import JobTitleStep from "./JobTitleStep";
 import FormNavigation from "./FormNavigation";
 
 interface AssessmentFormProps {
@@ -73,15 +72,6 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
           location={formData.location}
           setLocation={(location) =>
             setFormData((prev) => ({ ...prev, location }))
-          }
-        />
-      )}
-
-      {currentStep === 6 && (
-        <JobTitleStep
-          JobTitle={formData.jobTitle}
-          setJobTitle={(value) =>
-            setFormData((prev) => ({ ...prev, jobTitle: value }))
           }
         />
       )}
