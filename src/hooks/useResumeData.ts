@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -170,6 +169,9 @@ export function useResumeData() {
           profilePicture: profileData.avatar_url || "",
         }));
       }
+
+      // After fetching resume data, fetch and merge assessment data
+      await fetchAssessmentData();
     } catch (error: any) {
       console.error('Error fetching resume data:', error);
       toast({
@@ -191,31 +193,57 @@ export function useResumeData() {
         .from('seeker_assessments')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
       if (assessmentData) {
-        const educationItem: EducationItem = {
-          degree: assessmentData.education,
-          school: "",
-          startDate: "",
-          endDate: "",
-        };
+        // Add assessment education to resume education if not already present
+        if (assessmentData.education) {
+          setEducation(prev => {
+            const educationExists = prev.some(edu => 
+              edu.degree.toLowerCase() === assessmentData.education.toLowerCase()
+            );
+            
+            if (!educationExists) {
+              return [...prev, {
+                degree: assessmentData.education,
+                school: "",
+                startDate: "",
+                endDate: "",
+              }];
+            }
+            return prev;
+          });
+        }
 
-        const experienceItem: WorkExperienceItem = {
-          company: "",
-          title: assessmentData.job_title || "",
-          startDate: "",
-          endDate: "",
-          description: assessmentData.experience,
-        };
-
-        setEducation(prev => [...prev, educationItem]);
-        setWorkExperience(prev => [...prev, experienceItem]);
+        // Add assessment experience to resume work experience if not already present
+        if (assessmentData.experience) {
+          setWorkExperience(prev => {
+            const experienceExists = prev.some(exp => 
+              exp.description.toLowerCase() === assessmentData.experience.toLowerCase()
+            );
+            
+            if (!experienceExists) {
+              return [...prev, {
+                company: "",
+                title: "",
+                startDate: "",
+                endDate: "",
+                description: assessmentData.experience,
+              }];
+            }
+            return prev;
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching assessment data:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load assessment data.",
+      });
     }
   };
 
@@ -325,7 +353,6 @@ export function useResumeData() {
 
   useEffect(() => {
     fetchResumeData();
-    fetchAssessmentData();
   }, []);
 
   return {
