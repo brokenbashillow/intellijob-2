@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -193,6 +194,8 @@ export function useResumeData() {
         .from('seeker_assessments')
         .select('*')
         .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
@@ -227,7 +230,7 @@ export function useResumeData() {
             if (!experienceExists) {
               return [...prev, {
                 company: "",
-                title: "",
+                title: assessmentData.job_title || "",
                 startDate: "",
                 endDate: "",
                 description: assessmentData.experience,
@@ -237,7 +240,7 @@ export function useResumeData() {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching assessment data:', error);
       toast({
         variant: "destructive",
