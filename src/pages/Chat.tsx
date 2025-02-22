@@ -26,12 +26,31 @@ const Chat = () => {
   ])
   const [newMessage, setNewMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [userInitials, setUserInitials] = useState("")
   const { toast } = useToast()
 
   const chatRef = useRef<HTMLDivElement>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
+  const [botTyping, setBotTyping] = useState(false)
 
-  const [botTyping, setBotTyping] = useState(false)  // Added state to track typing animation
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single()
+        
+        if (profileData?.first_name && profileData?.last_name) {
+          setUserInitials(`${profileData.first_name[0]}${profileData.last_name[0]}`)
+        }
+      }
+    }
+    
+    fetchUserProfile()
+  }, [])
 
   const scrollToBottom = () => {
     if (chatRef.current) {
@@ -42,16 +61,9 @@ const Chat = () => {
   const checkIfAtBottom = () => {
     if (!chatRef.current) return
     const { scrollTop, scrollHeight, clientHeight } = chatRef.current
-    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50 // Small offset to detect near bottom
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50
     setIsAtBottom(isAtBottom)
   }
-
-  useEffect(() => {
-    // Scroll to bottom only when the user is at the bottom already or after new messages are sent
-    if (isAtBottom) {
-      scrollToBottom()
-    }
-  }, [messages])
 
   const typeMessage = (message: string, callback: (typedMessage: string) => void) => {
     let index = 0
@@ -97,9 +109,8 @@ const Chat = () => {
         timestamp: new Date(),
       }
 
-      setBotTyping(true)  // Show that the bot is typing
+      setBotTyping(true)
 
-      // Type out the bot's message with typewriter effect
       typeMessage(data.choices[0].message.content, (typedMessage) => {
         setMessages((prev) => {
           const updatedMessages = [...prev]
@@ -121,7 +132,7 @@ const Chat = () => {
       })
     } finally {
       setIsLoading(false)
-      setBotTyping(false)  // Hide typing status when done
+      setBotTyping(false)
     }
   }
 
@@ -156,7 +167,7 @@ const Chat = () => {
                   ) : (
                     <>
                       <AvatarImage src="" />
-                      <AvatarFallback>JD</AvatarFallback>
+                      <AvatarFallback>{userInitials}</AvatarFallback>
                     </>
                   )}
                 </Avatar>
