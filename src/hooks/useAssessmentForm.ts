@@ -41,20 +41,26 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
         .eq('user_id', userId)
         .single();
 
+      // Create education entry
+      const educationEntry = {
+        degree: formData.education,
+        school: "",
+        startDate: "",
+        endDate: "",
+      };
+
+      // Create work experience entry
+      const workExperienceEntry = {
+        company: "",
+        title: "",
+        startDate: "",
+        endDate: "",
+        description: formData.experience,
+      };
+
       const resumeData = {
-        education: [{
-          degree: formData.education,
-          school: "",
-          startDate: "",
-          endDate: "",
-        }],
-        work_experience: [{
-          company: "",
-          title: "",
-          startDate: "",
-          endDate: "",
-          description: formData.experience,
-        }],
+        education: [JSON.stringify(educationEntry)],
+        work_experience: [JSON.stringify(workExperienceEntry)],
         user_id: userId,
       };
 
