@@ -1,6 +1,8 @@
 
 import { BriefcaseIcon, MessageCircle, FileText, LogOut, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import { supabase } from "@/integrations/supabase/client"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +28,30 @@ const DashboardSidebar = ({
   onLogout, 
   onDeleteAccount 
 }: DashboardSidebarProps) => {
+  const { toast } = useToast()
+
+  const handleDeleteAccount = async () => {
+    try {
+      const { error } = await supabase.rpc('delete_user')
+      
+      if (error) {
+        throw error
+      }
+      
+      toast({
+        description: "Your account has been successfully deleted.",
+      })
+      
+      onDeleteAccount()
+    } catch (error) {
+      console.error('Error deleting account:', error)
+      toast({
+        variant: "destructive",
+        description: "Failed to delete account. Please try again.",
+      })
+    }
+  }
+
   return (
     <aside className="w-64 border-r bg-card p-6 space-y-6">
       <div className="flex items-center gap-2 mb-8">
@@ -75,7 +101,7 @@ const DashboardSidebar = ({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={onDeleteAccount} className="bg-red-500 hover:bg-red-600">
+              <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-500 hover:bg-red-600">
                 Delete Account
               </AlertDialogAction>
             </AlertDialogFooter>
