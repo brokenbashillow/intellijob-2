@@ -60,6 +60,16 @@ export const useResumeData = () => {
   const [references, setReferences] = useState<ReferenceItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const parseJsonArray = <T,>(data: string[] | null): T[] => {
+    if (!data) return [];
+    try {
+      return data.map(item => typeof item === 'string' ? JSON.parse(item) : item);
+    } catch (error) {
+      console.error('Error parsing JSON array:', error);
+      return [];
+    }
+  };
+
   const fetchResumeData = async () => {
     setIsLoading(true);
     try {
@@ -80,10 +90,10 @@ export const useResumeData = () => {
           lastName: resumeData.last_name || "",
           profilePicture: "",
         });
-        setEducation(resumeData.education || []);
-        setWorkExperience(resumeData.work_experience || []);
-        setCertificates(resumeData.certificates || []);
-        setReferences(resumeData.reference_list || []);
+        setEducation(parseJsonArray<EducationItem>(resumeData.education));
+        setWorkExperience(parseJsonArray<WorkExperienceItem>(resumeData.work_experience));
+        setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
+        setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
       }
     } catch (error: any) {
       console.error('Error fetching resume data:', error);
@@ -107,16 +117,22 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
+      // Convert arrays to strings for storage
+      const educationStrings = education.map(item => JSON.stringify(item));
+      const workExperienceStrings = workExperience.map(item => JSON.stringify(item));
+      const certificatesStrings = certificates.map(item => JSON.stringify(item));
+      const referencesStrings = references.map(item => JSON.stringify(item));
+
       const { error } = await supabase
         .from('resumes')
         .upsert({
-          user_id: user.id,
           first_name: personalDetails.firstName,
           last_name: personalDetails.lastName,
-          education: education,
-          work_experience: workExperience,
-          certificates: certificates,
-          reference_list: references,
+          education: educationStrings,
+          work_experience: workExperienceStrings,
+          certificates: certificatesStrings,
+          reference_list: referencesStrings,
+          user_id: user.id,
         });
 
       if (error) throw error;
