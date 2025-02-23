@@ -32,6 +32,54 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
     },
   });
 
+  const syncWithResume = async (userId: string) => {
+    try {
+      // Check if user already has a resume
+      const { data: existingResume } = await supabase
+        .from('resumes')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      const resumeData = {
+        education: [{
+          degree: formData.education,
+          school: "",
+          startDate: "",
+          endDate: "",
+        }],
+        work_experience: [{
+          company: "",
+          title: "",
+          startDate: "",
+          endDate: "",
+          description: formData.experience,
+        }],
+        user_id: userId,
+      };
+
+      if (existingResume) {
+        // Update existing resume
+        const { error: updateError } = await supabase
+          .from('resumes')
+          .update(resumeData)
+          .eq('user_id', userId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new resume
+        const { error: insertError } = await supabase
+          .from('resumes')
+          .insert(resumeData);
+
+        if (insertError) throw insertError;
+      }
+    } catch (error: any) {
+      console.error('Error syncing with resume:', error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       const user = await supabase.auth.getUser();
@@ -88,9 +136,12 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
 
       if (profileError) throw profileError;
 
+      // Sync with resume
+      await syncWithResume(user.data.user.id);
+
       toast({
         title: "Success!",
-        description: "Your assessment has been submitted successfully.",
+        description: "Your assessment has been submitted and resume updated successfully.",
       });
       navigate("/dashboard");
     } catch (error: any) {
