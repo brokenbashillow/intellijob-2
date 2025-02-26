@@ -1,11 +1,11 @@
 
 import { FormData } from "@/types/assessment";
-import { ToastType } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const validateAssessmentStep = (
   currentStep: number,
   formData: FormData,
-  toast: ToastType
+  toast: useToast()
 ): boolean => {
   if (currentStep === 1 && !formData.education) {
     toast({
