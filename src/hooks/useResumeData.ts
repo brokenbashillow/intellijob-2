@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,12 +37,19 @@ export interface ReferenceItem {
   phone: string;
 }
 
+export interface SkillItem {
+  id: string;
+  name: string;
+  type: 'technical' | 'soft';
+}
+
 export interface ResumeData {
   personalDetails: PersonalDetails;
   education: EducationItem[];
   workExperience: WorkExperienceItem[];
   certificates: CertificateItem[];
   references: ReferenceItem[];
+  skills: SkillItem[];
 }
 
 export const useResumeData = () => {
@@ -58,6 +64,7 @@ export const useResumeData = () => {
   const [workExperience, setWorkExperience] = useState<WorkExperienceItem[]>([]);
   const [certificates, setCertificates] = useState<CertificateItem[]>([]);
   const [references, setReferences] = useState<ReferenceItem[]>([]);
+  const [skills, setSkills] = useState<SkillItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const parseJsonArray = <T,>(data: string[] | null): T[] => {
@@ -76,7 +83,6 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      // Fetch user profile for names
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('first_name, last_name')
@@ -93,14 +99,12 @@ export const useResumeData = () => {
         }));
       }
 
-      // Fetch existing resume data
       const { data: resumeData, error: resumeError } = await supabase
         .from('resumes')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // If resume doesn't exist, fetch assessment data as initial values
       if (!resumeData) {
         const { data: assessmentData, error: assessmentError } = await supabase
           .from('seeker_assessments')
@@ -111,7 +115,6 @@ export const useResumeData = () => {
         if (assessmentError) throw assessmentError;
 
         if (assessmentData) {
-          // Use assessment data as initial values
           const initialEducation: EducationItem = {
             degree: assessmentData.education,
             school: "",
@@ -130,14 +133,34 @@ export const useResumeData = () => {
           setEducation([initialEducation]);
           setWorkExperience([initialWorkExperience]);
         }
+
+        const { data: userSkillsData } = await supabase
+          .from('user_skills')
+          .select(`
+            skill_id,
+            skill_type,
+            skills (
+              name
+            )
+          `)
+          .eq('user_id', user.id);
+
+        if (userSkillsData) {
+          const formattedSkills: SkillItem[] = userSkillsData.map(skillData => ({
+            id: skillData.skill_id,
+            name: skillData.skills.name,
+            type: skillData.skill_type as 'technical' | 'soft',
+          }));
+          setSkills(formattedSkills);
+        }
       } else {
-        // Use existing resume data
         if (resumeError) throw resumeError;
         
         setEducation(parseJsonArray<EducationItem>(resumeData.education));
         setWorkExperience(parseJsonArray<WorkExperienceItem>(resumeData.work_experience));
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
         setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
+        setSkills(parseJsonArray<SkillItem>(resumeData.skills));
       }
     } catch (error: any) {
       console.error('Error fetching resume data:', error);
@@ -161,13 +184,12 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      // Convert arrays to strings for storage
       const educationStrings = education.map(item => JSON.stringify(item));
       const workExperienceStrings = workExperience.map(item => JSON.stringify(item));
       const certificatesStrings = certificates.map(item => JSON.stringify(item));
       const referencesStrings = references.map(item => JSON.stringify(item));
+      const skillsStrings = skills.map(item => JSON.stringify(item));
 
-      // First check if a resume exists for this user
       const { data: existingResume } = await supabase
         .from('resumes')
         .select('id')
@@ -176,7 +198,6 @@ export const useResumeData = () => {
 
       let error;
       if (existingResume) {
-        // Update existing resume
         const { error: updateError } = await supabase
           .from('resumes')
           .update({
@@ -186,11 +207,11 @@ export const useResumeData = () => {
             work_experience: workExperienceStrings,
             certificates: certificatesStrings,
             reference_list: referencesStrings,
+            skills: skillsStrings,
           })
           .eq('user_id', user.id);
         error = updateError;
       } else {
-        // Insert new resume
         const { error: insertError } = await supabase
           .from('resumes')
           .insert({
@@ -200,6 +221,7 @@ export const useResumeData = () => {
             work_experience: workExperienceStrings,
             certificates: certificatesStrings,
             reference_list: referencesStrings,
+            skills: skillsStrings,
             user_id: user.id,
           });
         error = insertError;
@@ -207,7 +229,6 @@ export const useResumeData = () => {
 
       if (error) throw error;
 
-      // Also update the profile names
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -259,6 +280,8 @@ export const useResumeData = () => {
     setCertificates,
     references,
     setReferences,
+    skills,
+    setSkills,
     isLoading,
     handleSave,
     handleImageUpload,

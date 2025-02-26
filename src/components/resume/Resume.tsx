@@ -1,4 +1,3 @@
-
 import {
   Accordion,
   AccordionContent,
@@ -6,13 +5,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { User, Book, Briefcase, Award, Users } from "lucide-react";
+import { User, Book, Briefcase, Award, Users, Wrench } from "lucide-react";
 import { useResumeData } from "@/hooks/useResumeData";
 import { PersonalDetailsSection } from "./PersonalDetailsSection";
 import { EducationSection } from "./EducationSection";
 import { WorkExperienceSection } from "./WorkExperienceSection";
 import { CertificatesSection } from "./CertificatesSection";
 import { ReferencesSection } from "./ReferencesSection";
+import { SkillsSection } from "./SkillsSection";
 
 const Resume = () => {
   const {
@@ -26,6 +26,8 @@ const Resume = () => {
     setCertificates,
     references,
     setReferences,
+    skills,
+    setSkills,
     isLoading,
     handleSave,
     handleImageUpload,
@@ -52,6 +54,21 @@ const Resume = () => {
               personalDetails={personalDetails}
               setPersonalDetails={setPersonalDetails}
               handleImageUpload={handleImageUpload}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="skills">
+          <AccordionTrigger className="text-lg font-semibold">
+            <div className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Skills
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <SkillsSection
+              skills={skills}
+              setSkills={setSkills}
             />
           </AccordionContent>
         </AccordionItem>
