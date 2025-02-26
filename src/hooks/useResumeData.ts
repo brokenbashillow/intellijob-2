@@ -74,7 +74,7 @@ export const useResumeData = () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      if (!user) throw new Error("No authenticated user");
 
       // Fetch user profile for names
       const { data: profileData, error: profileError } = await supabase
@@ -159,7 +159,7 @@ export const useResumeData = () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      if (!user) throw new Error("No authenticated user");
 
       // Convert arrays to strings for storage
       const educationStrings = education.map(item => JSON.stringify(item));
@@ -167,17 +167,43 @@ export const useResumeData = () => {
       const certificatesStrings = certificates.map(item => JSON.stringify(item));
       const referencesStrings = references.map(item => JSON.stringify(item));
 
-      const { error } = await supabase
+      // First check if a resume exists for this user
+      const { data: existingResume } = await supabase
         .from('resumes')
-        .upsert({
-          first_name: personalDetails.firstName,
-          last_name: personalDetails.lastName,
-          education: educationStrings,
-          work_experience: workExperienceStrings,
-          certificates: certificatesStrings,
-          reference_list: referencesStrings,
-          user_id: user.id,
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let error;
+      if (existingResume) {
+        // Update existing resume
+        const { error: updateError } = await supabase
+          .from('resumes')
+          .update({
+            first_name: personalDetails.firstName,
+            last_name: personalDetails.lastName,
+            education: educationStrings,
+            work_experience: workExperienceStrings,
+            certificates: certificatesStrings,
+            reference_list: referencesStrings,
+          })
+          .eq('user_id', user.id);
+        error = updateError;
+      } else {
+        // Insert new resume
+        const { error: insertError } = await supabase
+          .from('resumes')
+          .insert({
+            first_name: personalDetails.firstName,
+            last_name: personalDetails.lastName,
+            education: educationStrings,
+            work_experience: workExperienceStrings,
+            certificates: certificatesStrings,
+            reference_list: referencesStrings,
+            user_id: user.id,
+          });
+        error = insertError;
+      }
 
       if (error) throw error;
 
@@ -201,7 +227,7 @@ export const useResumeData = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save resume data",
+        description: error.message || "Failed to save resume data",
       });
     } finally {
       setIsLoading(false);
