@@ -76,20 +76,64 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      const { data: resumeData, error } = await supabase
+      // Fetch user profile for names
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      if (profileData) {
+        setPersonalDetails(prev => ({
+          ...prev,
+          firstName: profileData.first_name || "",
+          lastName: profileData.last_name || "",
+        }));
+      }
+
+      // Fetch existing resume data
+      const { data: resumeData, error: resumeError } = await supabase
         .from('resumes')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      // If resume doesn't exist, fetch assessment data as initial values
+      if (!resumeData) {
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from('seeker_assessments')
+          .select('education, experience')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (resumeData) {
-        setPersonalDetails({
-          firstName: resumeData.first_name || "",
-          lastName: resumeData.last_name || "",
-          profilePicture: "",
-        });
+        if (assessmentError) throw assessmentError;
+
+        if (assessmentData) {
+          // Use assessment data as initial values
+          const initialEducation: EducationItem = {
+            degree: assessmentData.education,
+            school: "",
+            startDate: "",
+            endDate: "",
+          };
+
+          const initialWorkExperience: WorkExperienceItem = {
+            company: "",
+            title: "",
+            startDate: "",
+            endDate: "",
+            description: assessmentData.experience,
+          };
+
+          setEducation([initialEducation]);
+          setWorkExperience([initialWorkExperience]);
+        }
+      } else {
+        // Use existing resume data
+        if (resumeError) throw resumeError;
+        
         setEducation(parseJsonArray<EducationItem>(resumeData.education));
         setWorkExperience(parseJsonArray<WorkExperienceItem>(resumeData.work_experience));
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
@@ -136,6 +180,17 @@ export const useResumeData = () => {
         });
 
       if (error) throw error;
+
+      // Also update the profile names
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: personalDetails.firstName,
+          last_name: personalDetails.lastName,
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Success",
