@@ -25,8 +25,8 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY is not configured')
     }
 
-    // Using the correct version of the Gemini API
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
+    // Updated to use the correct API endpoint and model version for Gemini
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -74,4 +74,3 @@ serve(async (req) => {
     )
   }
 })
-
