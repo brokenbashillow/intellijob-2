@@ -98,6 +98,7 @@ export type Database = {
           id: string
           last_name: string | null
           reference_list: string[] | null
+          skills: Json[] | null
           updated_at: string
           user_id: string
           work_experience: string[] | null
@@ -110,6 +111,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           reference_list?: string[] | null
+          skills?: Json[] | null
           updated_at?: string
           user_id: string
           work_experience?: string[] | null
@@ -122,6 +124,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           reference_list?: string[] | null
+          skills?: Json[] | null
           updated_at?: string
           user_id?: string
           work_experience?: string[] | null

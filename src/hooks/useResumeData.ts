@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -160,7 +161,32 @@ export const useResumeData = () => {
         setWorkExperience(parseJsonArray<WorkExperienceItem>(resumeData.work_experience));
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
         setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
-        setSkills(parseJsonArray<SkillItem>(resumeData.skills));
+        
+        // Parse skills from the newly added skills column
+        if (resumeData.skills) {
+          setSkills(parseJsonArray<SkillItem>(resumeData.skills));
+        } else {
+          // If no skills in resume data, try to fetch from user_skills
+          const { data: userSkillsData } = await supabase
+            .from('user_skills')
+            .select(`
+              skill_id,
+              skill_type,
+              skills (
+                name
+              )
+            `)
+            .eq('user_id', user.id);
+
+          if (userSkillsData) {
+            const formattedSkills: SkillItem[] = userSkillsData.map(skillData => ({
+              id: skillData.skill_id,
+              name: skillData.skills.name,
+              type: skillData.skill_type as 'technical' | 'soft',
+            }));
+            setSkills(formattedSkills);
+          }
+        }
       }
     } catch (error: any) {
       console.error('Error fetching resume data:', error);
@@ -207,7 +233,7 @@ export const useResumeData = () => {
             work_experience: workExperienceStrings,
             certificates: certificatesStrings,
             reference_list: referencesStrings,
-            skills: skillsStrings,
+            skills: skillsStrings, // Add skills to the update operation
           })
           .eq('user_id', user.id);
         error = updateError;
@@ -221,7 +247,7 @@ export const useResumeData = () => {
             work_experience: workExperienceStrings,
             certificates: certificatesStrings,
             reference_list: referencesStrings,
-            skills: skillsStrings,
+            skills: skillsStrings, // Add skills to the insert operation
             user_id: user.id,
           });
         error = insertError;
