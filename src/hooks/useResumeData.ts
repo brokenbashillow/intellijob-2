@@ -68,10 +68,16 @@ export const useResumeData = () => {
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const parseJsonArray = <T,>(data: string[] | null): T[] => {
+  // Modified to handle both string arrays and JSON arrays
+  const parseJsonArray = <T,>(data: any[] | null): T[] => {
     if (!data) return [];
     try {
-      return data.map(item => typeof item === 'string' ? JSON.parse(item) : item);
+      return data.map(item => {
+        if (typeof item === 'string') {
+          return JSON.parse(item) as T;
+        }
+        return item as T;
+      });
     } catch (error) {
       console.error('Error parsing JSON array:', error);
       return [];
@@ -162,7 +168,7 @@ export const useResumeData = () => {
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
         setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
         
-        // Parse skills from the newly added skills column
+        // Parse skills from the skills column with our updated parseJsonArray function
         if (resumeData.skills) {
           setSkills(parseJsonArray<SkillItem>(resumeData.skills));
         } else {
