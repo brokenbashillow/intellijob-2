@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from "react"
-import { ExternalLink, Loader2 } from "lucide-react"
+import { ExternalLink, Loader2, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { useResumeData } from "@/hooks/useResumeData"
@@ -26,7 +27,9 @@ const formatDate = (dateString: string) => {
 
 const RecommendedJobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobTitles, setJobTitles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const { personalDetails } = useResumeData();
 
@@ -48,7 +51,12 @@ const RecommendedJobs = () => {
 
       if (error) throw error;
       
-      setJobs(data.jobs || []);
+      if (data.jobs && data.jobs.length > 0) {
+        setJobs(data.jobs);
+        setJobTitles(data.jobTitles || []);
+      } else {
+        throw new Error("No job recommendations found");
+      }
     } catch (error: any) {
       console.error("Error fetching recommended jobs:", error);
       toast({
@@ -88,7 +96,13 @@ const RecommendedJobs = () => {
       ]);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchRecommendedJobs();
   };
 
   useEffect(() => {
@@ -108,7 +122,32 @@ const RecommendedJobs = () => {
 
   return (
     <section className="mt-6">
-      <h2 className="text-2xl font-bold mb-4 md:mb-6">Recommended Jobs</h2>
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h2 className="text-2xl font-bold">Recommended Jobs</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+      
+      {jobTitles.length > 0 && (
+        <div className="mb-4">
+          <p className="text-sm text-muted-foreground mb-2">AI suggested job titles for your profile:</p>
+          <div className="flex flex-wrap gap-2">
+            {jobTitles.map((title, index) => (
+              <Badge key={index} variant="secondary">
+                {title}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {jobs.map((job, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow flex flex-col">
