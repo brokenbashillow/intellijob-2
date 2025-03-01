@@ -147,7 +147,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-background">
+    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -157,7 +157,7 @@ const Dashboard = () => {
       )}
       
       {/* Sidebar */}
-      <div className={`fixed md:sticky top-0 h-full z-30 transition-transform duration-300 ease-in-out ${
+      <div className={`fixed md:relative md:h-screen z-30 transition-transform duration-300 ease-in-out ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       }`}>
         <DashboardSidebar
@@ -169,7 +169,7 @@ const Dashboard = () => {
       </div>
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <DashboardHeader 
           userData={userData} 
           onMenuClick={toggleSidebar} 

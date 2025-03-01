@@ -53,12 +53,12 @@ const DashboardSidebar = ({
   }
 
   return (
-    <aside className="w-64 border-r bg-card p-6 space-y-6">
+    <aside className="h-screen w-64 border-r bg-card p-6 space-y-6 flex flex-col">
       <div className="flex items-center gap-2 mb-8">
         <h2 className="text-2xl font-bold">IntelliJob</h2>
       </div>
       
-      <nav className="space-y-2">
+      <nav className="space-y-2 flex-grow">
         <Button 
           variant={currentView === "dashboard" ? "default" : "ghost"} 
           className="w-full justify-start gap-2"
@@ -83,7 +83,9 @@ const DashboardSidebar = ({
           <FileText className="h-4 w-4" />
           Resume
         </Button>
-        
+      </nav>
+      
+      <div className="mt-auto space-y-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
@@ -115,7 +117,7 @@ const DashboardSidebar = ({
           <LogOut className="h-4 w-4" />
           Log Out
         </Button>
-      </nav>
+      </div>
     </aside>
   )
 }
