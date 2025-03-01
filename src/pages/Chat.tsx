@@ -65,76 +65,72 @@ const Chat = () => {
     setIsAtBottom(isAtBottom)
   }
 
-  const typeMessage = (message: string, callback: (typedMessage: string) => void) => {
-    let index = 0
+  const typeMessage = (message: string, onUpdate: (text: string) => void, speed = 1, chunkSize = 3) => {
+    let index = 0;
+    
     const interval = setInterval(() => {
       if (index < message.length) {
-        callback(message.slice(0, index + 1)) 
-        index++
+        onUpdate(message.slice(0, index + chunkSize));
+        index += chunkSize; // Increase chunk size to speed up typing
       } else {
-        clearInterval(interval)  
+        clearInterval(interval);
       }
-    }, 10)  
-  }
+    }, speed); // Lower speed = faster typing
+  };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || isLoading) return
-
+    if (!newMessage.trim() || isLoading) return;
+  
     const userMessage: Message = {
       id: messages.length + 1,
       text: newMessage,
       sender: "user",
       timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setNewMessage("")
-    setIsLoading(true)
-
+    };
+  
+    setMessages((prev) => [...prev, userMessage]);
+    setNewMessage("");
+    setIsLoading(true);
+  
     try {
-      const { data, error } = await supabase.functions.invoke('gemini', {
-        body: { prompt: newMessage }
-      })
-
-      if (error) throw error
-
-      if (!data?.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response format from AI')
-      }
-
+      const { data, error } = await supabase.functions.invoke("gemini", {
+        body: { prompt: newMessage },
+      });
+  
+      if (error) throw error;
+      if (!data?.choices?.[0]?.message?.content) throw new Error("Invalid response format from AI");
+  
       const botResponse: Message = {
         id: messages.length + 2,
         text: "",
         sender: "bot",
         timestamp: new Date(),
-      }
-
-      setBotTyping(true)
-
+      };
+  
+      setMessages((prev) => [...prev, botResponse]);
+  
+      setBotTyping(true);
+  
       typeMessage(data.choices[0].message.content, (typedMessage) => {
-        setMessages((prev) => {
-          const updatedMessages = [...prev]
-          updatedMessages[updatedMessages.length - 1] = {
-            ...botResponse,
-            text: typedMessage,
-          }
-          return updatedMessages
-        })
-      })
-
-      setMessages((prev) => [...prev, botResponse])
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botResponse.id ? { ...msg, text: typedMessage } : msg
+          )
+        );
+      }, 1, 5); // 🏎️ FAST: 1ms delay, 5 characters per step
+  
     } catch (error: any) {
-      console.error('Error getting AI response:', error)
+      console.error("Error getting AI response:", error);
       toast({
         variant: "destructive",
         title: "Error",
         description: error.message || "Failed to get AI response. Please try again.",
-      })
+      });
     } finally {
-      setIsLoading(false)
-      setBotTyping(false)
+      setIsLoading(false);
+      setBotTyping(false);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -174,7 +170,7 @@ const Chat = () => {
                 <div
                   className={`rounded-lg p-3 ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                 >
-                  <ReactMarkdown className="text-sm">{message.text}</ReactMarkdown>
+                  <ReactMarkdown className="text-sm leading-7">{message.text}</ReactMarkdown>
                 </div>
               </div>
             ))}
