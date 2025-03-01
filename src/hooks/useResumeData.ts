@@ -239,7 +239,7 @@ export const useResumeData = () => {
             work_experience: workExperienceStrings,
             certificates: certificatesStrings,
             reference_list: referencesStrings,
-            skills: skillsStrings, // Add skills to the update operation
+            skills: skillsStrings,
           })
           .eq('user_id', user.id);
         error = updateError;
@@ -253,7 +253,7 @@ export const useResumeData = () => {
             work_experience: workExperienceStrings,
             certificates: certificatesStrings,
             reference_list: referencesStrings,
-            skills: skillsStrings, // Add skills to the insert operation
+            skills: skillsStrings,
             user_id: user.id,
           });
         error = insertError;
@@ -270,6 +270,16 @@ export const useResumeData = () => {
         .eq('id', user.id);
 
       if (profileError) throw profileError;
+
+      // Trigger a re-evaluation of the assessment results
+      try {
+        await supabase.functions.invoke('analyze-application', {
+          body: { userId: user.id }
+        });
+      } catch (analyzeError) {
+        console.error("Error triggering assessment re-evaluation:", analyzeError);
+        // We don't want to fail the whole save operation if the analysis fails
+      }
 
       toast({
         title: "Success",

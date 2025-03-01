@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import Chat from "./Chat"
@@ -17,12 +17,13 @@ const Dashboard = () => {
   const [userData, setUserData] = useState<any>(null)
   const [assessmentData, setAssessmentData] = useState<any>(null)
   const navigate = useNavigate()
+  const location = useLocation()
   const { toast } = useToast()
 
   useEffect(() => {
     fetchUserData();
     fetchAssessmentData();
-  }, []);
+  }, [currentView]); // Refetch data when view changes
 
   const fetchUserData = async () => {
     try {
