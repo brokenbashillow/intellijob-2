@@ -1,7 +1,7 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { supabaseClient } from "../_shared/supabase-client.ts";
+import "https://deno.land/x/xhr@0.3.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +21,10 @@ serve(async (req) => {
       throw new Error("User ID is required");
     }
 
-    const supabase = supabaseClient(req);
+    // Create a Supabase client with the Deno runtime
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Fetch user's resume data
     const { data: resumeData, error: resumeError } = await supabase
@@ -29,6 +32,11 @@ serve(async (req) => {
       .select('*')
       .eq('user_id', userId)
       .maybeSingle();
+    
+    if (resumeError) {
+      console.error("Resume error:", resumeError);
+      throw resumeError;
+    }
     
     // Fetch user's skills
     const { data: userSkillsData, error: skillsError } = await supabase
@@ -42,6 +50,11 @@ serve(async (req) => {
       `)
       .eq('user_id', userId);
     
+    if (skillsError) {
+      console.error("Skills error:", skillsError);
+      throw skillsError;
+    }
+    
     // Fetch assessment data
     const { data: assessmentData, error: assessmentError } = await supabase
       .from('seeker_assessments')
@@ -49,18 +62,19 @@ serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle();
     
-    if (resumeError || skillsError || assessmentError) {
-      throw new Error("Error fetching data");
+    if (assessmentError) {
+      console.error("Assessment error:", assessmentError);
+      throw assessmentError;
     }
 
     // Prepare the data object to analyze
     const technicalSkills = userSkillsData
       ?.filter(skill => skill.skill_type === 'technical')
-      .map(skill => skill.skills.name) || [];
+      .map(skill => skill.skills?.name) || [];
     
     const softSkills = userSkillsData
       ?.filter(skill => skill.skill_type === 'soft')
-      .map(skill => skill.skills.name) || [];
+      .map(skill => skill.skills?.name) || [];
 
     // Parse education and work experience arrays if they exist
     let education = [];
@@ -69,15 +83,22 @@ serve(async (req) => {
     let references = [];
 
     if (resumeData) {
+      // Helper function to safely parse JSON arrays
       const parseJsonArray = (data) => {
         if (!data) return [];
+        
         try {
-          return data.map(item => {
-            if (typeof item === 'string') {
-              return JSON.parse(item);
-            }
-            return item;
-          });
+          if (typeof data === 'string') {
+            return JSON.parse(data);
+          } else if (Array.isArray(data)) {
+            return data.map(item => {
+              if (typeof item === 'string') {
+                return JSON.parse(item);
+              }
+              return item;
+            });
+          }
+          return data;
         } catch (error) {
           console.error('Error parsing JSON array:', error);
           return [];
@@ -102,42 +123,9 @@ serve(async (req) => {
       references
     };
 
-    // Use prompt to analyze data
-    const prompt = `
-      Given the following job application data, analyze and return a score from 0-100 based on education, experience, skills, certifications, and references.
-      
-      Only return the score for the education, experience, competency (the alignment of technical skills) and personality (the alignment of soft skills). 
-      Also return the overall score of each one and provide a 2-3 comment about how each of the data aligns with each other.
-      
-      Give it to me as a JSON object with the following structure:
-      {
-        "education": {
-          "score": number,
-          "comment": string
-        },
-        "experience": {
-          "score": number,
-          "comment": string
-        },
-        "competency": {
-          "score": number,
-          "comment": string
-        },
-        "personality": {
-          "score": number,
-          "comment": string
-        },
-        "overall": {
-          "score": number,
-          "comments": string[]
-        }
-      }
-      
-      Application data: ${JSON.stringify(applicationData)}
-    `;
+    console.log("Analyzing application data:", JSON.stringify(applicationData));
 
-    // This is sample analysis logic - in a real application you would use an AI model here
-    // For now, we'll use a simple algorithm to calculate scores
+    // Simple analysis calculation logic
     const educationScore = assessmentData?.education ? 
       Math.min(70 + (education.length * 10), 100) : 70;
     
@@ -150,6 +138,7 @@ serve(async (req) => {
     
     const overallScore = Math.round((educationScore + experienceScore + competencyScore + personalityScore) / 4);
 
+    // Create analysis result object
     const analysis = {
       education: {
         score: educationScore,
@@ -157,7 +146,9 @@ serve(async (req) => {
       },
       experience: {
         score: experienceScore,
-        comment: "Good professional experience that aligns with career goals."
+        comment: workExperience.length > 0 
+          ? "Good professional experience that aligns with career goals."
+          : "Consider adding work experience to improve your profile."
       },
       competency: {
         score: competencyScore,
@@ -181,6 +172,8 @@ serve(async (req) => {
       }
     };
 
+    console.log("Analysis result:", JSON.stringify(analysis));
+
     // Store the analysis in Supabase
     const { error: updateError } = await supabase
       .from('seeker_assessments')
@@ -190,16 +183,18 @@ serve(async (req) => {
       .eq('user_id', userId);
 
     if (updateError) {
+      console.error("Update error:", updateError);
       throw updateError;
     }
 
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
     });
   } catch (error) {
-    console.error('Error in analyze-application function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    console.error('Error in analyze-application function:', error.message || error);
+    return new Response(JSON.stringify({ error: error.message || "Unknown error occurred" }), {
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

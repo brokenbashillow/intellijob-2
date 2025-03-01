@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import Chat from "./Chat"
@@ -16,14 +16,14 @@ const Dashboard = () => {
   const [currentView, setCurrentView] = useState<View>("dashboard")
   const [userData, setUserData] = useState<any>(null)
   const [assessmentData, setAssessmentData] = useState<any>(null)
+  const [resumeUpdated, setResumeUpdated] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
   const { toast } = useToast()
 
   useEffect(() => {
     fetchUserData();
     fetchAssessmentData();
-  }, [currentView]); // Refetch data when view changes
+  }, [currentView, resumeUpdated]); // Refetch data when view changes or resume is updated
 
   const fetchUserData = async () => {
     try {
@@ -106,12 +106,20 @@ const Dashboard = () => {
     }
   }
 
+  const handleResumeUpdate = () => {
+    setResumeUpdated(prev => !prev);
+    toast({
+      title: "Resume Updated",
+      description: "Your assessment will be updated with your latest resume data.",
+    });
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case "chat":
         return <Chat />
       case "resume":
-        return <Resume />
+        return <Resume onSave={handleResumeUpdate} />
       case "dashboard":
         return (
           <main className="flex-1 p-8">

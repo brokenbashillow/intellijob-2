@@ -1,9 +1,11 @@
+
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart3 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface AnalysisResult {
   education: {
@@ -36,6 +38,7 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
   const { toast } = useToast();
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (assessmentData) {
@@ -52,27 +55,41 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
   const analyzeApplication = async () => {
     try {
       setIsLoading(true);
+      setError(null);
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         throw new Error("User not authenticated");
       }
 
+      console.log("Calling analyze-application function with userId:", user.id);
+      
       const { data, error } = await supabase.functions.invoke('analyze-application', {
         body: { userId: user.id },
       });
 
+      console.log("Response from analyze-application:", { data, error });
+
       if (error) throw error;
 
-      if (data.analysis) {
+      if (data?.analysis) {
         setAnalysisResult(data.analysis);
+        toast({
+          title: "Analysis complete",
+          description: "Your application has been analyzed successfully.",
+        });
+      } else {
+        throw new Error("Invalid response from analysis function");
       }
     } catch (error: any) {
       console.error("Error analyzing application:", error);
+      const errorMessage = error.message || "Failed to analyze application data";
+      setError(errorMessage);
       toast({
         variant: "destructive",
         title: "Analysis failed",
-        description: error.message || "Failed to analyze application data",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -101,7 +118,22 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
         <CardTitle className="text-2xl font-bold">Assessment Results</CardTitle>
       </CardHeader>
       <CardContent>
-        {assessmentData ? (
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {isLoading ? (
+          <div className="py-8 text-center">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-12 w-12 bg-gray-200 rounded-full mb-4"></div>
+              <div className="h-4 w-48 bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 w-32 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        ) : assessmentData ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Left column - Progress bars */}
             <div className="space-y-6">
@@ -164,6 +196,16 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
                   indicatorClassName="bg-black bg-opacity-90" 
                 />
               </div>
+              
+              {error && (
+                <button 
+                  onClick={analyzeApplication}
+                  className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Analyzing..." : "Retry Analysis"}
+                </button>
+              )}
             </div>
             
             {/* Right column - Score and Analysis */}
@@ -219,7 +261,7 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
         )}
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default AssessmentResults
+export default AssessmentResults;
