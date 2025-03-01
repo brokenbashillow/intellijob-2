@@ -1,3 +1,4 @@
+
 import {
   Accordion,
   AccordionContent,
@@ -14,7 +15,11 @@ import { CertificatesSection } from "./CertificatesSection";
 import { ReferencesSection } from "./ReferencesSection";
 import { SkillsSection } from "./SkillsSection";
 
-const Resume = () => {
+interface ResumeProps {
+  onSave?: () => void;
+}
+
+const Resume = ({ onSave }: ResumeProps) => {
   const {
     personalDetails,
     setPersonalDetails,
@@ -32,6 +37,13 @@ const Resume = () => {
     handleSave,
     handleImageUpload,
   } = useResumeData();
+
+  const handleSaveWithCallback = async () => {
+    await handleSave();
+    if (onSave) {
+      onSave();
+    }
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -135,7 +147,7 @@ const Resume = () => {
       </Accordion>
 
       <div className="flex justify-end pt-6">
-        <Button onClick={handleSave}>Save Resume</Button>
+        <Button onClick={handleSaveWithCallback}>Save Resume</Button>
       </div>
     </div>
   );
