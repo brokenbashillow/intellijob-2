@@ -67,11 +67,23 @@ const Chat = () => {
 
   const typeMessage = (message: string, onUpdate: (text: string) => void, speed = 1, chunkSize = 3) => {
     let index = 0;
+
+    const typeNext = () => {
+      if (index < message.length) {
+        onUpdate(message.slice(0, index + chunkSize));
+        index += chunkSize;
+        scrollToBottom(); // Auto-scroll after each update
+        setTimeout(typeNext, speed);
+      }
+    };
+  
+    typeNext(); // Start typing immediately
     
     const interval = setInterval(() => {
       if (index < message.length) {
         onUpdate(message.slice(0, index + chunkSize));
         index += chunkSize; // Increase chunk size to speed up typing
+        scrollToBottom(); // Auto-scroll after each update
       } else {
         clearInterval(interval);
       }
@@ -89,6 +101,10 @@ const Chat = () => {
     };
   
     setMessages((prev) => [...prev, userMessage]);
+
+    setTimeout(() => {
+      scrollToBottom(); // Ensure scroll happens after state updates
+    }, 100)
     setNewMessage("");
     setIsLoading(true);
   
