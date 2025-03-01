@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
+import { useResumeData } from "@/hooks/useResumeData"
 
 interface Job {
   title: string
@@ -27,71 +28,72 @@ const RecommendedJobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { personalDetails } = useResumeData();
+
+  const fetchRecommendedJobs = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // Call the recommend-jobs function
+      const { data, error } = await supabase.functions.invoke('recommend-jobs', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+      
+      setJobs(data.jobs || []);
+    } catch (error: any) {
+      console.error("Error fetching recommended jobs:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load job recommendations. Please try again later.",
+      });
+      // Set fallback jobs
+      setJobs([
+        { 
+          title: "Frontend Developer", 
+          company: "Tech Solutions Inc",
+          location: "San Francisco, CA", 
+          description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies. Remote options available.",
+          postedAt: "2023-05-15", 
+          platform: "jobstreet",
+          url: "#"
+        },
+        { 
+          title: "UX/UI Designer", 
+          company: "Creative Studio",
+          location: "New York, NY", 
+          description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for our clients' digital products.",
+          postedAt: "2023-05-16", 
+          platform: "indeed",
+          url: "#"
+        },
+        { 
+          title: "Full Stack Engineer", 
+          company: "InnovateApp",
+          location: "Remote", 
+          description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing engineering team.",
+          postedAt: "2023-05-17", 
+          platform: "linkedin",
+          url: "#"
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRecommendedJobs = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          throw new Error("User not authenticated");
-        }
-
-        // Call the recommend-jobs function
-        const { data, error } = await supabase.functions.invoke('recommend-jobs', {
-          body: { userId: user.id }
-        });
-
-        if (error) throw error;
-        
-        setJobs(data.jobs || []);
-      } catch (error: any) {
-        console.error("Error fetching recommended jobs:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load job recommendations. Please try again later.",
-        });
-        // Set fallback jobs
-        setJobs([
-          { 
-            title: "Frontend Developer", 
-            company: "Tech Solutions Inc",
-            location: "San Francisco, CA", 
-            description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies. Remote options available.",
-            postedAt: "2023-05-15", 
-            platform: "jobstreet",
-            url: "#"
-          },
-          { 
-            title: "UX/UI Designer", 
-            company: "Creative Studio",
-            location: "New York, NY", 
-            description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for our clients' digital products.",
-            postedAt: "2023-05-16", 
-            platform: "indeed",
-            url: "#"
-          },
-          { 
-            title: "Full Stack Engineer", 
-            company: "InnovateApp",
-            location: "Remote", 
-            description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing engineering team.",
-            postedAt: "2023-05-17", 
-            platform: "linkedin",
-            url: "#"
-          },
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchRecommendedJobs();
-  }, [toast]);
+  }, [toast, personalDetails]); // Re-fetch when personalDetails change (resume updated)
 
   if (isLoading) {
     return (
@@ -119,11 +121,9 @@ const RecommendedJobs = () => {
                   <Badge variant="outline" className="text-xs font-normal">
                     {job.location}
                   </Badge>
-                  {job.score && (
-                    <Badge variant="secondary" className="ml-2">
-                      Match: {job.score}%
-                    </Badge>
-                  )}
+                  <Badge className="ml-2 bg-primary text-white">
+                    {job.company}
+                  </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-3">
                   {job.description}

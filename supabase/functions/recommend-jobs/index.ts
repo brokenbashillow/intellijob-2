@@ -1,220 +1,30 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.20.0";
+import "https://deno.land/x/xhr@0.3.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
-
-// Mock TheirStack API function - replace with actual API integration
-async function fetchJobListings() {
-  // In a real implementation, this would call TheirStack API
-  // For now, returning mock data
-  return [
-    { 
-      title: "Frontend Developer", 
-      company: "Tech Solutions Inc",
-      location: "San Francisco, CA", 
-      description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies. Remote options available.",
-      postedAt: "2023-05-15", 
-      platform: "jobstreet",
-      url: "https://example.com/job1"
-    },
-    { 
-      title: "UX/UI Designer", 
-      company: "Creative Studio",
-      location: "New York, NY", 
-      description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for our clients' digital products.",
-      postedAt: "2023-05-16", 
-      platform: "indeed",
-      url: "https://example.com/job2"
-    },
-    { 
-      title: "Full Stack Developer", 
-      company: "InnovateApp",
-      location: "Remote", 
-      description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing engineering team.",
-      postedAt: "2023-05-17", 
-      platform: "linkedin",
-      url: "https://example.com/job3"
-    },
-    { 
-      title: "Software Engineer", 
-      company: "TechGiant",
-      location: "Seattle, WA", 
-      description: "Looking for a software engineer to help build scalable and reliable systems using modern technologies.",
-      postedAt: "2023-05-17", 
-      platform: "linkedin",
-      url: "https://example.com/job4"
-    },
-    { 
-      title: "Data Scientist", 
-      company: "DataCorp",
-      location: "Boston, MA", 
-      description: "Join our team to analyze large datasets and build machine learning models to solve complex problems.",
-      postedAt: "2023-05-18", 
-      platform: "indeed",
-      url: "https://example.com/job5"
-    },
-    { 
-      title: "DevOps Engineer", 
-      company: "CloudSys",
-      location: "Remote", 
-      description: "Looking for a DevOps engineer to help automate and optimize our infrastructure and deployment processes.",
-      postedAt: "2023-05-19", 
-      platform: "jobstreet",
-      url: "https://example.com/job6"
-    },
-    { 
-      title: "Product Manager", 
-      company: "ProductLabs",
-      location: "Austin, TX", 
-      description: "Join our team to lead the development of innovative products from conception to launch.",
-      postedAt: "2023-05-20", 
-      platform: "linkedin",
-      url: "https://example.com/job7"
-    }
-  ];
+interface UserData {
+  education: string[];
+  workExperience: string[];
+  skills: string[];
+  certificates: string[];
 }
 
-async function rankJobsWithAI(userProfile: any, jobs: any[]) {
-  console.log("Ranking jobs with AI for user:", userProfile.id);
-  
-  try {
-    // Create a prompt that describes the user's skills and the available jobs
-    let prompt = `Given a job seeker with the following profile:\n\n`;
-    
-    // Add technical skills
-    prompt += `Technical Skills: ${userProfile.technical_skills.map((skill: any) => skill.name).join(", ")}\n`;
-    
-    // Add soft skills
-    prompt += `Soft Skills: ${userProfile.soft_skills.map((skill: any) => skill.name).join(", ")}\n`;
-    
-    // Add education and experience
-    prompt += `Education: ${userProfile.education}\n`;
-    prompt += `Experience: ${userProfile.experience}\n\n`;
-    
-    // Add jobs to evaluate
-    prompt += `Available Jobs:\n`;
-    jobs.forEach((job, index) => {
-      prompt += `Job ${index + 1}: ${job.title} at ${job.company}\n`;
-      prompt += `Description: ${job.description}\n`;
-      prompt += `Location: ${job.location}\n\n`;
-    });
-    
-    prompt += `Please analyze these jobs and recommend the top 3 that best match the job seeker's profile. For each job, provide a score from 1-100 and a brief explanation of why it's a good match. Return your response as a JSON array with this format:
-    [
-      {
-        "jobIndex": 0, // The index of the job in the list (starting from 0)
-        "score": 95, // Match score from 1-100
-        "reason": "This job is a great match because..." // Brief explanation
-      }
-    ]`;
-    
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:3000',
-        'X-Title': 'Job Recommendation System'
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3-opus',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        response_format: { type: "json_object" }
-      }),
-    });
-    
-    const data = await response.json();
-    
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error("Unexpected API response:", data);
-      throw new Error("Invalid response from OpenRouter API");
-    }
-    
-    const content = data.choices[0].message.content;
-    let recommendations;
-    
-    try {
-      // Parse the JSON response
-      const parsedContent = JSON.parse(content);
-      recommendations = Array.isArray(parsedContent) ? parsedContent : parsedContent.recommendations || [];
-    } catch (error) {
-      console.error("Error parsing AI response:", error);
-      console.log("Raw AI response:", content);
-      throw new Error("Failed to parse AI recommendations");
-    }
-    
-    // Map the recommendations to the actual job objects
-    return recommendations.slice(0, 3).map((rec: any) => {
-      const job = jobs[rec.jobIndex];
-      return {
-        ...job,
-        score: rec.score,
-        reason: rec.reason
-      };
-    });
-  } catch (error) {
-    console.error("Error in rankJobsWithAI:", error);
-    // Return the first 3 jobs if AI ranking fails
-    return jobs.slice(0, 3);
-  }
-}
-
-async function getUserSkills(supabase: any, userId: string) {
-  // Get technical skills
-  const { data: technicalSkills, error: technicalError } = await supabase
-    .from('user_skills')
-    .select(`
-      skill_id,
-      skills (
-        id,
-        name,
-        category_id
-      )
-    `)
-    .eq('user_id', userId)
-    .eq('skill_type', 'technical');
-  
-  if (technicalError) {
-    console.error('Error fetching technical skills:', technicalError);
-    return { technical_skills: [], soft_skills: [] };
-  }
-  
-  // Get soft skills
-  const { data: softSkills, error: softError } = await supabase
-    .from('user_skills')
-    .select(`
-      skill_id,
-      skills (
-        id,
-        name,
-        category_id
-      )
-    `)
-    .eq('user_id', userId)
-    .eq('skill_type', 'soft');
-  
-  if (softError) {
-    console.error('Error fetching soft skills:', softError);
-    return { technical_skills: technicalSkills || [], soft_skills: [] };
-  }
-  
-  return {
-    technical_skills: technicalSkills?.map((item: any) => item.skills) || [],
-    soft_skills: softSkills?.map((item: any) => item.skills) || []
-  };
+interface Job {
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  postedAt: string;
+  platform: string;
+  url: string;
+  score?: number;
+  reason?: string;
 }
 
 serve(async (req) => {
@@ -222,61 +32,238 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
-    // Get user ID from request
     const { userId } = await req.json();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY') || '';
+    const theirStackApiKey = Deno.env.get('THEIRSTACK_API_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxOS0xMjI1NEBsY2N0YW5hdWFuLmVkdS5waCIsInBlcm1pc3Npb25zIjoidXNlciIsImNyZWF0ZWRfYXQiOiIyMDI1LTAzLTAxVDA3OjE2OjAxLjA5NTAzOSswMDowMCJ9.2smpEYSwRVaApYDen8yOA59IKmJn_slwZs7Tmn84yKI';
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log("Fetching user data for userId:", userId);
     
-    // Initialize Supabase client with service role key
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
-    // Get user assessment data
-    const { data: assessmentData, error: assessmentError } = await supabase
-      .from('seeker_assessments')
-      .select('education, experience, location')
+    // First try to get resume data
+    const { data: resumeData, error: resumeError } = await supabase
+      .from('resumes')
+      .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
-    if (assessmentError) {
-      console.error('Error fetching assessment data:', assessmentError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch user assessment data' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Get user skills
-    const userSkills = await getUserSkills(supabase, userId);
-    
-    // Combine all user data
-    const userProfile = {
-      id: userId,
-      ...assessmentData,
-      ...userSkills
+    // Initialize userData with default empty arrays
+    let userData: UserData = {
+      education: [],
+      workExperience: [],
+      skills: [],
+      certificates: [],
     };
     
-    // Fetch job listings
-    const jobListings = await fetchJobListings();
+    // If resume exists, use resume data
+    if (resumeData) {
+      console.log("Found resume data");
+      
+      // Parse education
+      const education = resumeData.education?.map(item => {
+        try {
+          const parsed = typeof item === 'string' ? JSON.parse(item) : item;
+          return `${parsed.degree} at ${parsed.school}`;
+        } catch (e) {
+          return String(item);
+        }
+      }) || [];
+      
+      // Parse work experience
+      const workExperience = resumeData.work_experience?.map(item => {
+        try {
+          const parsed = typeof item === 'string' ? JSON.parse(item) : item;
+          return `${parsed.title} at ${parsed.company}: ${parsed.description}`;
+        } catch (e) {
+          return String(item);
+        }
+      }) || [];
+      
+      // Parse skills
+      const skills = resumeData.skills?.map(item => {
+        try {
+          const parsed = typeof item === 'string' ? JSON.parse(item) : item;
+          return parsed.name;
+        } catch (e) {
+          return String(item);
+        }
+      }) || [];
+      
+      // Parse certificates
+      const certificates = resumeData.certificates?.map(item => {
+        try {
+          const parsed = typeof item === 'string' ? JSON.parse(item) : item;
+          return `${parsed.name} from ${parsed.organization}`;
+        } catch (e) {
+          return String(item);
+        }
+      }) || [];
+      
+      userData = {
+        education,
+        workExperience,
+        skills,
+        certificates
+      };
+    } else {
+      console.log("No resume found, checking assessment data");
+      
+      // Fallback to assessment data
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from('seeker_assessments')
+        .select('education, experience')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (assessmentData) {
+        console.log("Found assessment data");
+        
+        // Get skills from user_skills table
+        const { data: userSkillsData, error: userSkillsError } = await supabase
+          .from('user_skills')
+          .select(`
+            skill_id,
+            skill_type,
+            skills (name)
+          `)
+          .eq('user_id', userId);
+        
+        userData = {
+          education: [assessmentData.education],
+          workExperience: [assessmentData.experience],
+          skills: userSkillsData?.map(skillData => skillData.skills.name) || [],
+          certificates: []
+        };
+      } else {
+        console.log("No assessment data found either");
+        return new Response(
+          JSON.stringify({ 
+            error: "No user data found",
+            jobs: [] 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
     
-    // Rank jobs using AI
-    const recommendedJobs = await rankJobsWithAI(userProfile, jobListings);
+    console.log("User data collected:", JSON.stringify(userData));
+    
+    // Generate job titles using OpenRouter
+    console.log("Generating job titles with AI...");
+    const prompt = `
+Based on the following user profile, suggest 5 job titles that would be a good match. Return ONLY a JSON array of strings without any explanation.
+
+Education: ${userData.education.join(', ')}
+Work Experience: ${userData.workExperience.join(', ')}
+Skills: ${userData.skills.join(', ')}
+${userData.certificates.length > 0 ? `Certificates: ${userData.certificates.join(', ')}` : ''}
+`;
+
+    const openRouterResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openrouterApiKey}`,
+        "HTTP-Referer": "https://lovable.ai",
+        "X-Title": "TheirStack Job Recommender"
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-coder-v2-instruct",
+        messages: [
+          { role: "system", content: "You are a job recommendation assistant. Respond only with a JSON array of job title strings that match the user's profile." },
+          { role: "user", content: prompt }
+        ]
+      })
+    });
+
+    let jobTitles: string[] = [];
+    try {
+      const aiResponse = await openRouterResponse.json();
+      console.log("AI Response:", JSON.stringify(aiResponse));
+      
+      // Extract job titles from AI response
+      const content = aiResponse.choices?.[0]?.message?.content || "";
+      const extractedJson = content.match(/\[.*\]/s)?.[0] || "";
+      
+      try {
+        // Try to parse the JSON array directly
+        jobTitles = JSON.parse(extractedJson);
+      } catch (e) {
+        // If that fails, try parsing after cleaning up the string
+        const cleanedJson = content
+          .replace(/^```json/m, '')
+          .replace(/```$/m, '')
+          .trim();
+        jobTitles = JSON.parse(cleanedJson);
+      }
+    } catch (error) {
+      console.error("Error parsing AI response:", error);
+      jobTitles = userData.skills.length > 0 
+        ? [`${userData.skills[0]} Specialist`, `${userData.skills[0]} Developer`]
+        : ["Software Developer", "Web Developer", "Data Analyst", "Project Manager", "UX Designer"];
+    }
+    
+    console.log("Generated job titles:", jobTitles);
+
+    // Fetch job listings from TheirStack
+    console.log("Fetching job listings from TheirStack...");
+    const jobTitleParams = jobTitles.map(title => encodeURIComponent(title)).join('&job_title_or=');
+    const theirStackUrl = `https://api.theirstack.com/v1/jobs/search?posted_at_max_age_days=15&${jobTitleParams}&limit=10`;
+    
+    const jobListingsResponse = await fetch(theirStackUrl, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${theirStackApiKey}`,
+      }
+    });
+    
+    if (!jobListingsResponse.ok) {
+      console.error("TheirStack API error:", await jobListingsResponse.text());
+      throw new Error("Failed to fetch job listings");
+    }
+    
+    const jobListingsData = await jobListingsResponse.json();
+    console.log(`Fetched ${jobListingsData.total_count} job listings`);
+    
+    // Transform the job listings to our format
+    const formattedJobs: Job[] = jobListingsData.jobs.map((job: any) => ({
+      title: job.title,
+      company: job.company_name,
+      location: job.location || "Remote",
+      description: job.description || "",
+      postedAt: job.date_posted,
+      platform: job.source || "TheirStack",
+      url: job.apply_url || job.url || "#",
+      // We'll calculate these later
+      score: null,
+      reason: null
+    }));
+
+    // Return the processed job listings
+    console.log(`Returning ${formattedJobs.length} job recommendations`);
     
     return new Response(
-      JSON.stringify({ jobs: recommendedJobs }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        jobs: formattedJobs.slice(0, 6) // Limit to top 6 results
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   } catch (error) {
-    console.error('Error in recommend-jobs function:', error);
+    console.error("Error in recommend-jobs function:", error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error occurred' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
