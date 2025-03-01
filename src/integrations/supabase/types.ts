@@ -133,6 +133,7 @@ export type Database = {
       }
       seeker_assessments: {
         Row: {
+          analysis_results: Json | null
           created_at: string
           education: string
           experience: string
@@ -141,6 +142,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          analysis_results?: Json | null
           created_at?: string
           education: string
           experience: string
@@ -149,6 +151,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          analysis_results?: Json | null
           created_at?: string
           education?: string
           experience?: string
