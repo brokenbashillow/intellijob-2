@@ -3,6 +3,8 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import Chat from "./Chat"
 import Resume from "@/components/resume/Resume"
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar"
@@ -17,6 +19,7 @@ const Dashboard = () => {
   const [userData, setUserData] = useState<any>(null)
   const [assessmentData, setAssessmentData] = useState<any>(null)
   const [resumeUpdated, setResumeUpdated] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -24,6 +27,13 @@ const Dashboard = () => {
     fetchUserData();
     fetchAssessmentData();
   }, [currentView, resumeUpdated]); // Refetch data when view changes or resume is updated
+
+  // Close sidebar when changing view on mobile
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  }, [currentView]);
 
   const fetchUserData = async () => {
     try {
@@ -114,6 +124,10 @@ const Dashboard = () => {
     });
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case "chat":
@@ -122,7 +136,7 @@ const Dashboard = () => {
         return <Resume onSave={handleResumeUpdate} />
       case "dashboard":
         return (
-          <main className="flex-1 p-8">
+          <main className="flex-1 p-4 md:p-8 overflow-auto">
             <AssessmentResults assessmentData={assessmentData} />
             <RecommendedJobs />
           </main>
@@ -133,16 +147,37 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        onLogout={handleLogout}
-        onDeleteAccount={handleDeleteAccount}
-      />
-      <div className="flex-1">
-        <DashboardHeader userData={userData} />
-        {renderContent()}
+    <div className="flex flex-col md:flex-row min-h-screen bg-background">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed md:sticky top-0 h-full z-30 transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      }`}>
+        <DashboardSidebar
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          onLogout={handleLogout}
+          onDeleteAccount={handleDeleteAccount}
+        />
+      </div>
+      
+      {/* Main content */}
+      <div className="flex-1 flex flex-col">
+        <DashboardHeader 
+          userData={userData} 
+          onMenuClick={toggleSidebar} 
+          showMenuButton={true}
+        />
+        <div className="flex-1 overflow-auto">
+          {renderContent()}
+        </div>
       </div>
     </div>
   )

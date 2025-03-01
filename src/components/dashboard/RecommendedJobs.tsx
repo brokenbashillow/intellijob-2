@@ -11,13 +11,13 @@ const jobPlatforms = [
 
 const RecommendedJobs = () => {
   return (
-    <section>
-      <h2 className="text-2xl font-bold mb-6">Recommended Jobs</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <section className="mt-6">
+      <h2 className="text-2xl font-bold mb-4 md:mb-6">Recommended Jobs</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {jobPlatforms.map((platform) => (
           <Card key={platform.name} className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex items-center justify-between text-lg md:text-xl">
                 <span>{platform.name}</span>
                 <ExternalLink className="h-4 w-4" />
               </CardTitle>

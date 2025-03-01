@@ -1,6 +1,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Bell } from "lucide-react"
+import { Bell, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -11,12 +11,27 @@ import {
 
 interface DashboardHeaderProps {
   userData: any;
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
 }
 
-const DashboardHeader = ({ userData }: DashboardHeaderProps) => {
+const DashboardHeader = ({ userData, onMenuClick, showMenuButton = false }: DashboardHeaderProps) => {
   return (
-    <div className="flex justify-end items-center p-4 border-b">
-      <div className="flex items-center gap-4">
+    <div className="flex justify-between items-center p-4 border-b">
+      {/* Mobile menu button */}
+      {showMenuButton && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      )}
+      
+      {/* Right side elements */}
+      <div className="flex items-center gap-2 ml-auto">
         <div className="relative">
           <TooltipProvider>
             <Tooltip>
@@ -38,7 +53,7 @@ const DashboardHeader = ({ userData }: DashboardHeaderProps) => {
             </Tooltip>
           </TooltipProvider>
         </div>
-        <span className="font-medium">{userData?.full_name}</span>
+        <span className="font-medium hidden sm:inline">{userData?.full_name}</span>
         <Avatar>
           <AvatarImage src={userData?.avatar_url} />
           <AvatarFallback>{userData?.full_name?.charAt(0)}</AvatarFallback>
