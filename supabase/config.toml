@@ -1,8 +1,7 @@
 
 project_id = "ktuyzukgojkkiowillas"
-
-[functions.gemini]
-verify_jwt = false
-
+[api]
+enabled = true
+[functions]
 [functions.recommend-jobs]
 verify_jwt = false
