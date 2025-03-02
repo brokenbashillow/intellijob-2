@@ -1,4 +1,3 @@
-
 // recommend-jobs/index.ts
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -255,6 +254,12 @@ No explanation, ONLY the JSON array.
     
     // Use first 3 job titles for API requests to avoid rate limiting
     const titlesToSearch = suggestedJobTitles.slice(0, 3)
+    
+    // Check if TheirStack API key is available
+    if (!theirStackApiKey) {
+      console.error('TheirStack API key not found in environment variables');
+      throw new Error('TheirStack API key not configured. Check environment variables.');
+    }
     
     for (const jobTitle of titlesToSearch) {
       try {
