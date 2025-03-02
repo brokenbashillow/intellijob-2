@@ -30,12 +30,14 @@ const RecommendedJobs = () => {
   const [jobTitles, setJobTitles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
   const { personalDetails } = useResumeData();
 
   const fetchRecommendedJobs = async () => {
     try {
       setIsLoading(true);
+      setErrorMessage(null);
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,30 +51,51 @@ const RecommendedJobs = () => {
         body: { userId: user.id }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Function error:", error);
+        throw new Error(`Error calling recommend-jobs function: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error("No data returned from the recommend-jobs function");
+      }
+      
+      console.log("Jobs API response:", data);
       
       if (data.jobs && data.jobs.length > 0) {
         setJobs(data.jobs);
-        setJobTitles(data.jobTitles || []);
+        if (data.jobTitles && Array.isArray(data.jobTitles)) {
+          setJobTitles(data.jobTitles);
+        }
       } else {
-        throw new Error("No job recommendations found");
+        // We'll still show fallback jobs from the API, but also show a warning message
+        setJobs(data.jobs || []);
+        setErrorMessage("No job recommendations found that match your profile. We're showing some default suggestions instead.");
+      }
+      
+      // Handle API errors that still return fallback data
+      if (data.error) {
+        console.warn("API returned an error but also fallback data:", data.error);
+        setErrorMessage(`Note: Using fallback job recommendations. (${data.error})`);
       }
     } catch (error: any) {
       console.error("Error fetching recommended jobs:", error);
+      setErrorMessage("Failed to load job recommendations. Using default suggestions instead.");
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to load job recommendations. Please try again later.",
       });
-      // Set fallback jobs
+      
+      // Use fallback jobs from the component (these are only used if the API completely fails)
       setJobs([
         { 
           title: "Frontend Developer", 
           company: "Tech Solutions Inc",
           location: "San Francisco, CA", 
           description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies. Remote options available.",
-          postedAt: "2023-05-15", 
-          platform: "jobstreet",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
           url: "#"
         },
         { 
@@ -80,8 +103,8 @@ const RecommendedJobs = () => {
           company: "Creative Studio",
           location: "New York, NY", 
           description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for our clients' digital products.",
-          postedAt: "2023-05-16", 
-          platform: "indeed",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
           url: "#"
         },
         { 
@@ -89,11 +112,16 @@ const RecommendedJobs = () => {
           company: "InnovateApp",
           location: "Remote", 
           description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing engineering team.",
-          postedAt: "2023-05-17", 
-          platform: "linkedin",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
           url: "#"
         },
       ]);
+      
+      // Set default job titles if we don't have any
+      if (jobTitles.length === 0) {
+        setJobTitles(["Software Developer", "Web Developer", "Frontend Developer"]);
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -135,6 +163,12 @@ const RecommendedJobs = () => {
         </Button>
       </div>
       
+      {errorMessage && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-md text-sm">
+          {errorMessage}
+        </div>
+      )}
+      
       {jobTitles.length > 0 && (
         <div className="mb-4">
           <p className="text-sm text-muted-foreground mb-2">AI suggested job titles for your profile:</p>
@@ -149,44 +183,50 @@ const RecommendedJobs = () => {
       )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {jobs.map((job, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow flex flex-col">
-            <CardHeader className="pb-2 border-b">
-              <CardTitle className="text-lg md:text-xl font-semibold">{job.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow py-3">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <Badge variant="outline" className="text-xs font-normal">
-                    {job.location}
-                  </Badge>
-                  <Badge className="ml-2 bg-primary text-white">
-                    {job.company}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {job.description}
-                </p>
-                {job.reason && (
-                  <p className="text-xs text-primary italic mt-2 line-clamp-2">
-                    {job.reason}
+        {jobs.length > 0 ? (
+          jobs.map((job, index) => (
+            <Card key={index} className="hover:shadow-lg transition-shadow flex flex-col">
+              <CardHeader className="pb-2 border-b">
+                <CardTitle className="text-lg md:text-xl font-semibold">{job.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-grow py-3">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <Badge variant="outline" className="text-xs font-normal">
+                      {job.location}
+                    </Badge>
+                    <Badge className="ml-2 bg-primary text-white">
+                      {job.company}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {job.description}
                   </p>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="pt-2 pb-3 border-t flex justify-between items-center text-xs text-muted-foreground">
-              <span>Posted {formatDate(job.postedAt)}</span>
-              <a 
-                href={job.url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex items-center hover:text-primary transition-colors"
-              >
-                {job.platform} <ExternalLink className="ml-1 h-3 w-3" />
-              </a>
-            </CardFooter>
-          </Card>
-        ))}
+                  {job.reason && (
+                    <p className="text-xs text-primary italic mt-2 line-clamp-2">
+                      {job.reason}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-2 pb-3 border-t flex justify-between items-center text-xs text-muted-foreground">
+                <span>Posted {formatDate(job.postedAt)}</span>
+                <a 
+                  href={job.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center hover:text-primary transition-colors"
+                >
+                  {job.platform} <ExternalLink className="ml-1 h-3 w-3" />
+                </a>
+              </CardFooter>
+            </Card>
+          ))
+        ) : (
+          <div className="col-span-3 text-center py-12 text-muted-foreground">
+            No job recommendations found. Try refreshing or update your profile with more details.
+          </div>
+        )}
       </div>
     </section>
   );
