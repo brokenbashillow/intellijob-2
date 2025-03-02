@@ -1,12 +1,13 @@
+
 import { useEffect, useState } from "react"
-import { ExternalLink, Loader2, RefreshCw } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { useResumeData } from "@/hooks/useResumeData"
-import { Textarea } from "@/components/ui/textarea"
+import JobList from "./JobList"
+import JobTitleBadges from "./JobTitleBadges"
+import JobFeedback from "./JobFeedback"
 
 interface Job {
   title: string
@@ -20,11 +21,6 @@ interface Job {
   reason?: string
 }
 
-const formatDate = (dateString: string) => {
-  const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString('en-US', options);
-}
-
 const RecommendedJobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobTitles, setJobTitles] = useState<string[]>([]);
@@ -32,8 +28,6 @@ const RecommendedJobs = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [apiErrorDetails, setApiErrorDetails] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string>("");
-  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
   const { toast } = useToast();
   const { personalDetails } = useResumeData();
 
@@ -140,43 +134,6 @@ const RecommendedJobs = () => {
     fetchRecommendedJobs();
   };
 
-  const handleSubmitFeedback = async () => {
-    if (!feedback.trim()) return;
-    
-    setIsSendingFeedback(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-      
-      await supabase.functions.invoke('job-feedback', {
-        body: { 
-          userId: user.id,
-          feedback,
-          jobTitles
-        }
-      });
-      
-      toast({
-        title: "Feedback Sent",
-        description: "Thank you for your feedback! We'll use it to improve your recommendations.",
-      });
-      
-      setFeedback("");
-    } catch (error) {
-      console.error("Error sending feedback:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to send feedback. Please try again later.",
-      });
-    } finally {
-      setIsSendingFeedback(false);
-    }
-  };
-
   useEffect(() => {
     fetchRecommendedJobs();
   }, [toast, personalDetails]);
@@ -223,39 +180,16 @@ const RecommendedJobs = () => {
         </div>
       )}
       
-      {jobTitles.length > 0 && (
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground mb-2">AI suggested job titles for your profile:</p>
-          <div className="flex flex-wrap gap-2">
-            {jobTitles.map((title, index) => (
-              <Badge key={index} variant="secondary">
-                {title}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
+      <JobTitleBadges jobTitles={jobTitles} />
       
-      {liveJobs.length > 0 && (
-        <>
-          <h3 className="text-lg font-medium mb-3 text-primary">Live Job Listings</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            {liveJobs.map((job, index) => (
-              <JobCard key={`live-${index}`} job={job} />
-            ))}
-          </div>
-        </>
-      )}
+      {liveJobs.length > 0 && <JobList jobs={liveJobs} title="Live Job Listings" />}
       
       {fallbackJobs.length > 0 && (
-        <>
-          <h3 className="text-lg font-medium mb-3 text-muted-foreground">Example Job Listings</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {fallbackJobs.map((job, index) => (
-              <JobCard key={`fallback-${index}`} job={job} />
-            ))}
-          </div>
-        </>
+        <JobList 
+          jobs={fallbackJobs} 
+          title="Example Job Listings" 
+          titleClassName="text-muted-foreground" 
+        />
       )}
       
       {jobs.length === 0 && (
@@ -264,71 +198,8 @@ const RecommendedJobs = () => {
         </div>
       )}
       
-      <div className="mt-8 border-t pt-6">
-        <h3 className="text-lg font-medium mb-3">How can we improve your recommendations?</h3>
-        <div className="space-y-4">
-          <Textarea 
-            placeholder="Let us know if these job recommendations were helpful or what you'd like to see instead..."
-            value={feedback}
-            onChange={e => setFeedback(e.target.value)}
-            className="min-h-[100px]"
-          />
-          <Button 
-            onClick={handleSubmitFeedback} 
-            disabled={!feedback.trim() || isSendingFeedback}
-            className="w-full sm:w-auto"
-          >
-            {isSendingFeedback ? "Sending..." : "Send Feedback"}
-          </Button>
-        </div>
-      </div>
+      <JobFeedback jobTitles={jobTitles} />
     </section>
-  );
-};
-
-const JobCard = ({ job }: { job: Job }) => {
-  return (
-    <Card className="hover:shadow-lg transition-shadow flex flex-col">
-      <CardHeader className="pb-2 border-b">
-        <CardTitle className="text-lg md:text-xl font-semibold">{job.title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow py-3">
-        <div className="space-y-3">
-          <div className="flex items-start justify-between flex-wrap gap-2">
-            <Badge variant="outline" className="text-xs font-normal">
-              {job.location}
-            </Badge>
-            <Badge className="bg-primary text-white">
-              {job.company}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {job.description}
-          </p>
-          {job.reason && (
-            <p className="text-xs text-primary italic mt-2 line-clamp-2">
-              {job.reason}
-            </p>
-          )}
-          {(job.platform === "Example" || job.platform === "fallback") && (
-            <p className="text-xs text-amber-500 mt-2">
-              Example job - not from live data
-            </p>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="pt-2 pb-3 border-t flex justify-between items-center text-xs text-muted-foreground">
-        <span>Posted {formatDate(job.postedAt)}</span>
-        <a 
-          href={job.url} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center hover:text-primary transition-colors"
-        >
-          {job.platform} <ExternalLink className="ml-1 h-3 w-3" />
-        </a>
-      </CardFooter>
-    </Card>
   );
 };
 
