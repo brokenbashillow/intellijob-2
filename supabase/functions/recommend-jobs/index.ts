@@ -260,24 +260,28 @@ No explanation, ONLY the JSON array.
       try {
         console.log(`Searching for jobs with title: ${jobTitle}`)
         
-        // Fixed API url and correct response handling
-        const response = await fetch(`https://api.theirstack.guru/v1/job-postings?search=${encodeURIComponent(jobTitle)}&from=${dateFilter}`, {
+        // FIXED: Correct API URL and proper query parameters
+        const apiUrl = `https://api.theirstack.guru/v1/job-postings?search=${encodeURIComponent(jobTitle)}&from=${dateFilter}`;
+        console.log(`API URL: ${apiUrl}`);
+        
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${theirStackApiKey}`,
             'Content-Type': 'application/json'
           }
-        })
+        });
 
-        console.log(`Response status for ${jobTitle}: ${response.status}`)
+        console.log(`Response status for ${jobTitle}: ${response.status}`);
         
         if (!response.ok) {
-          const errorBody = await response.text()
-          throw new Error(`TheirStack API returned ${response.status}: ${errorBody}`)
+          const errorBody = await response.text();
+          console.error(`TheirStack API error (${response.status}): ${errorBody}`);
+          throw new Error(`TheirStack API returned ${response.status}: ${errorBody}`);
         }
 
-        const data = await response.json()
-        console.log(`Got ${data.data?.length || 0} jobs for "${jobTitle}"`)
+        const data = await response.json();
+        console.log(`Got ${data.data?.length || 0} jobs for "${jobTitle}"`);
         
         if (data && Array.isArray(data.data)) {
           // Transform job data to our format and add match reason
@@ -290,21 +294,21 @@ No explanation, ONLY the JSON array.
             platform: job.source || 'theirstack',
             url: job.url || '#',
             reason: `Matched with your profile for "${jobTitle}"`
-          }))
+          }));
           
-          jobs.push(...transformedJobs)
+          jobs.push(...transformedJobs);
         }
       } catch (error) {
-        console.error(`Error fetching jobs for "${jobTitle}":`, error)
+        console.error(`Error fetching jobs for "${jobTitle}":`, error);
       }
     }
 
     // Limit to max 9 jobs and deduplicate by URL
     const uniqueJobs = Array.from(
       new Map(jobs.map(job => [job.url, job])).values()
-    ).slice(0, 9)
+    ).slice(0, 9);
 
-    console.log(`Returning ${uniqueJobs.length} job recommendations`)
+    console.log(`Returning ${uniqueJobs.length} job recommendations`);
     
     // Prepare fallback jobs if no jobs found
     const fallbackJobs = [

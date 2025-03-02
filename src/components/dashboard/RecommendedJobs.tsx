@@ -31,6 +31,7 @@ const RecommendedJobs = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [apiErrorDetails, setApiErrorDetails] = useState<string | null>(null);
   const { toast } = useToast();
   const { personalDetails } = useResumeData();
 
@@ -38,6 +39,7 @@ const RecommendedJobs = () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
+      setApiErrorDetails(null);
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -46,6 +48,8 @@ const RecommendedJobs = () => {
         throw new Error("User not authenticated");
       }
 
+      console.log("Calling recommend-jobs function with userId:", user.id);
+      
       // Call the recommend-jobs function
       const { data, error } = await supabase.functions.invoke('recommend-jobs', {
         body: { userId: user.id }
@@ -63,6 +67,14 @@ const RecommendedJobs = () => {
       console.log("Jobs API response:", data);
       
       if (data.jobs && data.jobs.length > 0) {
+        // Check if all jobs are fallbacks
+        const allFallbacks = data.jobs.every((job: Job) => job.platform === "Example" || job.platform === "fallback");
+        
+        if (allFallbacks && data.error) {
+          setApiErrorDetails(`API Error: ${data.error}`);
+          console.warn("All jobs are fallbacks with error:", data.error);
+        }
+        
         setJobs(data.jobs);
         if (data.jobTitles && Array.isArray(data.jobTitles)) {
           setJobTitles(data.jobTitles);
@@ -169,6 +181,13 @@ const RecommendedJobs = () => {
         </div>
       )}
       
+      {apiErrorDetails && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+          {apiErrorDetails}
+          <p className="mt-2 text-xs">Using fallback job recommendations due to API error.</p>
+        </div>
+      )}
+      
       {jobTitles.length > 0 && (
         <div className="mb-4">
           <p className="text-sm text-muted-foreground mb-2">AI suggested job titles for your profile:</p>
@@ -207,6 +226,11 @@ const RecommendedJobs = () => {
                       {job.reason}
                     </p>
                   )}
+                  {job.platform === "Example" || job.platform === "fallback" ? (
+                    <p className="text-xs text-amber-500 mt-2">
+                      Example job - not from live data
+                    </p>
+                  ) : null}
                 </div>
               </CardContent>
               <CardFooter className="pt-2 pb-3 border-t flex justify-between items-center text-xs text-muted-foreground">
