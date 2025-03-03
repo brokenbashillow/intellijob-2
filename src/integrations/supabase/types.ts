@@ -46,6 +46,7 @@ export type Database = {
       }
       job_postings: {
         Row: {
+          accepted_count: number | null
           created_at: string | null
           description: string | null
           employer_id: string
@@ -58,6 +59,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          accepted_count?: number | null
           created_at?: string | null
           description?: string | null
           employer_id: string
@@ -70,6 +72,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          accepted_count?: number | null
           created_at?: string | null
           description?: string | null
           employer_id?: string
