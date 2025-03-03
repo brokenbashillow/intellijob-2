@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { ArrowRight, Check, Plus, Users, MessageCircle } from "lucide-react"
+import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -15,6 +15,16 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { supabase } from "@/integrations/supabase/client"
 import JobResponses from "./JobResponses"
 
@@ -26,6 +36,7 @@ interface JobPosting {
   field?: string
   responses: number
   status?: string
+  accepted_count?: number
 }
 
 interface JobPostingsProps {
@@ -38,6 +49,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedJob, setSelectedJob] = useState<string | null>(null)
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null)
   const [newJob, setNewJob] = useState<Omit<JobPosting, 'id' | 'responses'>>({
     title: "",
     description: "",
@@ -110,6 +122,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           requirements: newJob.requirements,
           field: newJob.field,
           responses: 0,
+          accepted_count: 0,
           employer_id: user.id
         })
         .select()
@@ -142,6 +155,83 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     setSelectedJob(jobId)
   }
 
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      const { error } = await supabase
+        .from('job_postings')
+        .delete()
+        .eq('id', jobId)
+
+      if (error) throw error
+      
+      // Remove from local state
+      setJobPostings(prev => prev.filter(job => job.id !== jobId))
+      
+      toast({
+        title: "Job Deleted",
+        description: "The job posting has been removed.",
+      })
+    } catch (error: any) {
+      console.error('Error deleting job:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to delete job posting.",
+      })
+    } finally {
+      setJobToDelete(null)
+    }
+  }
+
+  const handleInterviewScheduled = async (jobId: string) => {
+    try {
+      // Find the job in the local state
+      const job = jobPostings.find(j => j.id === jobId);
+      if (!job) return;
+
+      // Calculate the new accepted count
+      const newAcceptedCount = (job.accepted_count || 0) + 1;
+      
+      // Update the job in the database
+      const { error } = await supabase
+        .from('job_postings')
+        .update({ 
+          accepted_count: newAcceptedCount,
+          // If 5 or more employees are accepted, mark the job as done
+          ...(newAcceptedCount >= 5 ? { status: 'done' } : {})
+        })
+        .eq('id', jobId)
+
+      if (error) throw error;
+      
+      // Update the job in the local state
+      setJobPostings(prev => prev.map(j => 
+        j.id === jobId 
+          ? { 
+              ...j, 
+              accepted_count: newAcceptedCount,
+              status: newAcceptedCount >= 5 ? 'done' : j.status 
+            } 
+          : j
+      ));
+
+      // If 5 employees have been accepted, show a toast notification
+      if (newAcceptedCount >= 5) {
+        toast({
+          title: "Job Posting Closed",
+          description: "This job has reached 5 accepted applicants and has been marked as done.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error updating job accepted count:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update job status.",
+      });
+    }
+  };
+
   return (
     <div className="flex-1 p-8">
       <div className="mb-6 flex items-center justify-between">
@@ -171,9 +261,19 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {jobPostings.map((job) => (
-            <Card key={job.id} className="hover:shadow-lg transition-shadow">
+            <Card key={job.id} className={`hover:shadow-lg transition-shadow ${job.status === 'done' ? 'opacity-70' : ''}`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">{job.title}</CardTitle>
+                <div className="flex justify-between">
+                  <CardTitle className="text-lg">{job.title}</CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-destructive hover:text-destructive/80"
+                    onClick={() => setJobToDelete(job.id)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
                 {job.field && (
                   <p className="text-sm text-muted-foreground">Field: {job.field}</p>
                 )}
@@ -268,6 +368,27 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         </DialogContent>
       </Dialog>
 
+      {/* Job delete confirmation */}
+      <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the job posting and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive text-destructive-foreground" 
+              onClick={() => jobToDelete && handleDeleteJob(jobToDelete)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Job responses dialog */}
       {selectedJob && (
         <JobResponses 
@@ -275,6 +396,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           isOpen={!!selectedJob} 
           onClose={() => setSelectedJob(null)} 
           jobDetails={jobPostings.find(job => job.id === selectedJob)}
+          onInterviewScheduled={() => handleInterviewScheduled(selectedJob)}
         />
       )}
     </div>

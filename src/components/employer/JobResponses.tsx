@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { X, Download, Mail, Phone, UserRound, Briefcase, File, CheckCircle, XCircle, Eye, Trash, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -29,6 +28,7 @@ interface JobResponsesProps {
   isOpen: boolean
   onClose: () => void
   jobDetails?: JobDetailsProps
+  onInterviewScheduled?: () => void
 }
 
 interface Applicant {
@@ -77,7 +77,7 @@ const mockApplicants: Applicant[] = [
   }
 ];
 
-const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps) => {
+const JobResponses = ({ jobId, isOpen, onClose, jobDetails, onInterviewScheduled }: JobResponsesProps) => {
   const { toast } = useToast()
   const [applicants, setApplicants] = useState<Applicant[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -313,6 +313,11 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
         title: "Interview Scheduled",
         description: `Interview scheduled for ${format(dateTime, 'PPP')} at ${format(dateTime, 'p')}. The applicant has been notified.`,
       })
+
+      // Call the onInterviewScheduled callback to update the job posting
+      if (onInterviewScheduled) {
+        onInterviewScheduled();
+      }
     } catch (error: any) {
       console.error('Error scheduling interview:', error)
       toast({
