@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -25,8 +24,9 @@ import {
 import { supabase } from "@/integrations/supabase/client"
 import EmployerChat from "@/components/employer/EmployerChat"
 import JobPostings from "@/components/employer/JobPostings"
+import Resume from "@/components/resume/Resume"
 
-type View = "dashboard" | "chat" | "job-postings"
+type View = "dashboard" | "chat" | "job-postings" | "resume-viewer"
 
 const EmployerDashboard = () => {
   const [currentView, setCurrentView] = useState<View>("dashboard")
@@ -48,7 +48,6 @@ const EmployerDashboard = () => {
         return
       }
 
-      // Fetch the profile to get the company name
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('company_name')
@@ -61,7 +60,6 @@ const EmployerDashboard = () => {
         setCompanyName(profileData.company_name)
       }
 
-      // Fetch employer assessment for company description
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('employer_assessments')
         .select('description')
@@ -69,7 +67,6 @@ const EmployerDashboard = () => {
         .single()
 
       if (assessmentError && assessmentError.code !== 'PGRST116') {
-        // PGRST116 is "no rows returned" - not an error in this case
         throw assessmentError
       }
       
@@ -126,6 +123,8 @@ const EmployerDashboard = () => {
         return <EmployerChat />
       case "job-postings":
         return <JobPostings />
+      case "resume-viewer":
+        return <Resume />
       default:
         return (
           <main className="flex-1 p-8">

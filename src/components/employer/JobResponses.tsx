@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { X, Download, Mail, Phone, UserRound, Briefcase, File, CheckCircle, XCircle } from "lucide-react"
+import { X, Download, Mail, Phone, UserRound, Briefcase, File, CheckCircle, XCircle, Eye } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,6 +38,7 @@ interface Applicant {
   status: 'new' | 'reviewed' | 'accepted' | 'rejected'
   appliedAt: string
   profileImage?: string
+  userId: string
 }
 
 // Sample data for now - in a real app, this would come from the database
@@ -52,6 +53,7 @@ const mockApplicants: Applicant[] = [
     experience: ["3 years at ABC Tech", "2 years at XYZ Solutions"],
     status: "new",
     appliedAt: new Date().toISOString(),
+    userId: "sample-user-id-1"
   },
   {
     id: "2",
@@ -63,14 +65,16 @@ const mockApplicants: Applicant[] = [
     experience: ["5 years at Product Co", "3 years at Design Inc"],
     status: "reviewed",
     appliedAt: new Date(Date.now() - 86400000).toISOString(), // yesterday
+    userId: "sample-user-id-2"
   }
 ];
 
 const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps) => {
   const { toast } = useToast()
-  const [applicants, setApplicants] = useState<Applicant[]>(mockApplicants)
+  const [applicants, setApplicants] = useState<Applicant[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
+  const [viewingResume, setViewingResume] = useState<string | null>(null)
   
   useEffect(() => {
     if (isOpen) {
@@ -83,35 +87,44 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
       setIsLoading(true)
       
       // In a real implementation, you would fetch actual applicants from the database
-      // For now, we're using mock data and simulating a delay
-      setTimeout(() => {
-        setApplicants(mockApplicants)
-        setIsLoading(false)
-      }, 500)
-      
-      // Example of how real fetching might look:
+      // This is commented out now but will be used when the real API is ready
       /*
       const { data, error } = await supabase
         .from('job_applications')
-        .select('*, profiles(*)')
+        .select('*, profiles(*), resumes(id)')
         .eq('job_id', jobId)
         .order('created_at', { ascending: false })
         
       if (error) throw error
       
-      setApplicants(data.map(app => ({
+      if (!data || data.length === 0) {
+        setApplicants([])
+        setIsLoading(false)
+        return
+      }
+      
+      const applicantsWithResumes = data.filter(app => app.resumes !== null && app.resumes.length > 0)
+      
+      setApplicants(applicantsWithResumes.map(app => ({
         id: app.id,
-        firstName: app.profiles.first_name,
-        lastName: app.profiles.last_name,
-        email: app.profiles.email,
-        phone: app.phone,
-        skills: app.skills,
-        experience: app.experience,
-        status: app.status,
+        firstName: app.profiles.first_name || '',
+        lastName: app.profiles.last_name || '',
+        email: app.profiles.email || '',
+        phone: app.phone || '',
+        skills: app.skills || [],
+        experience: app.experience || [],
+        status: app.status || 'new',
         appliedAt: app.created_at,
-        profileImage: app.profiles.avatar_url
+        profileImage: app.profiles.avatar_url,
+        userId: app.profiles.id
       })))
       */
+      
+      // Using mock data for now
+      setTimeout(() => {
+        setApplicants(mockApplicants)
+        setIsLoading(false)
+      }, 500)
       
     } catch (error: any) {
       console.error('Error fetching applicants:', error)
@@ -125,19 +138,79 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
     }
   }
   
-  const updateApplicantStatus = (applicantId: string, newStatus: Applicant['status']) => {
-    setApplicants(prev => 
-      prev.map(app => 
-        app.id === applicantId ? { ...app, status: newStatus } : app
+  const updateApplicantStatus = async (applicantId: string, newStatus: Applicant['status']) => {
+    try {
+      // In a real implementation, you would update the database
+      /*
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ status: newStatus })
+        .eq('id', applicantId)
+        
+      if (error) throw error
+      */
+      
+      // Update local state
+      setApplicants(prev => 
+        prev.map(app => 
+          app.id === applicantId ? { ...app, status: newStatus } : app
+        )
       )
-    )
-    
-    toast({
-      title: "Status Updated",
-      description: `Applicant status has been updated to ${newStatus}.`,
-    })
-    
-    // In a real implementation, you would update the database here
+      
+      toast({
+        title: "Status Updated",
+        description: `Applicant status has been updated to ${newStatus}.`,
+      })
+    } catch (error: any) {
+      console.error('Error updating status:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update applicant status.",
+      })
+    }
+  }
+  
+  const handleViewResume = async (applicantId: string, userId: string) => {
+    try {
+      setViewingResume(applicantId)
+      
+      // Only mark as reviewed if it's currently new
+      const applicant = applicants.find(app => app.id === applicantId)
+      if (applicant && applicant.status === 'new') {
+        // In a real implementation, you would fetch the resume and update the status
+        /*
+        const { data: resumeData, error: resumeError } = await supabase
+          .from('resumes')
+          .select('*')
+          .eq('user_id', userId)
+          .single()
+          
+        if (resumeError) throw resumeError
+        
+        // If we successfully retrieved the resume, mark the application as reviewed
+        await updateApplicantStatus(applicantId, 'reviewed')
+        */
+        
+        // For now with mock data, just update the status
+        await updateApplicantStatus(applicantId, 'reviewed')
+      }
+      
+      // For now, just show a toast to simulate viewing the resume
+      toast({
+        title: "Resume Viewed",
+        description: "The application has been marked as reviewed."
+      })
+    } catch (error: any) {
+      console.error('Error viewing resume:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to view resume.",
+      })
+    } finally {
+      setViewingResume(null)
+    }
   }
   
   const filteredApplicants = activeTab === "all" 
@@ -174,7 +247,14 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
                 </div>
               ) : filteredApplicants.length === 0 ? (
                 <div className="text-center py-12 border rounded-lg bg-muted/20">
-                  <p className="text-muted-foreground">No {activeTab !== "all" ? activeTab : ""} applicants yet.</p>
+                  <p className="text-muted-foreground">
+                    No {activeTab !== "all" ? activeTab : ""} applicants yet.
+                    {activeTab === "all" && (
+                      <span className="block mt-2 text-sm">
+                        Only applicants with resumes can apply for this position.
+                      </span>
+                    )}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -254,11 +334,22 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
                           Applied {new Date(applicant.appliedAt).toLocaleDateString()}
                         </div>
                         <div className="flex gap-2">
-                          {applicant.resumeUrl && (
-                            <Button variant="outline" size="sm" className="gap-1.5">
-                              <Download className="h-3.5 w-3.5" /> Resume
-                            </Button>
-                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-1.5"
+                            onClick={() => handleViewResume(applicant.id, applicant.userId)}
+                            disabled={viewingResume === applicant.id}
+                          >
+                            {viewingResume === applicant.id ? (
+                              <>Loading...</>
+                            ) : (
+                              <>
+                                <Eye className="h-3.5 w-3.5" /> 
+                                View Resume
+                              </>
+                            )}
+                          </Button>
                           
                           {applicant.status !== 'accepted' && (
                             <Button 
@@ -279,16 +370,6 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
                               onClick={() => updateApplicantStatus(applicant.id, 'rejected')}
                             >
                               <XCircle className="h-3.5 w-3.5" /> Reject
-                            </Button>
-                          )}
-                          
-                          {applicant.status === 'new' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => updateApplicantStatus(applicant.id, 'reviewed')}
-                            >
-                              Mark as Reviewed
                             </Button>
                           )}
                         </div>
