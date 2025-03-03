@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { ArrowRight, Check, Plus } from "lucide-react"
+import { ArrowRight, Check, Plus, Users } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/integrations/supabase/client"
+import JobResponses from "./JobResponses"
 
 interface JobPosting {
   id: string
@@ -32,6 +33,7 @@ const JobPostings = () => {
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedJob, setSelectedJob] = useState<string | null>(null)
   const [newJob, setNewJob] = useState<Omit<JobPosting, 'id' | 'responses'>>({
     title: "",
     description: "",
@@ -132,6 +134,10 @@ const JobPostings = () => {
     }
   }
 
+  const handleViewResponses = (jobId: string) => {
+    setSelectedJob(jobId)
+  }
+
   return (
     <div className="flex-1 p-8">
       <div className="mb-6 flex items-center justify-between">
@@ -167,10 +173,19 @@ const JobPostings = () => {
                         <Check className="h-4 w-4" /> Done
                       </span>
                     ) : (
-                      `${job.responses} Responses`
+                      <span 
+                        className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => handleViewResponses(job.id)}
+                      >
+                        <Users className="h-4 w-4" /> {job.responses} {job.responses === 1 ? 'Response' : 'Responses'}
+                      </span>
                     )}
                   </span>
-                  <Button variant="ghost" size="icon">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleViewResponses(job.id)}
+                  >
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -180,6 +195,7 @@ const JobPostings = () => {
         </div>
       )}
 
+      {/* Job creation dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -238,6 +254,16 @@ const JobPostings = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Job responses dialog */}
+      {selectedJob && (
+        <JobResponses 
+          jobId={selectedJob} 
+          isOpen={!!selectedJob} 
+          onClose={() => setSelectedJob(null)} 
+          jobDetails={jobPostings.find(job => job.id === selectedJob)}
+        />
+      )}
     </div>
   )
 }

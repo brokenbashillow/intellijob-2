@@ -1,4 +1,5 @@
-import { useState } from "react"
+
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Building, MessageCircle, BriefcaseIcon, LogOut, Bell, Trash2 } from "lucide-react"
@@ -29,8 +30,56 @@ type View = "dashboard" | "chat" | "job-postings"
 
 const EmployerDashboard = () => {
   const [currentView, setCurrentView] = useState<View>("dashboard")
+  const [companyName, setCompanyName] = useState("Company Name")
+  const [companyDescription, setCompanyDescription] = useState("")
   const navigate = useNavigate()
   const { toast } = useToast()
+
+  useEffect(() => {
+    fetchEmployerProfile()
+  }, [])
+
+  const fetchEmployerProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        navigate('/')
+        return
+      }
+
+      // Fetch the profile to get the company name
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_name')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) throw profileError
+      
+      if (profileData?.company_name) {
+        setCompanyName(profileData.company_name)
+      }
+
+      // Fetch employer assessment for company description
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from('employer_assessments')
+        .select('description')
+        .eq('user_id', user.id)
+        .single()
+
+      if (assessmentError && assessmentError.code !== 'PGRST116') {
+        // PGRST116 is "no rows returned" - not an error in this case
+        throw assessmentError
+      }
+      
+      if (assessmentData?.description) {
+        setCompanyDescription(assessmentData.description)
+      }
+    } catch (error: any) {
+      console.error("Error fetching profile:", error)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -84,13 +133,13 @@ const EmployerDashboard = () => {
               <div className="flex gap-8 items-start">
                 <Avatar className="w-32 h-32">
                   <AvatarImage src="" />
-                  <AvatarFallback className="text-2xl">CN</AvatarFallback>
+                  <AvatarFallback className="text-2xl">{companyName.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-2">Company Name</h2>
+                  <h2 className="text-2xl font-bold mb-2">{companyName}</h2>
                   <p className="text-muted-foreground">
-                    Sample description of company. This is where you can add information about your organization,
-                    its mission, and what you're looking for in potential candidates.
+                    {companyDescription || 
+                      "Sample description of company. This is where you can add information about your organization, its mission, and what you're looking for in potential candidates."}
                   </p>
                 </div>
               </div>
@@ -188,10 +237,10 @@ const EmployerDashboard = () => {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <span className="font-medium">Company Name</span>
+            <span className="font-medium">{companyName}</span>
             <Avatar>
               <AvatarImage src="" />
-              <AvatarFallback>CN</AvatarFallback>
+              <AvatarFallback>{companyName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           </div>
         </div>
