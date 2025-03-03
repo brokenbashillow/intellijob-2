@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User, Book, Briefcase, Award, Users, Wrench } from "lucide-react";
 import { useResumeData } from "@/hooks/useResumeData";
 import { PersonalDetailsSection } from "./PersonalDetailsSection";
@@ -34,6 +35,7 @@ const Resume = ({ onSave }: ResumeProps) => {
     skills,
     setSkills,
     isLoading,
+    hasResumeData,
     handleSave,
     handleImageUpload,
   } = useResumeData();
@@ -46,12 +48,20 @@ const Resume = ({ onSave }: ResumeProps) => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <h2 className="text-2xl font-bold mb-6">Resume Builder</h2>
+      
+      {!hasResumeData && (
+        <Alert className="mb-6 bg-amber-50 border-amber-200">
+          <AlertDescription className="text-amber-800">
+            We've initialized your resume with information from your assessment. Please complete and save your resume to unlock full job recommendations.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Accordion type="single" collapsible defaultValue="personal-details">
         <AccordionItem value="personal-details">

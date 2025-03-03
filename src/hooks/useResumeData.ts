@@ -67,6 +67,7 @@ export const useResumeData = () => {
   const [references, setReferences] = useState<ReferenceItem[]>([]);
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasResumeData, setHasResumeData] = useState(false);
 
   // Modified to handle both string arrays and JSON arrays
   const parseJsonArray = <T,>(data: any[] | null): T[] => {
@@ -106,61 +107,15 @@ export const useResumeData = () => {
         }));
       }
 
+      // First, check if the user has a resume already
       const { data: resumeData, error: resumeError } = await supabase
         .from('resumes')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!resumeData) {
-        const { data: assessmentData, error: assessmentError } = await supabase
-          .from('seeker_assessments')
-          .select('education, experience')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (assessmentError) throw assessmentError;
-
-        if (assessmentData) {
-          const initialEducation: EducationItem = {
-            degree: assessmentData.education,
-            school: "",
-            startDate: "",
-            endDate: "",
-          };
-
-          const initialWorkExperience: WorkExperienceItem = {
-            company: "",
-            title: "",
-            startDate: "",
-            endDate: "",
-            description: assessmentData.experience,
-          };
-
-          setEducation([initialEducation]);
-          setWorkExperience([initialWorkExperience]);
-        }
-
-        const { data: userSkillsData } = await supabase
-          .from('user_skills')
-          .select(`
-            skill_id,
-            skill_type,
-            skills (
-              name
-            )
-          `)
-          .eq('user_id', user.id);
-
-        if (userSkillsData) {
-          const formattedSkills: SkillItem[] = userSkillsData.map(skillData => ({
-            id: skillData.skill_id,
-            name: skillData.skills.name,
-            type: skillData.skill_type as 'technical' | 'soft',
-          }));
-          setSkills(formattedSkills);
-        }
-      } else {
+      if (resumeData) {
+        // User has a resume, use that data
         if (resumeError) throw resumeError;
         
         setEducation(parseJsonArray<EducationItem>(resumeData.education));
@@ -173,26 +128,13 @@ export const useResumeData = () => {
           setSkills(parseJsonArray<SkillItem>(resumeData.skills));
         } else {
           // If no skills in resume data, try to fetch from user_skills
-          const { data: userSkillsData } = await supabase
-            .from('user_skills')
-            .select(`
-              skill_id,
-              skill_type,
-              skills (
-                name
-              )
-            `)
-            .eq('user_id', user.id);
-
-          if (userSkillsData) {
-            const formattedSkills: SkillItem[] = userSkillsData.map(skillData => ({
-              id: skillData.skill_id,
-              name: skillData.skills.name,
-              type: skillData.skill_type as 'technical' | 'soft',
-            }));
-            setSkills(formattedSkills);
-          }
+          await fetchUserSkills(user.id);
         }
+        setHasResumeData(true);
+      } else {
+        // User doesn't have a resume yet, initialize with assessment data
+        await initializeFromAssessment(user.id);
+        setHasResumeData(false);
       }
     } catch (error: any) {
       console.error('Error fetching resume data:', error);
@@ -206,6 +148,72 @@ export const useResumeData = () => {
     }
   };
 
+  const fetchUserSkills = async (userId: string) => {
+    try {
+      const { data: userSkillsData, error: userSkillsError } = await supabase
+        .from('user_skills')
+        .select(`
+          skill_id,
+          skill_type,
+          skills (
+            name
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (userSkillsError) throw userSkillsError;
+
+      if (userSkillsData && userSkillsData.length > 0) {
+        const formattedSkills: SkillItem[] = userSkillsData.map(skillData => ({
+          id: skillData.skill_id,
+          name: skillData.skills.name,
+          type: skillData.skill_type as 'technical' | 'soft',
+        }));
+        setSkills(formattedSkills);
+      }
+    } catch (error) {
+      console.error('Error fetching user skills:', error);
+    }
+  };
+
+  const initializeFromAssessment = async (userId: string) => {
+    try {
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from('seeker_assessments')
+        .select('education, experience')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (assessmentError) throw assessmentError;
+
+      if (assessmentData) {
+        // Initialize education from assessment
+        const initialEducation: EducationItem = {
+          degree: assessmentData.education || "",
+          school: "",
+          startDate: "",
+          endDate: "",
+        };
+        setEducation([initialEducation]);
+
+        // Initialize work experience from assessment
+        const initialWorkExperience: WorkExperienceItem = {
+          company: "",
+          title: "",
+          startDate: "",
+          endDate: "",
+          description: assessmentData.experience || "",
+        };
+        setWorkExperience([initialWorkExperience]);
+
+        // Fetch skills from user_skills table
+        await fetchUserSkills(userId);
+      }
+    } catch (error) {
+      console.error('Error initializing from assessment:', error);
+    }
+  };
+
   useEffect(() => {
     fetchResumeData();
   }, []);
@@ -216,11 +224,12 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      const educationStrings = education.map(item => JSON.stringify(item));
-      const workExperienceStrings = workExperience.map(item => JSON.stringify(item));
-      const certificatesStrings = certificates.map(item => JSON.stringify(item));
-      const referencesStrings = references.map(item => JSON.stringify(item));
-      const skillsStrings = skills.map(item => JSON.stringify(item));
+      // Only convert to JSON strings if we're not using null values
+      const educationStrings = education.length > 0 ? education.map(item => JSON.stringify(item)) : null;
+      const workExperienceStrings = workExperience.length > 0 ? workExperience.map(item => JSON.stringify(item)) : null;
+      const certificatesStrings = certificates.length > 0 ? certificates.map(item => JSON.stringify(item)) : null;
+      const referencesStrings = references.length > 0 ? references.map(item => JSON.stringify(item)) : null;
+      const skillsStrings = skills.length > 0 ? skills.map(item => JSON.stringify(item)) : null;
 
       const { data: existingResume } = await supabase
         .from('resumes')
@@ -270,6 +279,8 @@ export const useResumeData = () => {
         .eq('id', user.id);
 
       if (profileError) throw profileError;
+
+      setHasResumeData(true);
 
       // Trigger a re-evaluation of the assessment results
       try {
@@ -325,6 +336,7 @@ export const useResumeData = () => {
     skills,
     setSkills,
     isLoading,
+    hasResumeData,
     handleSave,
     handleImageUpload,
   };

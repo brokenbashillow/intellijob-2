@@ -48,22 +48,26 @@ const CategorySkillsStep = ({
     <div className="space-y-4">
       <Label>{title}</Label>
       
-      {selectedSkills.length < 3 && (
-        <Alert>
+      {selectedSkills.length < 3 ? (
+        <Alert variant="destructive">
           <AlertDescription>
             Please select at least {3 - selectedSkills.length} more {type} skills
           </AlertDescription>
         </Alert>
-      )}
-      
-      {selectedSkills.length >= 5 && (
+      ) : selectedSkills.length >= 5 ? (
         <Alert>
           <AlertDescription>
-            Maximum of 5 {type} skills reached
+            Maximum of 5 {type} skills selected
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert variant="default" className="bg-green-50 border-green-200">
+          <AlertDescription className="text-green-800">
+            {selectedSkills.length} skills selected
           </AlertDescription>
         </Alert>
       )}
-
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {categoriesWithSkills.map((category) => (
           <div key={category.id} className="col-span-1">
