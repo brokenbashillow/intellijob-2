@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,26 +18,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/integrations/supabase/client"
 
 interface JobPosting {
-  id: number | string
+  id: string
   title: string
   description?: string
   requirements?: string
   field?: string
   responses: number
-  status?: "done"
+  status?: string
 }
 
 const JobPostings = () => {
   const { toast } = useToast()
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>([
-    { id: 1, title: "Software Engineer", responses: 0, status: "done" },
-    { id: 2, title: "Junior Programmer", responses: 30, field: "Programming" },
-    { id: 3, title: "Project Manager", responses: 5, field: "Management" },
-    { id: 4, title: "Senior Programmer", responses: 15, field: "Programming" },
-    { id: 5, title: "Dev Ops", responses: 0, field: "DevOps" },
-    { id: 6, title: "Rust Programmer", responses: 4, field: "Programming" },
-  ])
-  
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newJob, setNewJob] = useState<Omit<JobPosting, 'id' | 'responses'>>({
     title: "",
@@ -45,6 +38,33 @@ const JobPostings = () => {
     requirements: "",
     field: ""
   })
+  
+  useEffect(() => {
+    fetchJobPostings()
+  }, [])
+
+  const fetchJobPostings = async () => {
+    try {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from('job_postings')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      
+      setJobPostings(data || [])
+    } catch (error: any) {
+      console.error('Error fetching job postings:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to load job postings.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -63,15 +83,22 @@ const JobPostings = () => {
         return
       }
 
-      // In a real implementation, we would save to Supabase here
-      // For now, just add to local state with a generated ID
-      const newJobWithId: JobPosting = {
-        id: `job-${Date.now()}`,
-        ...newJob,
-        responses: 0
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('job_postings')
+        .insert([{
+          ...newJob,
+          responses: 0,
+        }])
+        .select()
+
+      if (error) throw error
+      
+      // Update the local state with the new job
+      if (data && data.length > 0) {
+        setJobPostings(prev => [data[0], ...prev])
       }
       
-      setJobPostings(prev => [...prev, newJobWithId])
       setNewJob({ title: "", description: "", requirements: "", field: "" })
       setIsDialogOpen(false)
       
@@ -80,6 +107,7 @@ const JobPostings = () => {
         description: "New job has been created.",
       })
     } catch (error: any) {
+      console.error('Error creating job:', error)
       toast({
         variant: "destructive",
         title: "Error",
@@ -97,34 +125,44 @@ const JobPostings = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {jobPostings.map((job) => (
-          <Card key={job.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{job.title}</CardTitle>
-              {job.field && (
-                <p className="text-sm text-muted-foreground">Field: {job.field}</p>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {job.status === "done" ? (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <Check className="h-4 w-4" /> Done
-                    </span>
-                  ) : (
-                    `${job.responses} Responses`
-                  )}
-                </span>
-                <Button variant="ghost" size="icon">
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center min-h-[200px]">
+          <p>Loading job postings...</p>
+        </div>
+      ) : jobPostings.length === 0 ? (
+        <div className="text-center py-8 border rounded-lg bg-muted/20">
+          <p className="text-muted-foreground">No job postings yet. Click 'Add New Job' to create one.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {jobPostings.map((job) => (
+            <Card key={job.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">{job.title}</CardTitle>
+                {job.field && (
+                  <p className="text-sm text-muted-foreground">Field: {job.field}</p>
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    {job.status === "done" ? (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <Check className="h-4 w-4" /> Done
+                      </span>
+                    ) : (
+                      `${job.responses} Responses`
+                    )}
+                  </span>
+                  <Button variant="ghost" size="icon">
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">

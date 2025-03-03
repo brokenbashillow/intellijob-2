@@ -44,6 +44,53 @@ export type Database = {
           },
         ]
       }
+      job_postings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          employer_id: string
+          field: string | null
+          id: string
+          requirements: string | null
+          responses: number | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          employer_id: string
+          field?: string | null
+          id?: string
+          requirements?: string | null
+          responses?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          employer_id?: string
+          field?: string | null
+          id?: string
+          requirements?: string | null
+          responses?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_employer_id"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
