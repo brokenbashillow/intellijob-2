@@ -27,34 +27,59 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<"employee" | "employer">("employee");
+  const [companyName, setCompanyName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !email || !password) {
+    
+    // Validation
+    if (!email || !password) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please fill in all fields.",
+        description: "Please fill in all required fields.",
+      });
+      return;
+    }
+
+    if (userType === "employee" && (!firstName || !lastName)) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please fill in first and last name.",
+      });
+      return;
+    }
+
+    if (userType === "employer" && !companyName) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please fill in company name.",
       });
       return;
     }
 
     setIsLoading(true);
     try {
-      const fullName = `${firstName} ${lastName}`;
+      // For employer, use company name as the name
+      const fullName = userType === "employer" 
+        ? companyName 
+        : `${firstName} ${lastName}`;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name: fullName,
-            first_name: firstName,
-            last_name: lastName,
+            first_name: userType === "employer" ? null : firstName,
+            last_name: userType === "employer" ? null : lastName,
             user_type: userType,
-            company_name: userType === "employer" ? fullName : null,
+            company_name: userType === "employer" ? companyName : null,
           },
         },
       });
@@ -70,6 +95,7 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
         onClose();
       }
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -95,6 +121,7 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
             <Label>I am signing up as:</Label>
             <RadioGroup
               defaultValue="employee"
+              value={userType}
               onValueChange={(value) => setUserType(value as "employee" | "employer")}
               className="flex gap-4"
             >
@@ -115,12 +142,8 @@ const SignUpForm = ({ isOpen, onClose }: SignUpFormProps) => {
                 id="companyName"
                 type="text"
                 placeholder="Enter your company name"
-                value={`${firstName} ${lastName}`}
-                onChange={(e) => {
-                  const [first, ...rest] = e.target.value.split(" ");
-                  setFirstName(first || "");
-                  setLastName(rest.join(" ") || "");
-                }}
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
               />
             </div>
           ) : (
