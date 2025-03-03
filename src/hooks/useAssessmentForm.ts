@@ -40,7 +40,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
         const technicalSkillsData = formData.technicalSkills.map(skillId => ({
           user_id: user.id,
           skill_id: skillId,
-          skill_type: 'technical',
+          skill_type: 'technical' as const,
           assessment_id: assessmentId
         }));
         
@@ -56,7 +56,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
         const softSkillsData = formData.softSkills.map(skillId => ({
           user_id: user.id,
           skill_id: skillId,
-          skill_type: 'soft',
+          skill_type: 'soft' as const,
           assessment_id: assessmentId
         }));
         
