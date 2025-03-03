@@ -36,7 +36,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
       if (!user) throw new Error("No authenticated user");
       
       // Save technical skills
-      if (formData.technicalSkills && formData.technicalSkills.length > 0) {
+      if (formData.technicalSkills && formData.technicalSkills.length > 0 && assessmentId) {
         const technicalSkillsData = formData.technicalSkills.map(skillId => ({
           user_id: user.id,
           skill_id: skillId,
@@ -52,7 +52,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
       }
       
       // Save soft skills
-      if (formData.softSkills && formData.softSkills.length > 0) {
+      if (formData.softSkills && formData.softSkills.length > 0 && assessmentId) {
         const softSkillsData = formData.softSkills.map(skillId => ({
           user_id: user.id,
           skill_id: skillId,
