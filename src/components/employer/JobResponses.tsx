@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { X, Download, Mail, Phone, UserRound, Briefcase, File, CheckCircle, XCircle, Eye } from "lucide-react"
+import { X, Download, Mail, Phone, UserRound, Briefcase, File, CheckCircle, XCircle, Eye, Trash, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { supabase } from "@/integrations/supabase/client"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { format } from "date-fns"
 
 interface JobDetailsProps {
   id?: string
@@ -39,6 +44,7 @@ interface Applicant {
   appliedAt: string
   profileImage?: string
   userId: string
+  interviewDate?: Date | null
 }
 
 // Sample data for now - in a real app, this would come from the database
@@ -53,7 +59,8 @@ const mockApplicants: Applicant[] = [
     experience: ["3 years at ABC Tech", "2 years at XYZ Solutions"],
     status: "new",
     appliedAt: new Date().toISOString(),
-    userId: "sample-user-id-1"
+    userId: "sample-user-id-1",
+    interviewDate: null
   },
   {
     id: "2",
@@ -65,7 +72,8 @@ const mockApplicants: Applicant[] = [
     experience: ["5 years at Product Co", "3 years at Design Inc"],
     status: "reviewed",
     appliedAt: new Date(Date.now() - 86400000).toISOString(), // yesterday
-    userId: "sample-user-id-2"
+    userId: "sample-user-id-2",
+    interviewDate: null
   }
 ];
 
@@ -75,6 +83,9 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
   const [viewingResume, setViewingResume] = useState<string | null>(null)
+  const [interviewDate, setInterviewDate] = useState<Date | null>(null)
+  const [interviewTime, setInterviewTime] = useState<string>("09:00")
+  const [schedulingFor, setSchedulingFor] = useState<string | null>(null)
   
   useEffect(() => {
     if (isOpen) {
@@ -116,7 +127,8 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
         status: app.status || 'new',
         appliedAt: app.created_at,
         profileImage: app.profiles.avatar_url,
-        userId: app.profiles.id
+        userId: app.profiles.id,
+        interviewDate: app.interview_date || null
       })))
       */
       
@@ -212,6 +224,104 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
       setViewingResume(null)
     }
   }
+
+  const deleteRejectedApplicant = async (applicantId: string) => {
+    try {
+      // In a real implementation, you would delete the applicant from the database
+      /*
+      const { error } = await supabase
+        .from('job_applications')
+        .delete()
+        .eq('id', applicantId)
+        
+      if (error) throw error
+      */
+      
+      // Update local state to remove the applicant
+      setApplicants(prev => prev.filter(app => app.id !== applicantId))
+      
+      toast({
+        title: "Applicant Removed",
+        description: "The rejected applicant has been removed from the list.",
+      })
+    } catch (error: any) {
+      console.error('Error deleting applicant:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to delete applicant.",
+      })
+    }
+  }
+
+  const scheduleInterview = async (applicantId: string) => {
+    try {
+      if (!interviewDate) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please select a date for the interview.",
+        })
+        return
+      }
+
+      // Combine the date and time
+      const dateTime = new Date(interviewDate)
+      const [hours, minutes] = interviewTime.split(':').map(Number)
+      dateTime.setHours(hours, minutes)
+
+      // In a real implementation, you would update the database and send a notification
+      /*
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ 
+          interview_date: dateTime.toISOString(),
+          status: 'accepted'
+        })
+        .eq('id', applicantId)
+        
+      if (error) throw error
+
+      // Send notification to applicant
+      const applicant = applicants.find(app => app.id === applicantId)
+      if (applicant) {
+        await supabase.functions.invoke('notify-interview', {
+          body: { 
+            applicantEmail: applicant.email,
+            applicantName: `${applicant.firstName} ${applicant.lastName}`,
+            jobTitle: jobDetails?.title || 'Job Position',
+            interviewDate: dateTime.toISOString()
+          }
+        })
+      }
+      */
+      
+      // Update local state
+      setApplicants(prev => 
+        prev.map(app => 
+          app.id === applicantId 
+            ? { ...app, status: 'accepted', interviewDate: dateTime } 
+            : app
+        )
+      )
+
+      setSchedulingFor(null)
+      setInterviewDate(null)
+      setInterviewTime("09:00")
+      
+      toast({
+        title: "Interview Scheduled",
+        description: `Interview scheduled for ${format(dateTime, 'PPP')} at ${format(dateTime, 'p')}. The applicant has been notified.`,
+      })
+    } catch (error: any) {
+      console.error('Error scheduling interview:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to schedule interview.",
+      })
+    }
+  }
   
   const filteredApplicants = activeTab === "all" 
     ? applicants 
@@ -286,16 +396,25 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
                               </CardDescription>
                             </div>
                           </div>
-                          <Badge 
-                            variant={
-                              applicant.status === "accepted" ? "default" : 
-                              applicant.status === "rejected" ? "destructive" : 
-                              applicant.status === "reviewed" ? "secondary" : 
-                              "outline"
-                            }
-                          >
-                            {applicant.status.charAt(0).toUpperCase() + applicant.status.slice(1)}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={
+                                applicant.status === "accepted" ? "default" : 
+                                applicant.status === "rejected" ? "destructive" : 
+                                applicant.status === "reviewed" ? "secondary" : 
+                                "outline"
+                              }
+                            >
+                              {applicant.status.charAt(0).toUpperCase() + applicant.status.slice(1)}
+                            </Badge>
+                            
+                            {applicant.interviewDate && (
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {format(new Date(applicant.interviewDate), 'MMM d, h:mm a')}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </CardHeader>
                       
@@ -351,26 +470,89 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails }: JobResponsesProps)
                             )}
                           </Button>
                           
-                          {applicant.status !== 'accepted' && (
+                          {applicant.status !== 'accepted' && !applicant.interviewDate && (
+                            <>
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                className="gap-1.5"
+                                onClick={() => {
+                                  if (applicant.status === 'reviewed') {
+                                    setSchedulingFor(applicant.id)
+                                  } else {
+                                    updateApplicantStatus(applicant.id, 'accepted')
+                                  }
+                                }}
+                              >
+                                <CheckCircle className="h-3.5 w-3.5" /> 
+                                {applicant.status === 'reviewed' ? 'Schedule Interview' : 'Accept'}
+                              </Button>
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="gap-1.5 text-destructive border-destructive hover:bg-destructive/10"
+                                onClick={() => updateApplicantStatus(applicant.id, 'rejected')}
+                              >
+                                <XCircle className="h-3.5 w-3.5" /> Reject
+                              </Button>
+                            </>
+                          )}
+
+                          {applicant.status === 'rejected' && (
                             <Button 
-                              variant="default" 
+                              variant="destructive" 
                               size="sm" 
                               className="gap-1.5"
-                              onClick={() => updateApplicantStatus(applicant.id, 'accepted')}
+                              onClick={() => deleteRejectedApplicant(applicant.id)}
                             >
-                              <CheckCircle className="h-3.5 w-3.5" /> Accept
+                              <Trash className="h-3.5 w-3.5" /> Remove
                             </Button>
                           )}
-                          
-                          {applicant.status !== 'rejected' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="gap-1.5 text-destructive border-destructive hover:bg-destructive/10"
-                              onClick={() => updateApplicantStatus(applicant.id, 'rejected')}
-                            >
-                              <XCircle className="h-3.5 w-3.5" /> Reject
-                            </Button>
+
+                          {applicant.status === 'accepted' && !applicant.interviewDate && (
+                            <Popover open={schedulingFor === applicant.id} onOpenChange={(open) => !open && setSchedulingFor(null)}>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="gap-1.5"
+                                  onClick={() => setSchedulingFor(applicant.id)}
+                                >
+                                  <Calendar className="h-3.5 w-3.5" /> Schedule Interview
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-4" align="end">
+                                <div className="space-y-4">
+                                  <h4 className="font-medium">Schedule Interview</h4>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="date">Date</Label>
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={interviewDate}
+                                      onSelect={setInterviewDate}
+                                      disabled={(date) => date < new Date()}
+                                      className="border rounded-md"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="time">Time</Label>
+                                    <Input
+                                      id="time"
+                                      type="time"
+                                      value={interviewTime}
+                                      onChange={(e) => setInterviewTime(e.target.value)}
+                                    />
+                                  </div>
+                                  <Button 
+                                    className="w-full" 
+                                    onClick={() => scheduleInterview(applicant.id)}
+                                  >
+                                    Confirm & Notify
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           )}
                         </div>
                       </CardFooter>
