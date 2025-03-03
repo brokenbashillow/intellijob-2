@@ -117,12 +117,17 @@ const EmployerDashboard = () => {
     }
   }
 
+  const navigateToChat = (prompt?: string) => {
+    setCurrentView("chat")
+    // We'll pass the prompt in future enhancements
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case "chat":
         return <EmployerChat />
       case "job-postings":
-        return <JobPostings />
+        return <JobPostings onCreateWithAssistant={() => navigateToChat()} />
       case "resume-viewer":
         return <Resume />
       default:
@@ -140,6 +145,23 @@ const EmployerDashboard = () => {
                     {companyDescription || 
                       "Sample description of company. This is where you can add information about your organization, its mission, and what you're looking for in potential candidates."}
                   </p>
+                  <div className="mt-4 flex gap-4">
+                    <Button
+                      onClick={() => setCurrentView("job-postings")}
+                      className="flex items-center gap-2"
+                    >
+                      <BriefcaseIcon className="h-4 w-4" />
+                      View Job Postings
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentView("chat")}
+                      className="flex items-center gap-2"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Ask AI Assistant
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -218,23 +240,25 @@ const EmployerDashboard = () => {
         <div className="flex justify-end items-center p-4 border-b">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative hover:bg-accent"
-                  >
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      3
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Notifications coming soon</p>
-                </TooltipContent>
-              </Tooltip>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative hover:bg-accent"
+                    >
+                      <Bell className="h-5 w-5" />
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        3
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Notifications coming soon</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <span className="font-medium">{companyName}</span>
             <Avatar>

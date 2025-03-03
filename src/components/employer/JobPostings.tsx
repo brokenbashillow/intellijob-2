@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { ArrowRight, Check, Plus, Users } from "lucide-react"
+import { ArrowRight, Check, Plus, Users, MessageCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -28,7 +28,11 @@ interface JobPosting {
   status?: string
 }
 
-const JobPostings = () => {
+interface JobPostingsProps {
+  onCreateWithAssistant?: () => void;
+}
+
+const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   const { toast } = useToast()
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -142,9 +146,18 @@ const JobPostings = () => {
     <div className="flex-1 p-8">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold">Job Postings</h2>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Add New Job
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={onCreateWithAssistant}
+          >
+            <MessageCircle className="h-4 w-4" /> Create with Assistant
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Add New Job
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
