@@ -83,13 +83,29 @@ const JobPostings = () => {
         return
       }
 
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to create a job posting."
+        })
+        return
+      }
+
       // Save to Supabase
       const { data, error } = await supabase
         .from('job_postings')
-        .insert([{
-          ...newJob,
+        .insert({
+          title: newJob.title,
+          description: newJob.description,
+          requirements: newJob.requirements,
+          field: newJob.field,
           responses: 0,
-        }])
+          employer_id: user.id
+        })
         .select()
 
       if (error) throw error

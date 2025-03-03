@@ -10,6 +10,7 @@ import JobTitleBadges from "./JobTitleBadges"
 import JobFeedback from "./JobFeedback"
 
 interface Job {
+  id: string
   title: string
   company: string
   location: string
@@ -68,7 +69,13 @@ const RecommendedJobs = () => {
           console.warn("All jobs are fallbacks with error:", data.error);
         }
         
-        setJobs(data.jobs);
+        // Ensure all jobs have the required id property
+        const validatedJobs = data.jobs.map((job: any) => ({
+          ...job,
+          id: job.id || `fallback-${Math.random().toString(36).substr(2, 9)}`
+        }));
+        
+        setJobs(validatedJobs);
         if (data.jobTitles && Array.isArray(data.jobTitles)) {
           setJobTitles(data.jobTitles);
         }
@@ -90,8 +97,10 @@ const RecommendedJobs = () => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
+      // Fallback jobs with id property
       setJobs([
         { 
+          id: "fallback-1",
           title: "Frontend Developer", 
           company: "Tech Solutions Inc",
           location: "San Francisco, CA", 
@@ -101,6 +110,7 @@ const RecommendedJobs = () => {
           url: "#"
         },
         { 
+          id: "fallback-2",
           title: "UX/UI Designer", 
           company: "Creative Studio",
           location: "New York, NY", 
@@ -110,6 +120,7 @@ const RecommendedJobs = () => {
           url: "#"
         },
         { 
+          id: "fallback-3",
           title: "Full Stack Engineer", 
           company: "InnovateApp",
           location: "Remote", 

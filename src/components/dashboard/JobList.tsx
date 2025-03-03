@@ -3,7 +3,24 @@ import { useEffect, useState } from "react"
 import JobCard from "./JobCard"
 import { supabase } from "@/integrations/supabase/client"
 
-interface Job {
+interface JobPosting {
+  id: string
+  title: string
+  company?: string
+  location?: string
+  description?: string
+  postedAt?: string
+  platform?: string
+  url?: string
+  field?: string
+  score?: number
+  reason?: string
+  created_at?: string
+  requirements?: string
+}
+
+// Interface that matches what the RecommendedJobs component expects
+interface RecommendedJob {
   id: string
   title: string
   company: string
@@ -18,7 +35,7 @@ interface Job {
 }
 
 interface JobListProps {
-  jobs: Job[]
+  jobs: RecommendedJob[]
   title: string
   titleClassName?: string
   userFields?: string[] // User's fields of interest/expertise
@@ -32,7 +49,7 @@ const JobList = ({
   userFields = [],
   fetchFromDatabase = false
 }: JobListProps) => {
-  const [jobs, setJobs] = useState<Job[]>(initialJobs)
+  const [jobs, setJobs] = useState<RecommendedJob[]>(initialJobs)
   const [isLoading, setIsLoading] = useState(fetchFromDatabase)
 
   // Fetch jobs from database if fetchFromDatabase is true
@@ -53,14 +70,14 @@ const JobList = ({
       if (error) throw error
       
       if (data) {
-        // Map the job_postings data to the Job interface
-        const mappedJobs = data.map(post => ({
+        // Map the job_postings data to the RecommendedJob interface
+        const mappedJobs: RecommendedJob[] = data.map(post => ({
           id: post.id,
           title: post.title,
           company: "Company Name", // This would ideally come from the employer profile
           location: "Remote", // Default location
           description: post.description || "",
-          postedAt: post.created_at,
+          postedAt: post.created_at || new Date().toISOString(),
           platform: "IntelliJob",
           url: `/job/${post.id}`,
           field: post.field,

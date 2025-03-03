@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Badge } from "@/components/ui/badge"
 
 interface Job {
+  id: string
   title: string
   company: string
   location: string
@@ -13,6 +14,7 @@ interface Job {
   url: string
   score?: number
   reason?: string
+  requirements?: string
 }
 
 const formatDate = (dateString: string) => {
