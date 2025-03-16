@@ -20,73 +20,156 @@ interface Job {
   url: string
   score?: number
   reason?: string
+  field?: string
+}
+
+interface Skill {
+  name: string
+  level?: string
+  category?: string
 }
 
 const RecommendedJobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobTitles, setJobTitles] = useState<string[]>([]);
+  const [userFields, setUserFields] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [apiErrorDetails, setApiErrorDetails] = useState<string | null>(null);
   const { toast } = useToast();
-  const { personalDetails } = useResumeData();
+  const { personalDetails, skills, workExperience } = useResumeData();
+
+  // Extract user skills and fields of interest from resume data
+  useEffect(() => {
+    if (skills && skills.length > 0) {
+      const skillNames = skills.map((skill: Skill) => skill.name);
+      const categories = skills
+        .filter((skill: Skill) => skill.category)
+        .map((skill: Skill) => skill.category as string);
+      
+      // Combine skills and categories into fields
+      const fields = [...new Set([...skillNames, ...categories])];
+      setUserFields(fields);
+      
+      // Set common job titles based on skills
+      const technicalSkills = skills.filter((skill: Skill) => 
+        ['programming', 'development', 'technical', 'data', 'engineering'].some(
+          keyword => skill.category?.toLowerCase().includes(keyword) || 
+                    skill.name.toLowerCase().includes(keyword)
+        )
+      );
+      
+      if (technicalSkills.length > 3) {
+        setJobTitles(prev => [...new Set([...prev, 'Software Developer', 'Full Stack Developer', 'Data Analyst'])]);
+      }
+      
+      if (skills.some((skill: Skill) => 
+        skill.name.toLowerCase().includes('customer') || 
+        skill.name.toLowerCase().includes('support') ||
+        skill.name.toLowerCase().includes('service')
+      )) {
+        setJobTitles(prev => [...new Set([...prev, 'Customer Service Representative', 'Customer Support Specialist'])]);
+      }
+    }
+    
+    // Extract job titles from work experience
+    if (workExperience && workExperience.length > 0) {
+      const titles = workExperience.map(exp => exp.title || '').filter(Boolean);
+      if (titles.length > 0) {
+        setJobTitles(prev => [...new Set([...prev, ...titles])]);
+      }
+    }
+  }, [skills, workExperience]);
 
   const fetchRecommendedJobs = async () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      setApiErrorDetails(null);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      console.log("Calling recommend-jobs function with userId:", user.id);
-      
-      const { data, error } = await supabase.functions.invoke('recommend-jobs', {
-        body: { userId: user.id }
-      });
+      // Fetch all jobs from our database
+      const { data, error } = await supabase
+        .from('job_postings')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Function error:", error);
-        throw new Error(`Error calling recommend-jobs function: ${error.message}`);
+        console.error("Database error:", error);
+        throw new Error(`Error fetching jobs: ${error.message}`);
       }
       
-      if (!data) {
-        throw new Error("No data returned from the recommend-jobs function");
+      if (!data || data.length === 0) {
+        throw new Error("No jobs found in the database");
       }
       
-      console.log("Jobs API response:", data);
+      // Map the database jobs to our Job interface
+      const mappedJobs: Job[] = data.map(job => ({
+        id: job.id,
+        title: job.title,
+        company: "IntelliJob", // Standard company name for all internal jobs
+        location: "Remote", // Default location
+        description: job.description || "No description provided",
+        postedAt: job.created_at || new Date().toISOString(),
+        platform: "IntelliJob",
+        url: `/job/${job.id}`,
+        field: job.field,
+        // If we have user fields, add a reason for recommendation if there's a match
+        reason: userFields.some(field => 
+          job.field?.toLowerCase().includes(field.toLowerCase()) ||
+          (field && job.title.toLowerCase().includes(field.toLowerCase()))
+        ) ? `Matched to your experience in ${userFields.find(field => 
+            job.field?.toLowerCase().includes(field.toLowerCase()) ||
+            (field && job.title.toLowerCase().includes(field.toLowerCase()))
+          )}` : undefined
+      }));
       
-      if (data.jobs && data.jobs.length > 0) {
-        const allFallbacks = data.jobs.every((job: Job) => job.platform === "Example" || job.platform === "fallback");
+      // Score jobs based on match with user fields and skills
+      const scoredJobs = mappedJobs.map(job => {
+        let score = 0;
         
-        if (allFallbacks && data.error) {
-          setApiErrorDetails(`API Error: ${data.error}`);
-          console.warn("All jobs are fallbacks with error:", data.error);
+        // Score based on field match
+        if (job.field && userFields.some(field => 
+          job.field?.toLowerCase().includes(field.toLowerCase()) ||
+          field.toLowerCase().includes(job.field?.toLowerCase() || '')
+        )) {
+          score += 5;
         }
         
-        // Ensure all jobs have the required id property
-        const validatedJobs = data.jobs.map((job: any) => ({
-          ...job,
-          id: job.id || `fallback-${Math.random().toString(36).substr(2, 9)}`
-        }));
-        
-        setJobs(validatedJobs);
-        if (data.jobTitles && Array.isArray(data.jobTitles)) {
-          setJobTitles(data.jobTitles);
+        // Score based on title match with job titles extracted from experience
+        if (jobTitles.some(title => 
+          job.title.toLowerCase().includes(title.toLowerCase()) ||
+          title.toLowerCase().includes(job.title.toLowerCase())
+        )) {
+          score += 3;
         }
-      } else {
-        setJobs(data.jobs || []);
-        setErrorMessage("No job recommendations found that match your profile. We're showing some default suggestions instead.");
-      }
+        
+        // Score based on skill matches in description or requirements
+        if (skills && skills.length > 0) {
+          const skillNames = skills.map((skill: Skill) => skill.name.toLowerCase());
+          const jobText = `${job.title} ${job.description} ${job.field || ''}`.toLowerCase();
+          
+          skillNames.forEach(skill => {
+            if (jobText.includes(skill)) {
+              score += 1;
+            }
+          });
+        }
+        
+        return { ...job, score };
+      });
       
-      if (data.error) {
-        console.warn("API returned an error but also fallback data:", data.error);
-        setErrorMessage(`Note: Using fallback job recommendations. (${data.error})`);
+      // Sort by score (highest first)
+      scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
+      
+      setJobs(scoredJobs);
+      
+      // If we don't have job titles yet, extract them from top scoring jobs
+      if (jobTitles.length === 0 && scoredJobs.length > 0) {
+        const topJobTitles = scoredJobs
+          .slice(0, 3)
+          .map(job => job.title)
+          .filter(Boolean);
+        
+        setJobTitles(topJobTitles);
       }
     } catch (error: any) {
       console.error("Error fetching recommended jobs:", error);
@@ -97,14 +180,14 @@ const RecommendedJobs = () => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
-      // Fallback jobs with id property
+      // Set default jobs if we couldn't fetch from database
       setJobs([
         { 
           id: "fallback-1",
           title: "Frontend Developer", 
-          company: "Tech Solutions Inc",
-          location: "San Francisco, CA", 
-          description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies. Remote options available.",
+          company: "IntelliJob",
+          location: "Remote", 
+          description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#"
@@ -112,9 +195,9 @@ const RecommendedJobs = () => {
         { 
           id: "fallback-2",
           title: "UX/UI Designer", 
-          company: "Creative Studio",
-          location: "New York, NY", 
-          description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for our clients' digital products.",
+          company: "IntelliJob",
+          location: "Remote", 
+          description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for digital products.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#"
@@ -122,9 +205,9 @@ const RecommendedJobs = () => {
         { 
           id: "fallback-3",
           title: "Full Stack Engineer", 
-          company: "InnovateApp",
+          company: "IntelliJob",
           location: "Remote", 
-          description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing engineering team.",
+          description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing team.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#"
@@ -147,7 +230,7 @@ const RecommendedJobs = () => {
 
   useEffect(() => {
     fetchRecommendedJobs();
-  }, [toast, personalDetails]);
+  }, [userFields]);
 
   if (isLoading) {
     return (
@@ -160,8 +243,9 @@ const RecommendedJobs = () => {
     );
   }
 
-  const liveJobs = jobs.filter(job => job.platform !== "Example" && job.platform !== "fallback");
-  const fallbackJobs = jobs.filter(job => job.platform === "Example" || job.platform === "fallback");
+  // Separate jobs into recommended (high scoring) and other jobs
+  const recommendedJobs = jobs.filter(job => (job.score || 0) > 2);
+  const otherJobs = jobs.filter(job => (job.score || 0) <= 2);
 
   return (
     <section className="mt-6">
@@ -184,21 +268,20 @@ const RecommendedJobs = () => {
         </div>
       )}
       
-      {apiErrorDetails && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-          {apiErrorDetails}
-          <p className="mt-2 text-xs">Using fallback job recommendations due to API error.</p>
-        </div>
-      )}
-      
       <JobTitleBadges jobTitles={jobTitles} />
       
-      {liveJobs.length > 0 && <JobList jobs={liveJobs} title="Live Job Listings" />}
-      
-      {fallbackJobs.length > 0 && (
+      {recommendedJobs.length > 0 && (
         <JobList 
-          jobs={fallbackJobs} 
-          title="Example Job Listings" 
+          jobs={recommendedJobs} 
+          title="Recommended Job Matches" 
+          userFields={userFields} 
+        />
+      )}
+      
+      {otherJobs.length > 0 && (
+        <JobList 
+          jobs={otherJobs.slice(0, 6)} 
+          title="Other Available Positions" 
           titleClassName="text-muted-foreground" 
         />
       )}

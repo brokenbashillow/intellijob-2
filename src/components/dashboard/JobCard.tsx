@@ -15,6 +15,7 @@ interface Job {
   score?: number
   reason?: string
   requirements?: string
+  field?: string
 }
 
 const formatDate = (dateString: string) => {
@@ -38,6 +39,11 @@ const JobCard = ({ job }: { job: Job }) => {
               {job.company}
             </Badge>
           </div>
+          {job.field && (
+            <Badge variant="secondary" className="bg-secondary/30 text-xs">
+              {job.field}
+            </Badge>
+          )}
           <p className="text-sm text-muted-foreground line-clamp-3">
             {job.description}
           </p>
@@ -45,6 +51,13 @@ const JobCard = ({ job }: { job: Job }) => {
             <p className="text-xs text-primary italic mt-2 line-clamp-2">
               {job.reason}
             </p>
+          )}
+          {job.score && job.score > 5 && (
+            <div className="mt-2 flex items-center gap-1">
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                Strong match
+              </span>
+            </div>
           )}
           {(job.platform === "Example" || job.platform === "fallback") && (
             <p className="text-xs text-amber-500 mt-2">

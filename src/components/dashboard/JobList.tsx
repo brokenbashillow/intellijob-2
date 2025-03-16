@@ -40,6 +40,7 @@ interface JobListProps {
   titleClassName?: string
   userFields?: string[] // User's fields of interest/expertise
   fetchFromDatabase?: boolean // Whether to fetch jobs from database
+  limit?: number // Optional limit on number of jobs to display
 }
 
 const JobList = ({ 
@@ -47,7 +48,8 @@ const JobList = ({
   title, 
   titleClassName = "text-primary", 
   userFields = [],
-  fetchFromDatabase = false
+  fetchFromDatabase = false,
+  limit
 }: JobListProps) => {
   const [jobs, setJobs] = useState<RecommendedJob[]>(initialJobs)
   const [isLoading, setIsLoading] = useState(fetchFromDatabase)
@@ -57,15 +59,22 @@ const JobList = ({
     if (fetchFromDatabase) {
       fetchJobPostings()
     }
-  }, [fetchFromDatabase])
+  }, [fetchFromDatabase, limit])
 
   const fetchJobPostings = async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase
+      let query = supabase
         .from('job_postings')
         .select('*')
         .order('created_at', { ascending: false })
+      
+      // Apply limit if specified
+      if (limit) {
+        query = query.limit(limit)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       
@@ -74,7 +83,7 @@ const JobList = ({
         const mappedJobs: RecommendedJob[] = data.map(post => ({
           id: post.id,
           title: post.title,
-          company: "Company Name", // This would ideally come from the employer profile
+          company: "IntelliJob", // Standard company name for internal postings
           location: "Remote", // Default location
           description: post.description || "",
           postedAt: post.created_at || new Date().toISOString(),
