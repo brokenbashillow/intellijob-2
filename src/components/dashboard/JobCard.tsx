@@ -24,6 +24,10 @@ const formatDate = (dateString: string) => {
 }
 
 const JobCard = ({ job }: { job: Job }) => {
+  // Clean location to remove any hash-like IDs
+  const cleanLocation = job.location === "Remote" ? "Remote" : 
+    job.location?.replace(/^[a-f0-9-]+\s*/i, "").trim() || "Remote";
+
   return (
     <Card className="hover:shadow-lg transition-shadow flex flex-col">
       <CardHeader className="pb-2 border-b">
@@ -33,7 +37,7 @@ const JobCard = ({ job }: { job: Job }) => {
         <div className="space-y-3">
           <div className="flex items-start justify-between flex-wrap gap-2">
             <Badge variant="outline" className="text-xs font-normal">
-              {job.location}
+              {cleanLocation}
             </Badge>
             <Badge className="bg-primary text-white">
               {job.company}
