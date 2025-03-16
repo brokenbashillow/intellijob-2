@@ -54,6 +54,7 @@ const RecommendedJobs = () => {
       setIsLoading(true);
       setErrorMessage(null);
       
+      // Fetch all job postings from the database
       const { data, error } = await supabase
         .from('job_postings')
         .select('*')
@@ -68,35 +69,38 @@ const RecommendedJobs = () => {
         throw new Error("No jobs found in the database");
       }
       
+      // Map the database job postings to our Job interface
       const mappedJobs: Job[] = data.map(job => ({
         id: job.id,
-        title: job.title,
-        company: "IntelliJob",
-        location: "Remote",
+        title: job.title || "Untitled Position",
+        company: "IntelliJob",  // Default company name
+        location: "Remote",     // Default location
         description: job.description || "No description provided",
         postedAt: job.created_at || new Date().toISOString(),
         platform: "IntelliJob",
         url: `/job/${job.id}`,
-        field: job.field,
-        reason: userFields.some(field => 
-          job.field?.toLowerCase().includes(field.toLowerCase()) ||
-          (field && job.title.toLowerCase().includes(field.toLowerCase()))
-        ) ? `Matched to your experience in ${userFields.find(field => 
-            job.field?.toLowerCase().includes(field.toLowerCase()) ||
-            (field && job.title.toLowerCase().includes(field.toLowerCase()))
-          )}` : undefined
+        field: job.field
       }));
       
+      // Score the jobs based on user skills and experience
       const scoredJobs = mappedJobs.map(job => {
         let score = 0;
+        let matchReason = "";
         
+        // Check if job field matches user fields
         if (job.field && userFields.some(field => 
           job.field?.toLowerCase().includes(field.toLowerCase()) ||
           field.toLowerCase().includes(job.field?.toLowerCase() || '')
         )) {
           score += 5;
+          const matchedField = userFields.find(field => 
+            job.field?.toLowerCase().includes(field.toLowerCase()) ||
+            field.toLowerCase().includes(job.field?.toLowerCase() || '')
+          );
+          matchReason = `Matched to your experience in ${matchedField}`;
         }
         
+        // Check if job title matches user work experience
         if (workExperience && workExperience.length > 0) {
           const jobTitles = workExperience.map(exp => exp.title || '').filter(Boolean);
           
@@ -105,23 +109,42 @@ const RecommendedJobs = () => {
             title.toLowerCase().includes(job.title.toLowerCase())
           )) {
             score += 3;
+            if (!matchReason) {
+              const matchedTitle = jobTitles.find(title => 
+                job.title.toLowerCase().includes(title.toLowerCase()) ||
+                title.toLowerCase().includes(job.title.toLowerCase())
+              );
+              matchReason = `Relevant to your experience as ${matchedTitle}`;
+            }
           }
         }
         
+        // Check if job mentions user skills
         if (skills && skills.length > 0) {
           const skillNames = skills.map((skill: Skill) => skill.name.toLowerCase());
           const jobText = `${job.title} ${job.description} ${job.field || ''}`.toLowerCase();
           
+          const matchedSkills: string[] = [];
           skillNames.forEach(skill => {
             if (jobText.includes(skill)) {
               score += 1;
+              matchedSkills.push(skill);
             }
           });
+          
+          if (matchedSkills.length > 0 && !matchReason) {
+            matchReason = `Uses your skills: ${matchedSkills.slice(0, 2).join(', ')}${matchedSkills.length > 2 ? '...' : ''}`;
+          }
         }
         
-        return { ...job, score };
+        return { 
+          ...job, 
+          score,
+          reason: matchReason || "Potential match based on your profile"
+        };
       });
       
+      // Sort jobs by score in descending order
       scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
       
       setJobs(scoredJobs);
@@ -134,6 +157,7 @@ const RecommendedJobs = () => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
+      // Set fallback jobs if we can't fetch from the database
       setJobs([
         { 
           id: "fallback-1",
