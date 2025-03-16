@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { useResumeData } from "@/hooks/useResumeData"
 import JobList from "./JobList"
-import JobTitleBadges from "./JobTitleBadges"
 import JobFeedback from "./JobFeedback"
 
 interface Job {
@@ -31,13 +30,12 @@ interface Skill {
 
 const RecommendedJobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [jobTitles, setJobTitles] = useState<string[]>([]);
-  const [userFields, setUserFields] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
   const { personalDetails, skills, workExperience } = useResumeData();
+  const [userFields, setUserFields] = useState<string[]>([]);
 
   useEffect(() => {
     if (skills && skills.length > 0) {
@@ -48,36 +46,10 @@ const RecommendedJobs = () => {
       
       const fields = [...new Set([...skillNames, ...categories])];
       setUserFields(fields);
-      
-      const technicalSkills = skills.filter((skill: Skill) => 
-        ['programming', 'development', 'technical', 'data', 'engineering'].some(
-          keyword => skill.category?.toLowerCase().includes(keyword) || 
-                    skill.name.toLowerCase().includes(keyword)
-        )
-      );
-      
-      if (technicalSkills.length > 3) {
-        setJobTitles(prev => [...new Set([...prev, 'Software Developer', 'Full Stack Developer', 'Data Analyst'])]);
-      }
-      
-      if (skills.some((skill: Skill) => 
-        skill.name.toLowerCase().includes('customer') || 
-        skill.name.toLowerCase().includes('support') ||
-        skill.name.toLowerCase().includes('service')
-      )) {
-        setJobTitles(prev => [...new Set([...prev, 'Customer Service Representative', 'Customer Support Specialist'])]);
-      }
     }
-    
-    if (workExperience && workExperience.length > 0) {
-      const titles = workExperience.map(exp => exp.title || '').filter(Boolean);
-      if (titles.length > 0) {
-        setJobTitles(prev => [...new Set([...prev, ...titles])]);
-      }
-    }
-  }, [skills, workExperience]);
+  }, [skills]);
 
-  const fetchRecommendedJobs = async () => {
+  const fetchJobPostings = async () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
@@ -125,11 +97,15 @@ const RecommendedJobs = () => {
           score += 5;
         }
         
-        if (jobTitles.some(title => 
-          job.title.toLowerCase().includes(title.toLowerCase()) ||
-          title.toLowerCase().includes(job.title.toLowerCase())
-        )) {
-          score += 3;
+        if (workExperience && workExperience.length > 0) {
+          const jobTitles = workExperience.map(exp => exp.title || '').filter(Boolean);
+          
+          if (jobTitles.some(title => 
+            job.title.toLowerCase().includes(title.toLowerCase()) ||
+            title.toLowerCase().includes(job.title.toLowerCase())
+          )) {
+            score += 3;
+          }
         }
         
         if (skills && skills.length > 0) {
@@ -149,15 +125,6 @@ const RecommendedJobs = () => {
       scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
       
       setJobs(scoredJobs);
-      
-      if (jobTitles.length === 0 && scoredJobs.length > 0) {
-        const topJobTitles = scoredJobs
-          .slice(0, 3)
-          .map(job => job.title)
-          .filter(Boolean);
-        
-        setJobTitles(topJobTitles);
-      }
     } catch (error: any) {
       console.error("Error fetching recommended jobs:", error);
       setErrorMessage("Failed to load job recommendations. Using default suggestions instead.");
@@ -199,10 +166,6 @@ const RecommendedJobs = () => {
           url: "#"
         },
       ]);
-      
-      if (jobTitles.length === 0) {
-        setJobTitles(["Software Developer", "Web Developer", "Frontend Developer"]);
-      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -211,11 +174,11 @@ const RecommendedJobs = () => {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchRecommendedJobs();
+    fetchJobPostings();
   };
 
   useEffect(() => {
-    fetchRecommendedJobs();
+    fetchJobPostings();
   }, [userFields]);
 
   if (isLoading) {
@@ -253,8 +216,6 @@ const RecommendedJobs = () => {
         </div>
       )}
       
-      <JobTitleBadges jobTitles={jobTitles} />
-      
       {recommendedJobs.length > 0 ? (
         <JobList 
           jobs={recommendedJobs} 
@@ -267,7 +228,7 @@ const RecommendedJobs = () => {
         </div>
       )}
       
-      <JobFeedback jobTitles={jobTitles} />
+      <JobFeedback />
     </section>
   );
 };
