@@ -30,9 +30,11 @@ export const useJobRecommendations = () => {
   useEffect(() => {
     if (skills && skills.length > 0) {
       const skillNames = skills.map((skill) => skill.name);
+      // Update this section to match the SkillItem type which doesn't have a 'category' property
+      // Instead, use the 'type' property which is defined in the SkillItem interface
       const categories = skills
-        .filter((skill) => skill.category)
-        .map((skill) => skill.category as string);
+        .filter((skill) => skill.type)
+        .map((skill) => skill.type);
       
       const fields = [...new Set([...skillNames, ...categories])];
       setUserFields(fields);
