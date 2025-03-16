@@ -86,8 +86,8 @@ const JobList = ({
         const mappedJobs: RecommendedJob[] = data.map(post => ({
           id: post.id,
           title: post.title,
-          company: post.company_name || "IntelliJob", // Use company name if available
-          location: post.location || "Remote", // Default location
+          company: "IntelliJob", // Default company name since we don't have company_name field
+          location: "Remote", // Default location
           description: post.description || "",
           postedAt: post.created_at || new Date().toISOString(),
           platform: "IntelliJob",
