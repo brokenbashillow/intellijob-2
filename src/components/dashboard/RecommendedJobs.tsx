@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react"
 import { Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -39,7 +38,6 @@ const RecommendedJobs = () => {
   const { toast } = useToast();
   const { personalDetails, skills, workExperience } = useResumeData();
 
-  // Extract user skills and fields of interest from resume data
   useEffect(() => {
     if (skills && skills.length > 0) {
       const skillNames = skills.map((skill: Skill) => skill.name);
@@ -47,11 +45,9 @@ const RecommendedJobs = () => {
         .filter((skill: Skill) => skill.category)
         .map((skill: Skill) => skill.category as string);
       
-      // Combine skills and categories into fields
       const fields = [...new Set([...skillNames, ...categories])];
       setUserFields(fields);
       
-      // Set common job titles based on skills
       const technicalSkills = skills.filter((skill: Skill) => 
         ['programming', 'development', 'technical', 'data', 'engineering'].some(
           keyword => skill.category?.toLowerCase().includes(keyword) || 
@@ -72,7 +68,6 @@ const RecommendedJobs = () => {
       }
     }
     
-    // Extract job titles from work experience
     if (workExperience && workExperience.length > 0) {
       const titles = workExperience.map(exp => exp.title || '').filter(Boolean);
       if (titles.length > 0) {
@@ -86,7 +81,6 @@ const RecommendedJobs = () => {
       setIsLoading(true);
       setErrorMessage(null);
       
-      // Fetch all jobs from our database
       const { data, error } = await supabase
         .from('job_postings')
         .select('*')
@@ -101,18 +95,16 @@ const RecommendedJobs = () => {
         throw new Error("No jobs found in the database");
       }
       
-      // Map the database jobs to our Job interface
       const mappedJobs: Job[] = data.map(job => ({
         id: job.id,
         title: job.title,
-        company: "IntelliJob", // Standard company name for all internal jobs
-        location: "Remote", // Default location
+        company: "IntelliJob",
+        location: "Remote",
         description: job.description || "No description provided",
         postedAt: job.created_at || new Date().toISOString(),
         platform: "IntelliJob",
         url: `/job/${job.id}`,
         field: job.field,
-        // If we have user fields, add a reason for recommendation if there's a match
         reason: userFields.some(field => 
           job.field?.toLowerCase().includes(field.toLowerCase()) ||
           (field && job.title.toLowerCase().includes(field.toLowerCase()))
@@ -122,11 +114,9 @@ const RecommendedJobs = () => {
           )}` : undefined
       }));
       
-      // Score jobs based on match with user fields and skills
       const scoredJobs = mappedJobs.map(job => {
         let score = 0;
         
-        // Score based on field match
         if (job.field && userFields.some(field => 
           job.field?.toLowerCase().includes(field.toLowerCase()) ||
           field.toLowerCase().includes(job.field?.toLowerCase() || '')
@@ -134,7 +124,6 @@ const RecommendedJobs = () => {
           score += 5;
         }
         
-        // Score based on title match with job titles extracted from experience
         if (jobTitles.some(title => 
           job.title.toLowerCase().includes(title.toLowerCase()) ||
           title.toLowerCase().includes(job.title.toLowerCase())
@@ -142,7 +131,6 @@ const RecommendedJobs = () => {
           score += 3;
         }
         
-        // Score based on skill matches in description or requirements
         if (skills && skills.length > 0) {
           const skillNames = skills.map((skill: Skill) => skill.name.toLowerCase());
           const jobText = `${job.title} ${job.description} ${job.field || ''}`.toLowerCase();
@@ -157,12 +145,10 @@ const RecommendedJobs = () => {
         return { ...job, score };
       });
       
-      // Sort by score (highest first)
       scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
       
       setJobs(scoredJobs);
       
-      // If we don't have job titles yet, extract them from top scoring jobs
       if (jobTitles.length === 0 && scoredJobs.length > 0) {
         const topJobTitles = scoredJobs
           .slice(0, 3)
@@ -180,7 +166,6 @@ const RecommendedJobs = () => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
-      // Set default jobs if we couldn't fetch from database
       setJobs([
         { 
           id: "fallback-1",
@@ -243,9 +228,7 @@ const RecommendedJobs = () => {
     );
   }
 
-  // Separate jobs into recommended (high scoring) and other jobs
-  const recommendedJobs = jobs.filter(job => (job.score || 0) > 2);
-  const otherJobs = jobs.filter(job => (job.score || 0) <= 2);
+  const recommendedJobs = jobs.slice(0, 3);
 
   return (
     <section className="mt-6">
@@ -270,23 +253,13 @@ const RecommendedJobs = () => {
       
       <JobTitleBadges jobTitles={jobTitles} />
       
-      {recommendedJobs.length > 0 && (
+      {recommendedJobs.length > 0 ? (
         <JobList 
           jobs={recommendedJobs} 
-          title="Recommended Job Matches" 
+          title="Top Matches For You" 
           userFields={userFields} 
         />
-      )}
-      
-      {otherJobs.length > 0 && (
-        <JobList 
-          jobs={otherJobs.slice(0, 6)} 
-          title="Other Available Positions" 
-          titleClassName="text-muted-foreground" 
-        />
-      )}
-      
-      {jobs.length === 0 && (
+      ) : (
         <div className="text-center py-12 text-muted-foreground">
           No job recommendations found. Try refreshing or update your profile with more details.
         </div>

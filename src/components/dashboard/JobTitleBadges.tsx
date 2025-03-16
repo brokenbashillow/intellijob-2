@@ -10,7 +10,6 @@ const JobTitleBadges = ({ jobTitles }: JobTitleBadgesProps) => {
 
   return (
     <div className="mb-4">
-      <p className="text-sm text-muted-foreground mb-2">AI suggested job titles for your profile:</p>
       <div className="flex flex-wrap gap-2">
         {jobTitles.map((title, index) => (
           <Badge key={index} variant="secondary">
