@@ -54,6 +54,8 @@ const RecommendedJobs = () => {
       setIsLoading(true);
       setErrorMessage(null);
       
+      console.log("Fetching job postings...");
+      
       // Fetch all job postings from the database
       const { data, error } = await supabase
         .from('job_postings')
@@ -65,22 +67,29 @@ const RecommendedJobs = () => {
         throw new Error(`Error fetching jobs: ${error.message}`);
       }
       
+      console.log("Job postings fetched:", data ? data.length : 0);
+      
       if (!data || data.length === 0) {
-        throw new Error("No jobs found in the database");
+        console.log("No jobs found, creating fallback jobs");
+        // Instead of throwing an error, use fallback data directly
+        setFallbackJobs();
+        return;
       }
       
       // Map the database job postings to our Job interface
       const mappedJobs: Job[] = data.map(job => ({
         id: job.id,
         title: job.title || "Untitled Position",
-        company: "IntelliJob",  // Default company name
-        location: "Remote",     // Default location
+        company: job.company_name || "IntelliJob",  // Use company_name if available
+        location: job.location || "Remote",     // Use location if available
         description: job.description || "No description provided",
         postedAt: job.created_at || new Date().toISOString(),
         platform: "IntelliJob",
         url: `/job/${job.id}`,
         field: job.field
       }));
+      
+      console.log("Mapped jobs:", mappedJobs.length);
       
       // Score the jobs based on user skills and experience
       const scoredJobs = mappedJobs.map(job => {
@@ -146,6 +155,7 @@ const RecommendedJobs = () => {
       
       // Sort jobs by score in descending order
       scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
+      console.log("Scored and sorted jobs:", scoredJobs.length);
       
       setJobs(scoredJobs);
     } catch (error: any) {
@@ -158,42 +168,50 @@ const RecommendedJobs = () => {
       });
       
       // Set fallback jobs if we can't fetch from the database
-      setJobs([
-        { 
-          id: "fallback-1",
-          title: "Frontend Developer", 
-          company: "IntelliJob",
-          location: "Remote", 
-          description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies.",
-          postedAt: new Date().toISOString(), 
-          platform: "fallback",
-          url: "#"
-        },
-        { 
-          id: "fallback-2",
-          title: "UX/UI Designer", 
-          company: "IntelliJob",
-          location: "Remote", 
-          description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for digital products.",
-          postedAt: new Date().toISOString(), 
-          platform: "fallback",
-          url: "#"
-        },
-        { 
-          id: "fallback-3",
-          title: "Full Stack Engineer", 
-          company: "IntelliJob",
-          location: "Remote", 
-          description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing team.",
-          postedAt: new Date().toISOString(), 
-          platform: "fallback",
-          url: "#"
-        },
-      ]);
+      setFallbackJobs();
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
+  };
+
+  const setFallbackJobs = () => {
+    // Always set fallback jobs when there are no real ones
+    setJobs([
+      { 
+        id: "fallback-1",
+        title: "Frontend Developer", 
+        company: "IntelliJob",
+        location: "Remote", 
+        description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        reason: "Example job recommendation"
+      },
+      { 
+        id: "fallback-2",
+        title: "UX/UI Designer", 
+        company: "IntelliJob",
+        location: "Remote", 
+        description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for digital products.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        reason: "Example job recommendation"
+      },
+      { 
+        id: "fallback-3",
+        title: "Full Stack Engineer", 
+        company: "IntelliJob",
+        location: "Remote", 
+        description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing team.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        reason: "Example job recommendation"
+      },
+    ]);
   };
 
   const handleRefresh = () => {
@@ -216,8 +234,8 @@ const RecommendedJobs = () => {
     );
   }
 
-  // Only show the top 3 job recommendations
-  const recommendedJobs = jobs.slice(0, 3);
+  // Show fallback jobs if there are no recommended jobs
+  const recommendedJobs = jobs.length > 0 ? jobs.slice(0, 3) : [];
 
   return (
     <section className="mt-6">
@@ -247,8 +265,13 @@ const RecommendedJobs = () => {
           userFields={userFields} 
         />
       ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          No job recommendations found. Try refreshing or update your profile with more details.
+        <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
+          <p className="text-muted-foreground mb-3">No job recommendations found.</p>
+          <p className="text-sm text-muted-foreground mb-4">Try refreshing or update your profile with more details.</p>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Recommendations
+          </Button>
         </div>
       )}
       

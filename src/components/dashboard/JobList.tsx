@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import JobCard from "./JobCard"
 import { supabase } from "@/integrations/supabase/client"
+import { Loader2 } from "lucide-react"
 
 interface JobPosting {
   id: string
@@ -58,8 +59,10 @@ const JobList = ({
   useEffect(() => {
     if (fetchFromDatabase) {
       fetchJobPostings()
+    } else {
+      setJobs(initialJobs)
     }
-  }, [fetchFromDatabase, limit])
+  }, [fetchFromDatabase, limit, initialJobs])
 
   const fetchJobPostings = async () => {
     try {
@@ -83,8 +86,8 @@ const JobList = ({
         const mappedJobs: RecommendedJob[] = data.map(post => ({
           id: post.id,
           title: post.title,
-          company: "IntelliJob", // Standard company name for internal postings
-          location: "Remote", // Default location
+          company: post.company_name || "IntelliJob", // Use company name if available
+          location: post.location || "Remote", // Default location
           description: post.description || "",
           postedAt: post.created_at || new Date().toISOString(),
           platform: "IntelliJob",
@@ -97,6 +100,7 @@ const JobList = ({
       }
     } catch (error) {
       console.error("Error fetching job postings:", error)
+      setJobs([]) // Set empty array on error
     } finally {
       setIsLoading(false)
     }
@@ -119,7 +123,7 @@ const JobList = ({
       <>
         <h3 className={`text-lg font-medium mb-3 ${titleClassName}`}>{title}</h3>
         <div className="flex justify-center py-4">
-          <p>Loading jobs...</p>
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       </>
     )
@@ -132,7 +136,7 @@ const JobList = ({
       <h3 className={`text-lg font-medium mb-3 ${titleClassName}`}>{title}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         {filteredJobs.map((job, index) => (
-          <JobCard key={`${title.toLowerCase()}-${index}`} job={job} />
+          <JobCard key={`${job.id || `${title.toLowerCase()}-${index}`}`} job={job} />
         ))}
       </div>
     </>
