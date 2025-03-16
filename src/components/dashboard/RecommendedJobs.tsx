@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react"
 import { Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -228,6 +229,7 @@ const RecommendedJobs = () => {
     );
   }
 
+  // Only show the top 3 job recommendations
   const recommendedJobs = jobs.slice(0, 3);
 
   return (
