@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { supabase } from "@/integrations/supabase/client"
 import JobResponses from "./JobResponses"
+import JobTemplates from "./JobTemplates"
 
 interface JobPosting {
   id: string
@@ -37,6 +37,16 @@ interface JobPosting {
   responses: number
   status?: string
   accepted_count?: number
+}
+
+interface JobTemplate {
+  id: string
+  title: string
+  company: string
+  location: string
+  salary?: string
+  requirements?: string
+  field: string
 }
 
 interface JobPostingsProps {
@@ -56,6 +66,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     requirements: "",
     field: ""
   })
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
   
   useEffect(() => {
     fetchJobPostings()
@@ -91,7 +102,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
 
   const handleAddJob = async () => {
     try {
-      // Form validation
       if (!newJob.title.trim()) {
         toast({
           variant: "destructive",
@@ -101,7 +111,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         return
       }
 
-      // Get the current user
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -113,7 +122,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         return
       }
 
-      // Save to Supabase
       const { data, error } = await supabase
         .from('job_postings')
         .insert({
@@ -129,7 +137,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
 
       if (error) throw error
       
-      // Update the local state with the new job
       if (data && data.length > 0) {
         setJobPostings(prev => [data[0], ...prev])
       }
@@ -164,7 +171,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
 
       if (error) throw error
       
-      // Remove from local state
       setJobPostings(prev => prev.filter(job => job.id !== jobId))
       
       toast({
@@ -185,26 +191,21 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
 
   const handleInterviewScheduled = async (jobId: string) => {
     try {
-      // Find the job in the local state
       const job = jobPostings.find(j => j.id === jobId);
       if (!job) return;
 
-      // Calculate the new accepted count
       const newAcceptedCount = (job.accepted_count || 0) + 1;
       
-      // Update the job in the database
       const { error } = await supabase
         .from('job_postings')
         .update({ 
           accepted_count: newAcceptedCount,
-          // If 5 or more employees are accepted, mark the job as done
           ...(newAcceptedCount >= 5 ? { status: 'done' } : {})
         })
         .eq('id', jobId)
 
       if (error) throw error;
       
-      // Update the job in the local state
       setJobPostings(prev => prev.map(j => 
         j.id === jobId 
           ? { 
@@ -215,7 +216,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           : j
       ));
 
-      // If 5 employees have been accepted, show a toast notification
       if (newAcceptedCount >= 5) {
         toast({
           title: "Job Posting Closed",
@@ -232,11 +232,29 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     }
   };
 
+  const handleSelectTemplate = (template: JobTemplate) => {
+    setNewJob({
+      title: template.title,
+      description: `${template.company} - ${template.location}\n${template.salary ? `Salary: ${template.salary}\n` : ''}`,
+      requirements: template.requirements || "",
+      field: template.field
+    })
+    setIsTemplateDialogOpen(false)
+    setIsDialogOpen(true)
+  }
+
   return (
     <div className="flex-1 p-8">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold">Job Postings</h2>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => setIsTemplateDialogOpen(true)}
+          >
+            <Check className="h-4 w-4" /> Use Template
+          </Button>
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
@@ -308,7 +326,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         </div>
       )}
 
-      {/* Job creation dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -368,7 +385,15 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Job delete confirmation */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <JobTemplates 
+            onSelectTemplate={handleSelectTemplate} 
+            onClose={() => setIsTemplateDialogOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -389,7 +414,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Job responses dialog */}
       {selectedJob && (
         <JobResponses 
           jobId={selectedJob} 

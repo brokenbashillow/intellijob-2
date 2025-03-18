@@ -94,6 +94,39 @@ export type Database = {
           },
         ]
       }
+      job_templates: {
+        Row: {
+          company: string
+          created_at: string
+          field: string
+          id: string
+          location: string
+          requirements: string | null
+          salary: string | null
+          title: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          field: string
+          id?: string
+          location: string
+          requirements?: string | null
+          salary?: string | null
+          title: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          field?: string
+          id?: string
+          location?: string
+          requirements?: string | null
+          salary?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

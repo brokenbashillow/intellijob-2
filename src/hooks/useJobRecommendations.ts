@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,6 +16,7 @@ export interface Job {
   score?: number;
   reason?: string;
   field?: string;
+  salary?: string;
 }
 
 export const useJobRecommendations = () => {
@@ -47,43 +49,80 @@ export const useJobRecommendations = () => {
       
       console.log("Fetching job postings...");
       
-      // Fetch all job postings from the database
-      const { data, error } = await supabase
+      // First try to fetch job postings
+      const { data: jobPostingsData, error: jobPostingsError } = await supabase
         .from('job_postings')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Database error:", error);
-        throw new Error(`Error fetching jobs: ${error.message}`);
+      if (jobPostingsError) {
+        console.error("Job postings database error:", jobPostingsError);
+        throw new Error(`Error fetching jobs: ${jobPostingsError.message}`);
       }
       
-      console.log("Job postings fetched:", data ? data.length : 0);
+      // Then fetch job templates to supplement
+      const { data: jobTemplatesData, error: jobTemplatesError } = await supabase
+        .from('job_templates')
+        .select('*');
+        
+      if (jobTemplatesError) {
+        console.error("Job templates database error:", jobTemplatesError);
+      }
       
-      if (!data || data.length === 0) {
+      // Combine job postings and templates, with priority to real postings
+      let allJobsData = [];
+      
+      if (jobPostingsData && jobPostingsData.length > 0) {
+        console.log("Job postings fetched:", jobPostingsData.length);
+        
+        // Map job postings to our Job interface
+        const mappedJobPostings: Job[] = jobPostingsData.map(job => ({
+          id: job.id,
+          title: job.title || "Untitled Position",
+          company: job.employer_id || "IntelliJob", // Use employer_id as fallback
+          location: "Remote", // Default location since it doesn't exist in the table
+          description: job.description || "No description provided",
+          postedAt: job.created_at || new Date().toISOString(),
+          platform: "IntelliJob",
+          url: `/job/${job.id}`,
+          field: job.field
+        }));
+        
+        allJobsData = mappedJobPostings;
+      }
+      
+      // Add job templates if needed (only if we have few or no job postings)
+      if ((!jobPostingsData || jobPostingsData.length < 5) && jobTemplatesData && jobTemplatesData.length > 0) {
+        console.log("Adding job templates:", jobTemplatesData.length);
+        
+        // Map job templates to our Job interface
+        const mappedJobTemplates: Job[] = jobTemplatesData.map(template => ({
+          id: `template-${template.id}`,
+          title: template.title,
+          company: template.company,
+          location: template.location,
+          description: template.requirements || "No description provided",
+          postedAt: template.created_at || new Date().toISOString(),
+          platform: "Template",
+          url: "#", // Templates don't have a direct URL
+          field: template.field,
+          salary: template.salary
+        }));
+        
+        // Combine real postings with templates
+        allJobsData = [...allJobsData, ...mappedJobTemplates];
+      }
+      
+      if (allJobsData.length === 0) {
         console.log("No jobs found, creating fallback jobs");
-        // Instead of throwing an error, use fallback data directly
         setFallbackJobs();
         return;
       }
       
-      // Map the database job postings to our Job interface
-      const mappedJobs: Job[] = data.map(job => ({
-        id: job.id,
-        title: job.title || "Untitled Position",
-        company: job.employer_id || "IntelliJob", // Use employer_id as fallback
-        location: "Remote", // Default location since it doesn't exist in the table
-        description: job.description || "No description provided",
-        postedAt: job.created_at || new Date().toISOString(),
-        platform: "IntelliJob",
-        url: `/job/${job.id}`,
-        field: job.field
-      }));
-      
-      console.log("Mapped jobs:", mappedJobs.length);
+      console.log("Total jobs data combined:", allJobsData.length);
       
       // Score the jobs based on user skills and experience
-      const scoredJobs = mappedJobs.map(job => {
+      const scoredJobs = allJobsData.map(job => {
         let score = 0;
         let matchReason = "";
         
