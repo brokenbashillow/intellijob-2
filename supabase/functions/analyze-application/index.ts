@@ -52,20 +52,50 @@ Deno.serve(async (req) => {
 
     console.log("Retrieved resume data:", JSON.stringify(resumeData, null, 2));
 
-    // Get user skills
-    const { data: skillsData, error: skillsError } = await supabase
-      .from('user_skills')
-      .select(`
-        *,
-        skills (
-          name,
-          category_id
-        )
-      `)
-      .eq('user_id', userId);
+    // Parse skills from resume data
+    let skills = [];
+    if (resumeData.skills && resumeData.skills.length > 0) {
+      try {
+        skills = resumeData.skills.map(skillString => {
+          if (typeof skillString === 'string') {
+            return JSON.parse(skillString);
+          }
+          return skillString;
+        });
+        console.log("Parsed skills from resume:", skills);
+      } catch (error) {
+        console.error("Error parsing skills from resume:", error);
+      }
+    }
 
-    if (skillsError) {
-      throw new Error(`Error fetching user skills: ${skillsError.message}`);
+    // If no skills in resume, get from user_skills table
+    if (skills.length === 0) {
+      console.log("No skills found in resume, checking user_skills table");
+      
+      const { data: skillsData, error: skillsError } = await supabase
+        .from('user_skills')
+        .select(`
+          skill_id,
+          skill_type,
+          skills (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (skillsError) {
+        throw new Error(`Error fetching user skills: ${skillsError.message}`);
+      }
+
+      if (skillsData && skillsData.length > 0) {
+        skills = skillsData.map(skillData => ({
+          id: skillData.skill_id,
+          name: skillData.skills?.name || "Unknown Skill",
+          type: skillData.skill_type
+        }));
+        console.log("Skills from user_skills table:", skills);
+      }
     }
 
     // Prepare the prompt for Gemini API
@@ -77,8 +107,8 @@ Deno.serve(async (req) => {
       ? JSON.stringify(resumeData.work_experience)
       : "No work experience data available";
 
-    const formattedSkills = resumeData.skills
-      ? JSON.stringify(resumeData.skills)
+    const formattedSkills = skills.length > 0
+      ? JSON.stringify(skills)
       : "No skills data available";
 
     const formattedCertificates = resumeData.certificates

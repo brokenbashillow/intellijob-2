@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SkillsSectionProps {
   skills: SkillItem[];
@@ -30,6 +31,7 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
   const [newSkill, setNewSkill] = useState("");
   const [skillType, setSkillType] = useState<"technical" | "soft">("technical");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const technicalSkills = skills.filter(skill => skill.type === 'technical');
   const softSkills = skills.filter(skill => skill.type === 'soft');
@@ -44,7 +46,26 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
     // Check if we've reached the limit of 5 skills for the selected type
     const currentSkillsOfType = skills.filter(skill => skill.type === skillType);
     if (currentSkillsOfType.length >= 5) {
-      return; // Don't add if we've reached the limit
+      toast({
+        variant: "destructive",
+        title: "Skill Limit Reached",
+        description: `You can only add up to 5 ${skillType} skills.`
+      });
+      return;
+    }
+
+    // Check if the skill already exists with the same name and type
+    const skillExists = skills.some(
+      skill => skill.name.toLowerCase() === newSkill.trim().toLowerCase() && skill.type === skillType
+    );
+    
+    if (skillExists) {
+      toast({
+        variant: "destructive",
+        title: "Duplicate Skill",
+        description: "This skill already exists in your list."
+      });
+      return;
     }
 
     const newSkillItem: SkillItem = {
@@ -53,9 +74,15 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
       type: skillType,
     };
 
+    console.log("Adding new skill:", newSkillItem);
     setSkills([...skills, newSkillItem]);
     setNewSkill("");
     setDialogOpen(false);
+    
+    toast({
+      title: "Skill Added",
+      description: `${newSkill} has been added to your ${skillType} skills.`
+    });
   };
 
   return (
@@ -93,6 +120,12 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
                   value={newSkill} 
                   onChange={(e) => setNewSkill(e.target.value)}
                   placeholder="Enter skill name"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newSkill.trim()) {
+                      e.preventDefault();
+                      addSkill();
+                    }
+                  }}
                 />
               </div>
               <div className="pt-4">

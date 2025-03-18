@@ -16,6 +16,7 @@ import { CertificatesSection } from "./CertificatesSection";
 import { ReferencesSection } from "./ReferencesSection";
 import { SkillsSection } from "./SkillsSection";
 import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
 
 interface ResumeProps {
   onSave?: () => void;
@@ -23,6 +24,7 @@ interface ResumeProps {
 
 const Resume = ({ onSave }: ResumeProps) => {
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
   const {
     personalDetails,
     setPersonalDetails,
@@ -44,6 +46,19 @@ const Resume = ({ onSave }: ResumeProps) => {
 
   const handleSaveWithCallback = async () => {
     try {
+      console.log("Validating resume data before saving");
+      console.log("Current skills:", skills);
+      
+      // Check if personal details are filled out
+      if (!personalDetails.firstName.trim() || !personalDetails.lastName.trim()) {
+        toast({
+          variant: "destructive",
+          title: "Missing information",
+          description: "Please enter your first and last name before saving.",
+        });
+        return;
+      }
+      
       // Validate required fields before saving
       if (workExperience.length === 0) {
         toast({
@@ -76,7 +91,11 @@ const Resume = ({ onSave }: ResumeProps) => {
         return;
       }
 
+      setIsSaving(true);
+      console.log("All validation passed, saving resume data");
+      
       await handleSave();
+      
       toast({
         title: "Success",
         description: "Resume saved successfully and assessment updated.",
@@ -85,13 +104,15 @@ const Resume = ({ onSave }: ResumeProps) => {
       if (onSave) {
         onSave();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving resume:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save resume. Please try again.",
+        description: "Failed to save resume: " + (error.message || "Please try again."),
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -106,7 +127,7 @@ const Resume = ({ onSave }: ResumeProps) => {
       {!hasResumeData && (
         <Alert className="mb-6 bg-amber-50 border-amber-200">
           <AlertDescription className="text-amber-800">
-            We've initialized your resume with information from your assessment. Please complete and save your resume to unlock full job recommendations.
+            We've initialized your resume with information from your assessment. Please complete all sections including adding skills and save your resume to unlock full job recommendations.
           </AlertDescription>
         </Alert>
       )}
@@ -132,7 +153,7 @@ const Resume = ({ onSave }: ResumeProps) => {
           <AccordionTrigger className="text-lg font-semibold">
             <div className="flex items-center gap-2">
               <Wrench className="h-5 w-5" />
-              Skills
+              Skills {skills.length === 0 && <span className="text-red-500 ml-2 text-sm">(Required)</span>}
             </div>
           </AccordionTrigger>
           <AccordionContent>
@@ -140,6 +161,14 @@ const Resume = ({ onSave }: ResumeProps) => {
               skills={skills}
               setSkills={setSkills}
             />
+            
+            {skills.length === 0 && (
+              <Alert className="mt-4 bg-amber-50 border-amber-200">
+                <AlertDescription className="text-amber-800">
+                  You must add at least one technical skill and one soft skill to save your resume.
+                </AlertDescription>
+              </Alert>
+            )}
           </AccordionContent>
         </AccordionItem>
 
@@ -162,7 +191,7 @@ const Resume = ({ onSave }: ResumeProps) => {
           <AccordionTrigger className="text-lg font-semibold">
             <div className="flex items-center gap-2">
               <Briefcase className="h-5 w-5" />
-              Work Experience
+              Work Experience {workExperience.length === 0 && <span className="text-red-500 ml-2 text-sm">(Required)</span>}
             </div>
           </AccordionTrigger>
           <AccordionContent>
@@ -170,6 +199,14 @@ const Resume = ({ onSave }: ResumeProps) => {
               workExperience={workExperience}
               setWorkExperience={setWorkExperience}
             />
+            
+            {workExperience.length === 0 && (
+              <Alert className="mt-4 bg-amber-50 border-amber-200">
+                <AlertDescription className="text-amber-800">
+                  You must add at least one work experience entry to save your resume.
+                </AlertDescription>
+              </Alert>
+            )}
           </AccordionContent>
         </AccordionItem>
 
@@ -205,7 +242,9 @@ const Resume = ({ onSave }: ResumeProps) => {
       </Accordion>
 
       <div className="flex justify-end pt-6">
-        <Button onClick={handleSaveWithCallback}>Save Resume</Button>
+        <Button onClick={handleSaveWithCallback} disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save Resume"}
+        </Button>
       </div>
     </div>
   );
