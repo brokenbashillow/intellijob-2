@@ -28,25 +28,29 @@ const TechnicalSkillsStep = ({
   const { categories, skills, loading } = useSkillsData();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   
-  // Log to help with debugging
-  console.log("Rendering TechnicalSkillsStep with skills:", technicalSkills);
+  // Improved logging to debug the issue
+  useEffect(() => {
+    console.log("TechnicalSkillsStep rendered with skills:", technicalSkills);
+  }, [technicalSkills]);
   
   const handleSkillToggle = (skillId: string) => {
-    console.log("Toggling technical skill:", skillId);
-    console.log("Current technical skills:", technicalSkills);
+    console.log("Toggle called for skill:", skillId);
     
+    // Create a new array to ensure React detects the change
     if (technicalSkills.includes(skillId)) {
-      const updatedSkills = technicalSkills.filter((id) => id !== skillId);
-      console.log("Removing skill, new skills array:", updatedSkills);
-      setTechnicalSkills(updatedSkills);
+      // Remove the skill
+      const updatedSkills = technicalSkills.filter(id => id !== skillId);
+      console.log("Removing skill, new array:", updatedSkills);
+      setTechnicalSkills([...updatedSkills]);
     } else {
+      // Add the skill if under limit
       if (technicalSkills.length >= 5) {
-        console.log("Maximum technical skills reached");
-        return; // Maximum limit reached
+        console.log("Max skills limit reached (5)");
+        return;
       }
       const updatedSkills = [...technicalSkills, skillId];
-      console.log("Adding skill, new skills array:", updatedSkills);
-      setTechnicalSkills(updatedSkills);
+      console.log("Adding skill, new array:", updatedSkills);
+      setTechnicalSkills([...updatedSkills]);
     }
   };
 
@@ -65,10 +69,9 @@ const TechnicalSkillsStep = ({
     );
   };
   
-  // Use useEffect to prefill some categories as open for better user experience
+  // Open first technical category automatically for better UX
   useEffect(() => {
     if (!loading && categories.length > 0) {
-      // Automatically open the first technical category
       const techCategories = categories.filter(cat => cat.type === 'technical');
       if (techCategories.length > 0) {
         setOpenCategories(prev => ({
