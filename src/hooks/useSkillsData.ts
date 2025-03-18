@@ -11,10 +11,10 @@ export const useSkillsData = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadSkillsData = async () => {
+    const loadSkillsData = () => {
       try {
         setLoading(true);
-        console.log("Using hardcoded skill data");
+        console.log("Loading hardcoded skill data");
         
         // Simply use the hardcoded data
         setCategories(customSkillCategories);
