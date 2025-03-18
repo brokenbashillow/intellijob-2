@@ -22,35 +22,28 @@ const SoftSkillsStep = ({
   const { categories, skills, loading } = useSkillsData();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   
-  // Improved logging to debug the issue
   useEffect(() => {
     console.log("SoftSkillsStep rendered with skills:", softSkills);
   }, [softSkills]);
   
   const handleSkillToggle = (skillId: string) => {
-    console.log("Toggle called for skill:", skillId);
+    console.log("Toggle called for skill ID:", skillId);
     
-    // Ensure skillId is a valid UUID format, not a string name
-    if (!skillId || typeof skillId !== 'string') {
-      console.error("Invalid skill ID:", skillId);
+    if (!skillId) {
+      console.error("Invalid skill ID provided");
       return;
     }
     
-    // Create a new array to ensure React detects the change
     if (softSkills.includes(skillId)) {
-      // Remove the skill
-      const updatedSkills = softSkills.filter(id => id !== skillId);
-      console.log("Removing skill, new array:", updatedSkills);
-      setSoftSkills([...updatedSkills]);
+      // Remove the skill - create a new array to ensure React detects the change
+      setSoftSkills(softSkills.filter(id => id !== skillId));
     } else {
-      // Add the skill if under limit
+      // Add the skill if under limit - create a new array to ensure React detects the change
       if (softSkills.length >= 5) {
         console.log("Max skills limit reached (5)");
         return;
       }
-      const updatedSkills = [...softSkills, skillId];
-      console.log("Adding skill, new array:", updatedSkills);
-      setSoftSkills([...updatedSkills]);
+      setSoftSkills([...softSkills, skillId]);
     }
   };
 

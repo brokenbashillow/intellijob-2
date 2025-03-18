@@ -11,11 +11,6 @@ import {
 } from "@/components/ui/collapsible";
 import type { Skill as SkillType } from "@/types/skills";
 
-// Create an extended Skill type that includes the type property
-interface ExtendedSkill extends SkillType {
-  type?: string;
-}
-
 interface TechnicalSkillsStepProps {
   technicalSkills: string[];
   setTechnicalSkills: (skills: string[]) => void;
@@ -28,35 +23,28 @@ const TechnicalSkillsStep = ({
   const { categories, skills, loading } = useSkillsData();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   
-  // Improved logging to debug the issue
   useEffect(() => {
     console.log("TechnicalSkillsStep rendered with skills:", technicalSkills);
   }, [technicalSkills]);
   
   const handleSkillToggle = (skillId: string) => {
-    console.log("Toggle called for skill:", skillId);
+    console.log("Toggle called for skill ID:", skillId);
     
-    // Ensure skillId is a valid UUID format, not a string name
-    if (!skillId || typeof skillId !== 'string') {
-      console.error("Invalid skill ID:", skillId);
+    if (!skillId) {
+      console.error("Invalid skill ID provided");
       return;
     }
     
-    // Create a new array to ensure React detects the change
     if (technicalSkills.includes(skillId)) {
-      // Remove the skill
-      const updatedSkills = technicalSkills.filter(id => id !== skillId);
-      console.log("Removing skill, new array:", updatedSkills);
-      setTechnicalSkills([...updatedSkills]);
+      // Remove the skill - create a new array to ensure React detects the change
+      setTechnicalSkills(technicalSkills.filter(id => id !== skillId));
     } else {
-      // Add the skill if under limit
+      // Add the skill if under limit - create a new array to ensure React detects the change
       if (technicalSkills.length >= 5) {
         console.log("Max skills limit reached (5)");
         return;
       }
-      const updatedSkills = [...technicalSkills, skillId];
-      console.log("Adding skill, new array:", updatedSkills);
-      setTechnicalSkills([...updatedSkills]);
+      setTechnicalSkills([...technicalSkills, skillId]);
     }
   };
 
@@ -68,11 +56,8 @@ const TechnicalSkillsStep = ({
   };
 
   const getSkillsForCategory = (categoryId: string) => {
-    // Cast skills to ExtendedSkill[] to satisfy TypeScript
-    return (skills as ExtendedSkill[]).filter((skill) => 
-      skill.category_id === categoryId && 
-      (!skill.type || skill.type === 'technical')
-    );
+    // Only filter by category ID, no type filtering needed since we only display technical categories
+    return skills.filter(skill => skill.category_id === categoryId);
   };
   
   // Open first technical category automatically for better UX
