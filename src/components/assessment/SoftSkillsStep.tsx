@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger 
 } from "@/components/ui/collapsible";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SoftSkillsStepProps {
   softSkills: string[];
@@ -21,20 +22,43 @@ const SoftSkillsStep = ({
 }: SoftSkillsStepProps) => {
   const { categories, skills, loading } = useSkillsData();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
   
   // Handle skill selection/deselection
   const handleSkillToggle = (skillId: string) => {
     console.log("Toggling soft skill:", skillId);
-    if (softSkills.includes(skillId)) {
-      // Remove the skill
-      setSoftSkills(softSkills.filter(id => id !== skillId));
-    } else {
-      // Add the skill if under limit
-      if (softSkills.length >= 5) {
-        console.log("Max soft skills limit reached (5)");
-        return;
+    
+    try {
+      if (softSkills.includes(skillId)) {
+        // Remove the skill
+        console.log("Removing soft skill:", skillId);
+        const updatedSkills = softSkills.filter(id => id !== skillId);
+        console.log("Updated soft skills after removal:", updatedSkills);
+        setSoftSkills(updatedSkills);
+      } else {
+        // Add the skill if under limit
+        if (softSkills.length >= 5) {
+          console.log("Max soft skills limit reached (5)");
+          toast({
+            variant: "destructive",
+            title: "Maximum Limit Reached",
+            description: "You can only select up to 5 soft skills."
+          });
+          return;
+        }
+        
+        console.log("Adding soft skill:", skillId);
+        const updatedSkills = [...softSkills, skillId];
+        console.log("Updated soft skills after addition:", updatedSkills);
+        setSoftSkills(updatedSkills);
       }
-      setSoftSkills([...softSkills, skillId]);
+    } catch (error) {
+      console.error("Error in handleSkillToggle:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An error occurred while updating skills. Please try again."
+      });
     }
   };
 
@@ -48,7 +72,7 @@ const SoftSkillsStep = ({
 
   // Log selected skills on change to help with debugging
   useEffect(() => {
-    console.log("Current soft skills:", softSkills);
+    console.log("Current soft skills in SoftSkillsStep:", softSkills);
   }, [softSkills]);
 
   // Open first soft skill category automatically for better UX
