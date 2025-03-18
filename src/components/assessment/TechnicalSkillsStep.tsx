@@ -9,7 +9,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger 
 } from "@/components/ui/collapsible";
-import type { Skill as SkillType } from "@/types/skills";
 
 interface TechnicalSkillsStepProps {
   technicalSkills: string[];
@@ -23,20 +22,8 @@ const TechnicalSkillsStep = ({
   const { categories, skills, loading } = useSkillsData();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   
-  useEffect(() => {
-    console.log("TechnicalSkillsStep rendered with skills:", technicalSkills);
-    console.log("Available categories:", categories);
-    console.log("Available skills:", skills);
-  }, [technicalSkills, categories, skills]);
-  
+  // Handle skill selection/deselection
   const handleSkillToggle = (skillId: string) => {
-    console.log("Toggle called for skill ID:", skillId);
-    
-    if (!skillId) {
-      console.error("Invalid skill ID provided");
-      return;
-    }
-    
     if (technicalSkills.includes(skillId)) {
       // Remove the skill - create a new array to ensure React detects the change
       setTechnicalSkills(technicalSkills.filter(id => id !== skillId));
@@ -50,6 +37,7 @@ const TechnicalSkillsStep = ({
     }
   };
 
+  // Toggle category expansion
   const toggleCategory = (categoryId: string) => {
     setOpenCategories(prev => ({
       ...prev,
@@ -57,8 +45,8 @@ const TechnicalSkillsStep = ({
     }));
   };
 
+  // Get skills for a specific category
   const getSkillsForCategory = (categoryId: string) => {
-    // Only filter by category ID, no type filtering needed since we only display technical categories
     return skills.filter(skill => skill.category_id === categoryId);
   };
   
@@ -75,7 +63,7 @@ const TechnicalSkillsStep = ({
     }
   }, [loading, categories]);
 
-  // Filter out categories that have no skills
+  // Filter out categories that have no skills and are of technical type
   const categoriesWithSkills = categories
     .filter((category) => category.type === 'technical')
     .filter((category) => getSkillsForCategory(category.id).length > 0);
@@ -109,19 +97,11 @@ const TechnicalSkillsStep = ({
       
       {loading ? (
         <div className="text-center py-4">Loading skills...</div>
-      ) : categories.length === 0 || skills.length === 0 ? (
-        <div className="text-center py-4">
-          <Alert variant="destructive">
-            <AlertDescription>
-              Failed to load skills. Please refresh the page or try again later.
-            </AlertDescription>
-          </Alert>
-        </div>
       ) : categoriesWithSkills.length === 0 ? (
         <div className="text-center py-4">
           <Alert>
             <AlertDescription>
-              No technical skill categories found. Please check your database setup.
+              No technical skill categories found.
             </AlertDescription>
           </Alert>
         </div>

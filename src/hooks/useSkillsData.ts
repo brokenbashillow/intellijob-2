@@ -16,7 +16,7 @@ export const useSkillsData = () => {
         setLoading(true);
         console.log("Loading hardcoded skill data");
         
-        // Simply use the hardcoded data
+        // Use the hardcoded data directly
         setCategories(customSkillCategories);
         setSkills(customSkills);
       } catch (error) {
@@ -37,5 +37,4 @@ export const useSkillsData = () => {
   return { categories, skills, loading };
 };
 
-// Export the hook by default
 export default useSkillsData;

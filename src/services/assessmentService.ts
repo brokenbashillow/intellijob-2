@@ -15,48 +15,19 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
   }
 
   // Ensure we always have arrays for skills, never null
-  // This is critical - empty arrays are better than null
   const technicalSkills = formData.technicalSkills || [];
   const softSkills = formData.softSkills || [];
   
-  console.log("Processing technical skills for saving:", technicalSkills);
-  console.log("Processing soft skills for saving:", softSkills);
+  console.log("Saving technical skills:", technicalSkills);
+  console.log("Saving soft skills:", softSkills);
 
-  // Verify that the skills actually exist in the database
-  if (technicalSkills.length > 0) {
-    const { data: techSkillsData, error: techSkillsError } = await supabase
-      .from('skills')
-      .select('id, name')
-      .in('id', technicalSkills);
-      
-    if (techSkillsError) {
-      console.error("Error verifying technical skills:", techSkillsError);
-    } else {
-      console.log("Verified technical skills in database:", techSkillsData);
-    }
-  }
-  
-  if (softSkills.length > 0) {
-    const { data: softSkillsData, error: softSkillsError } = await supabase
-      .from('skills')
-      .select('id, name')
-      .in('id', softSkills);
-      
-    if (softSkillsError) {
-      console.error("Error verifying soft skills:", softSkillsError);
-    } else {
-      console.log("Verified soft skills in database:", softSkillsData);
-    }
-  }
-
-  // Save the assessment data - ensure we're passing arrays, not null
+  // Save the assessment data
   const { data: assessmentData, error: assessmentError } = await supabase
     .from('seeker_assessments')
     .insert({
       user_id: user.data.user.id,
       education: formData.education,
       experience: formData.experience,
-      // Important: Don't convert empty arrays to null
       technical_skills: technicalSkills,
       soft_skills: softSkills
     })
@@ -69,8 +40,6 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
   }
   
   console.log("Assessment saved successfully with ID:", assessmentData.id);
-  console.log("Technical skills saved to assessment:", technicalSkills);
-  console.log("Soft skills saved to assessment:", softSkills);
 
   // Clear previous user skills before adding new ones
   try {
@@ -88,74 +57,49 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
     console.error("Exception deleting user skills:", e);
   }
 
-  // Save each technical skill to the user_skills table
-  if (technicalSkills.length > 0) {
+  // Save all skills to the user_skills table
+  const allUserSkills = [
+    ...technicalSkills.map(skillId => ({
+      user_id: user.data.user.id,
+      skill_id: skillId,
+      assessment_id: assessmentData.id,
+      skill_type: 'technical'
+    })),
+    ...softSkills.map(skillId => ({
+      user_id: user.data.user.id,
+      skill_id: skillId,
+      assessment_id: assessmentData.id,
+      skill_type: 'soft'
+    }))
+  ];
+
+  if (allUserSkills.length > 0) {
     try {
-      const technicalSkillsData = technicalSkills.map(skillId => ({
-        user_id: user.data.user.id,
-        skill_id: skillId,
-        assessment_id: assessmentData.id,
-        skill_type: 'technical'
-      }));
-
-      console.log("Technical skills data to insert:", technicalSkillsData);
-      
-      const { error: technicalSkillsError } = await supabase
+      const { error: userSkillsError } = await supabase
         .from('user_skills')
-        .insert(technicalSkillsData);
+        .insert(allUserSkills);
 
-      if (technicalSkillsError) {
-        console.error("Error saving technical skills:", technicalSkillsError);
+      if (userSkillsError) {
+        console.error("Error saving user skills:", userSkillsError);
       } else {
-        console.log("Technical skills saved successfully to user_skills table");
+        console.log("All user skills saved successfully");
       }
     } catch (e) {
-      console.error("Exception saving technical skills:", e);
-    }
-  } else {
-    console.log("No technical skills to save");
-  }
-
-  // Save each soft skill to the user_skills table
-  if (softSkills.length > 0) {
-    try {
-      const softSkillsData = softSkills.map(skillId => ({
-        user_id: user.data.user.id,
-        skill_id: skillId,
-        assessment_id: assessmentData.id,
-        skill_type: 'soft'
-      }));
-
-      const { error: softSkillsError } = await supabase
-        .from('user_skills')
-        .insert(softSkillsData);
-
-      if (softSkillsError) {
-        console.error("Error saving soft skills:", softSkillsError);
-      } else {
-        console.log("Soft skills saved successfully to user_skills table");
-      }
-    } catch (e) {
-      console.error("Exception saving soft skills:", e);
+      console.error("Exception saving user skills:", e);
     }
   }
 
-  // After saving the assessment, trigger the analyze-application function
+  // Try to call the analyze-application function, but don't block if it fails
   try {
     console.log("Calling analyze-application function with userId:", user.data.user.id);
-    const { data, error } = await supabase.functions.invoke('analyze-application', {
+    await supabase.functions.invoke('analyze-application', {
       body: { userId: user.data.user.id }
     });
-    
-    if (error) {
-      console.error("Error analyzing application:", error);
-    } else {
-      console.log("Analysis completed:", data);
-    }
   } catch (e) {
     console.error("Exception calling analyze-application:", e);
+    // Don't throw here, as we've already saved the assessment data
   }
 
-  // Return the assessment ID which we'll need for other operations
+  // Return the assessment ID
   return assessmentData.id;
 };
