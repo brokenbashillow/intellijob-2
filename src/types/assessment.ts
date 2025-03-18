@@ -7,4 +7,5 @@ export interface FormData {
     province: string;
     city: string;
   };
+  technicalSkills: string[];
 }

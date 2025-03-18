@@ -37,5 +37,25 @@ export const validateAssessmentStep = (
     return true;
   }
 
+  if (currentStep === 4) {
+    if (!formData.technicalSkills || formData.technicalSkills.length < 3) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select at least 3 technical skills",
+      });
+      return false;
+    }
+    if (formData.technicalSkills.length > 5) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select at most 5 technical skills",
+      });
+      return false;
+    }
+    return true;
+  }
+
   return true;
 };

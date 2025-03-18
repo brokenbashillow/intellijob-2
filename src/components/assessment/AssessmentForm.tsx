@@ -4,6 +4,7 @@ import { useAssessmentForm } from "@/hooks/useAssessmentForm";
 import EducationStep from "./EducationStep";
 import ExperienceStep from "./ExperienceStep";
 import LocationStep from "./LocationStep";
+import TechnicalSkillsStep from "./TechnicalSkillsStep";
 import FormNavigation from "./FormNavigation";
 
 interface AssessmentFormProps {
@@ -45,6 +46,15 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
           location={formData.location}
           setLocation={(location) =>
             setFormData((prev) => ({ ...prev, location }))
+          }
+        />
+      )}
+
+      {currentStep === 4 && (
+        <TechnicalSkillsStep
+          technicalSkills={formData.technicalSkills || []}
+          setTechnicalSkills={(technicalSkills) =>
+            setFormData((prev) => ({ ...prev, technicalSkills }))
           }
         />
       )}

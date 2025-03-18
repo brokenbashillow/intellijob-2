@@ -15,6 +15,7 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       user_id: user.data.user.id,
       education: formData.education,
       experience: formData.experience,
+      technical_skills: formData.technicalSkills,
     })
     .select()
     .single();

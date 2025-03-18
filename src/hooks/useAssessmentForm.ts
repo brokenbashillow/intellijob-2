@@ -19,6 +19,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
       province: "",
       city: "",
     },
+    technicalSkills: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,7 +69,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const handleNext = () => {
     if (!validateAssessmentStep(currentStep, formData, toast)) return;
 
-    if (currentStep === 3) { // Changed from 5 to 3
+    if (currentStep === 4) { // Updated from 3 to 4
       handleSubmit();
       return;
     }
