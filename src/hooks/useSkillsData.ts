@@ -92,11 +92,14 @@ export const useSkillsData = () => {
           console.log("Attempting to populate database with fallback skills data");
           
           // First check if categories exist
-          const { data: existingCategories } = await supabase
+          const { data: existingCategories, error: countError } = await supabase
             .from('skill_categories')
-            .select('count(*)', { count: 'exact' });
+            .select('*', { count: 'exact', head: true });
             
-          if (!existingCategories || existingCategories.count === 0) {
+          // Get the count safely
+          const categoryCount = countError ? 0 : existingCategories?.length || 0;
+            
+          if (categoryCount === 0) {
             // Insert categories first
             for (const category of customSkillCategories) {
               await supabase
