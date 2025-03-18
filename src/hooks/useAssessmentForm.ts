@@ -28,47 +28,15 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
     try {
       setIsSubmitting(true);
       
-      // First save the assessment data
+      // Save the assessment data using the assessmentService
+      // This already handles saving the skills with proper UUID lookup
       const assessmentId = await saveAssessmentData(formData);
-      
-      // Get the user ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-      
-      // Save technical skills
-      if (formData.technicalSkills && formData.technicalSkills.length > 0 && assessmentId) {
-        const technicalSkillsData = formData.technicalSkills.map(skillId => ({
-          user_id: user.id,
-          skill_id: skillId,
-          skill_type: 'technical' as const,
-          assessment_id: assessmentId
-        }));
-        
-        const { error: techSkillsError } = await supabase
-          .from('user_skills')
-          .insert(technicalSkillsData);
-          
-        if (techSkillsError) throw techSkillsError;
-      }
-      
-      // Save soft skills
-      if (formData.softSkills && formData.softSkills.length > 0 && assessmentId) {
-        const softSkillsData = formData.softSkills.map(skillId => ({
-          user_id: user.id,
-          skill_id: skillId,
-          skill_type: 'soft' as const,
-          assessment_id: assessmentId
-        }));
-        
-        const { error: softSkillsError } = await supabase
-          .from('user_skills')
-          .insert(softSkillsData);
-          
-        if (softSkillsError) throw softSkillsError;
-      }
       
       // Save location data to the profile
       if (formData.location) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No authenticated user");
+        
         const { error: locationError } = await supabase
           .from('profiles')
           .update({
