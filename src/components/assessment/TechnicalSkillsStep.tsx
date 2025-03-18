@@ -3,12 +3,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSkillsData } from "@/hooks/useSkillsData";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface TechnicalSkillsStepProps {
   technicalSkills: string[];
@@ -20,6 +15,7 @@ const TechnicalSkillsStep = ({
   setTechnicalSkills 
 }: TechnicalSkillsStepProps) => {
   const { categories, skills, loading } = useSkillsData();
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   
   const handleSkillToggle = (skillId: string) => {
     if (technicalSkills.includes(skillId)) {
@@ -32,11 +28,20 @@ const TechnicalSkillsStep = ({
     }
   };
 
+  const toggleCategory = (categoryId: string) => {
+    setOpenCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
   // Group skills by category
-  const skillsByCategory = categories.map(category => ({
-    category,
-    skills: skills.filter(skill => skill.category_id === category.id)
-  }));
+  const skillsByCategory = categories
+    .filter(category => category.type === 'technical')
+    .map(category => ({
+      category,
+      skills: skills.filter(skill => skill.category_id === category.id)
+    }));
 
   return (
     <div className="space-y-4">
@@ -68,35 +73,46 @@ const TechnicalSkillsStep = ({
       {loading ? (
         <div className="text-center py-4">Loading skills...</div>
       ) : (
-        <Accordion type="multiple" className="w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {skillsByCategory.map(({ category, skills }) => (
-            <AccordionItem value={category.id} key={category.id}>
-              <AccordionTrigger className="text-base font-medium">
-                {category.name}
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+            <div key={category.id} className="border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleCategory(category.id)}
+                className="w-full p-3 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+              >
+                <span className="font-medium">{category.name}</span>
+                {openCategories[category.id] ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                )}
+              </button>
+              
+              {openCategories[category.id] && (
+                <div className="p-3 border-t space-y-2">
                   {skills.map((skill) => (
-                    <div key={skill.id} className="flex items-center space-x-2">
+                    <div key={skill.id} className="flex items-start space-x-2">
                       <Checkbox
                         id={`skill-${skill.id}`}
                         checked={technicalSkills.includes(skill.id)}
                         onCheckedChange={() => handleSkillToggle(skill.id)}
                         disabled={technicalSkills.length >= 5 && !technicalSkills.includes(skill.id)}
+                        className="mt-0.5"
                       />
                       <label
                         htmlFor={`skill-${skill.id}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
+                        className="text-sm cursor-pointer leading-tight"
                       >
                         {skill.name}
                       </label>
                     </div>
                   ))}
                 </div>
-              </AccordionContent>
-            </AccordionItem>
+              )}
+            </div>
           ))}
-        </Accordion>
+        </div>
       )}
     </div>
   );
