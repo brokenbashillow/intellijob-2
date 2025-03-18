@@ -3,7 +3,6 @@ import { useSkillsData } from "@/hooks/useSkillsData";
 import { useAssessmentForm } from "@/hooks/useAssessmentForm";
 import EducationStep from "./EducationStep";
 import ExperienceStep from "./ExperienceStep";
-import CategorySkillsStep from "./CategorySkillsStep";
 import LocationStep from "./LocationStep";
 import FormNavigation from "./FormNavigation";
 
@@ -12,7 +11,6 @@ interface AssessmentFormProps {
 }
 
 export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
-  const { categories, skills } = useSkillsData();
   const {
     currentStep,
     formData,
@@ -43,32 +41,6 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       )}
 
       {currentStep === 3 && (
-        <CategorySkillsStep
-          title="Select your technical skills (min 3, max 5)"
-          selectedSkills={formData.technicalSkills}
-          setSelectedSkills={(skills) =>
-            setFormData((prev) => ({ ...prev, technicalSkills: skills }))
-          }
-          categories={categories}
-          skills={skills}
-          type="technical"
-        />
-      )}
-
-      {currentStep === 4 && (
-        <CategorySkillsStep
-          title="Select your soft skills (min 3, max 5)"
-          selectedSkills={formData.softSkills}
-          setSelectedSkills={(skills) =>
-            setFormData((prev) => ({ ...prev, softSkills: skills }))
-          }
-          categories={categories}
-          skills={skills}
-          type="soft"
-        />
-      )}
-
-      {currentStep === 5 && (
         <LocationStep
           location={formData.location}
           setLocation={(location) =>

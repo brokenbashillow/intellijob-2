@@ -14,8 +14,6 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const [formData, setFormData] = useState<FormData>({
     education: "",
     experience: "",
-    technicalSkills: [],
-    softSkills: [],
     location: {
       country: "",
       province: "",
@@ -34,38 +32,6 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
       // Get the user ID
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
-      
-      // Save technical skills
-      if (formData.technicalSkills && formData.technicalSkills.length > 0 && assessmentId) {
-        const technicalSkillsData = formData.technicalSkills.map(skillId => ({
-          user_id: user.id,
-          skill_id: skillId,
-          skill_type: 'technical' as const,
-          assessment_id: assessmentId
-        }));
-        
-        const { error: techSkillsError } = await supabase
-          .from('user_skills')
-          .insert(technicalSkillsData);
-          
-        if (techSkillsError) throw techSkillsError;
-      }
-      
-      // Save soft skills
-      if (formData.softSkills && formData.softSkills.length > 0 && assessmentId) {
-        const softSkillsData = formData.softSkills.map(skillId => ({
-          user_id: user.id,
-          skill_id: skillId,
-          skill_type: 'soft' as const,
-          assessment_id: assessmentId
-        }));
-        
-        const { error: softSkillsError } = await supabase
-          .from('user_skills')
-          .insert(softSkillsData);
-          
-        if (softSkillsError) throw softSkillsError;
-      }
       
       // Save location data to the profile
       if (formData.location) {
@@ -102,7 +68,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const handleNext = () => {
     if (!validateAssessmentStep(currentStep, formData, toast)) return;
 
-    if (currentStep === 5) {
+    if (currentStep === 3) { // Changed from 5 to 3
       handleSubmit();
       return;
     }

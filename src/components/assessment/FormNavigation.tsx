@@ -36,7 +36,7 @@ const FormNavigation = ({
         disabled={isSubmitting}
         className="flex items-center"
       >
-        {currentStep === 5 ? (
+        {currentStep === 3 ? ( // Changed from 5 to 3
           <>
             Submit
             <Send className="h-4 w-4 ml-2" />
