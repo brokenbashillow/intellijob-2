@@ -77,15 +77,15 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
   console.log("Final validated technical skills:", validTechnicalSkills);
   console.log("Final validated soft skills:", validSoftSkills);
 
-  // Save the assessment data
+  // Save the assessment data - ensure we're passing empty arrays instead of null
   const { data: assessmentData, error: assessmentError } = await supabase
     .from('seeker_assessments')
     .insert({
       user_id: user.data.user.id,
       education: formData.education,
       experience: formData.experience,
-      technical_skills: validTechnicalSkills.length > 0 ? validTechnicalSkills : null,
-      soft_skills: validSoftSkills.length > 0 ? validSoftSkills : null
+      technical_skills: validTechnicalSkills.length > 0 ? validTechnicalSkills : [],
+      soft_skills: validSoftSkills.length > 0 ? validSoftSkills : []
     })
     .select()
     .single();

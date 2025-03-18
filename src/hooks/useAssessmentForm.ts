@@ -28,16 +28,20 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
     try {
       setIsSubmitting(true);
       
+      // Ensure technical skills is never null
+      const technicalSkillsArray = formData.technicalSkills || [];
+      const softSkillsArray = formData.softSkills || [];
+      
       // Log the skills before submission to help with debugging
-      console.log("Submitting assessment with technical skills:", formData.technicalSkills);
-      console.log("Submitting assessment with soft skills:", formData.softSkills);
+      console.log("Submitting assessment with technical skills:", technicalSkillsArray);
+      console.log("Submitting assessment with soft skills:", softSkillsArray);
       
       // Save the assessment data without the location field
       const assessmentData = {
         education: formData.education,
         experience: formData.experience,
-        technicalSkills: formData.technicalSkills,
-        softSkills: formData.softSkills
+        technicalSkills: technicalSkillsArray,
+        softSkills: softSkillsArray
       };
       
       // First save the assessment data
