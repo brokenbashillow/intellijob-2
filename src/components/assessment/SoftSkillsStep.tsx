@@ -24,12 +24,14 @@ const SoftSkillsStep = ({
   
   // Handle skill selection/deselection
   const handleSkillToggle = (skillId: string) => {
+    console.log("Toggling soft skill:", skillId);
     if (softSkills.includes(skillId)) {
       // Remove the skill
       setSoftSkills(softSkills.filter(id => id !== skillId));
     } else {
       // Add the skill if under limit
       if (softSkills.length >= 5) {
+        console.log("Max soft skills limit reached (5)");
         return;
       }
       setSoftSkills([...softSkills, skillId]);
@@ -43,6 +45,11 @@ const SoftSkillsStep = ({
       [categoryId]: !prev[categoryId]
     }));
   };
+
+  // Log selected skills on change to help with debugging
+  useEffect(() => {
+    console.log("Current soft skills:", softSkills);
+  }, [softSkills]);
 
   // Open first soft skill category automatically for better UX
   useEffect(() => {

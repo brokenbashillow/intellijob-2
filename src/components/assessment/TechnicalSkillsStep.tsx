@@ -24,6 +24,7 @@ const TechnicalSkillsStep = ({
   
   // Handle skill selection/deselection
   const handleSkillToggle = (skillId: string) => {
+    console.log("Toggling skill:", skillId);
     if (technicalSkills.includes(skillId)) {
       // Remove the skill - create a new array to ensure React detects the change
       setTechnicalSkills(technicalSkills.filter(id => id !== skillId));
@@ -62,6 +63,11 @@ const TechnicalSkillsStep = ({
       }
     }
   }, [loading, categories]);
+
+  // Log selected skills on change to help with debugging
+  useEffect(() => {
+    console.log("Current technical skills:", technicalSkills);
+  }, [technicalSkills]);
 
   // Filter out categories that have no skills and are of technical type
   const categoriesWithSkills = categories
