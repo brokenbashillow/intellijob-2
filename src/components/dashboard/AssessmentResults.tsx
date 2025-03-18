@@ -105,9 +105,9 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
     if (!assessmentData) return 0;
     
     // Fallback calculation if no analysis results
-    const educationScore = 90;
-    const experienceScore = 85;
-    const skillsScore = Math.min(assessmentData.user_skills?.length * 20, 100) || 0;
+    const educationScore = assessmentData.education ? 90 : 0;
+    const experienceScore = assessmentData.experience ? 85 : 0;
+    const skillsScore = Math.min(assessmentData.user_skills?.length * 20 || 0, 100);
     
     return Math.round((educationScore + experienceScore + skillsScore) / 3);
   };
@@ -171,13 +171,13 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
                   <span className="text-gray-600">
                     {analysisResult 
                       ? `${analysisResult.competency.score}%` 
-                      : `${Math.min(assessmentData.user_skills?.length * 20, 100)}%`}
+                      : `${Math.min(assessmentData.user_skills?.length * 20 || 0, 100)}%`}
                   </span>
                 </div>
                 <Progress 
                   value={analysisResult 
                     ? analysisResult.competency.score 
-                    : Math.min(assessmentData.user_skills?.length * 20, 100)} 
+                    : Math.min(assessmentData.user_skills?.length * 20 || 0, 100)} 
                   className="h-3 bg-white border border-gray-200" 
                   indicatorClassName="bg-black bg-opacity-90"
                 />

@@ -35,7 +35,24 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get resume data for the user
+    // Get user data from assessment
+    const { data: assessmentData, error: assessmentError } = await supabase
+      .from('seeker_assessments')
+      .select('education, experience, technical_skills, soft_skills')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (assessmentError) {
+      throw new Error(`Error fetching assessment data: ${assessmentError.message}`);
+    }
+
+    if (!assessmentData) {
+      throw new Error("No assessment data found for user");
+    }
+
+    console.log("Retrieved assessment data:", JSON.stringify(assessmentData, null, 2));
+
+    // Get resume data if available (but don't require it)
     const { data: resumeData, error: resumeError } = await supabase
       .from('resumes')
       .select('*')
@@ -43,14 +60,9 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (resumeError) {
-      throw new Error(`Error fetching resume data: ${resumeError.message}`);
+      console.error(`Error fetching resume data: ${resumeError.message}`);
+      // We'll continue even if there's an error with resume data
     }
-
-    if (!resumeData) {
-      throw new Error("No resume data found for user");
-    }
-
-    console.log("Retrieved resume data:", JSON.stringify(resumeData, null, 2));
 
     // Get user skills
     const { data: skillsData, error: skillsError } = await supabase
@@ -68,35 +80,46 @@ Deno.serve(async (req) => {
       throw new Error(`Error fetching user skills: ${skillsError.message}`);
     }
 
-    // Prepare the prompt for Gemini API
-    const formattedEducation = resumeData.education
+    // Format education from either resume or assessment
+    const formattedEducation = resumeData?.education 
       ? JSON.stringify(resumeData.education)
-      : "No education data available";
+      : assessmentData.education 
+        ? JSON.stringify(assessmentData.education) 
+        : "No education data available";
 
-    const formattedExperience = resumeData.work_experience
-      ? JSON.stringify(resumeData.work_experience)
-      : "No work experience data available";
+    // Format experience from either resume or assessment
+    const formattedExperience = resumeData?.work_experience 
+      ? JSON.stringify(resumeData.work_experience) 
+      : assessmentData.experience 
+        ? JSON.stringify(assessmentData.experience)
+        : "No work experience data available";
 
-    const formattedSkills = resumeData.skills
+    // Format skills from either resume or user_skills
+    const formattedSkills = resumeData?.skills 
       ? JSON.stringify(resumeData.skills)
-      : "No skills data available";
+      : skillsData && skillsData.length > 0 
+        ? JSON.stringify(skillsData.map(skill => skill.skills?.name || "Unknown skill"))
+        : "No skills data available";
 
-    const formattedCertificates = resumeData.certificates
+    // Format certificates if available from resume
+    const formattedCertificates = resumeData?.certificates 
       ? JSON.stringify(resumeData.certificates)
       : "No certificates data available";
 
-    const formattedReferences = resumeData.reference_list
+    // Format references if available from resume
+    const formattedReferences = resumeData?.reference_list 
       ? JSON.stringify(resumeData.reference_list)
       : "No references data available";
 
+    // Generate a prompt for Gemini API that works with just assessment data
     const prompt = `
 Given the following job application data, analyze and return a score from 0-100 based on education, experience, skills, certifications, and references.
 
 Education: ${formattedEducation}
 Work Experience: ${formattedExperience}
 Skills: ${formattedSkills}
-Certificates: ${formattedCertificates}
-References: ${formattedReferences}
+Certificates: ${formattedCertificates || "None provided"}
+References: ${formattedReferences || "None provided"}
 
 Only return the score for the education, experience, competency (the alignment of technical skills) and personality (the alignment of soft skills). Also return the overall score of each one and provide 2-3 comments about how each of the data aligns with each other.
 
@@ -191,7 +214,7 @@ Structure your response EXACTLY as a JSON object with this format:
     }
 
     // Store the analysis results in the user's assessment record
-    const { data: assessmentData, error: assessmentFetchError } = await supabase
+    const { data: assessmentRecordData, error: assessmentFetchError } = await supabase
       .from('seeker_assessments')
       .select('id')
       .eq('user_id', userId)
@@ -201,14 +224,14 @@ Structure your response EXACTLY as a JSON object with this format:
       throw new Error(`Error fetching assessment: ${assessmentFetchError.message}`);
     }
 
-    if (assessmentData) {
+    if (assessmentRecordData) {
       // Update existing assessment
       const { error: updateError } = await supabase
         .from('seeker_assessments')
         .update({
           analysis_results: analysis
         })
-        .eq('id', assessmentData.id);
+        .eq('id', assessmentRecordData.id);
 
       if (updateError) {
         throw new Error(`Error updating assessment: ${updateError.message}`);
@@ -219,8 +242,8 @@ Structure your response EXACTLY as a JSON object with this format:
         .from('seeker_assessments')
         .insert({
           user_id: userId,
-          education: "Generated from resume",
-          experience: "Generated from resume",
+          education: "Generated from available data",
+          experience: "Generated from available data",
           analysis_results: analysis
         });
 
