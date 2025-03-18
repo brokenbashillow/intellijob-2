@@ -33,30 +33,177 @@ export const customSkillCategories: SkillCategory[] = [
 ];
 
 export const customSkills: Skill[] = [
-  // Just adding a few examples from each category - the same skills as in the original file
   // Health and Medicine
-  { id: "clinical-procedures", name: "Clinical procedures", category_id: "health-medicine" },
+  { id: "clinical-procedures", name: "Clinical procedures (e.g., venipuncture, catheterization)", category_id: "health-medicine" },
   { id: "medical-terminology", name: "Medical terminology", category_id: "health-medicine" },
+  { id: "patient-care", name: "Patient care and assessment", category_id: "health-medicine" },
+  { id: "laboratory-testing", name: "Laboratory testing and analysis", category_id: "health-medicine" },
+  { id: "pharmacology", name: "Pharmacology and drug administration", category_id: "health-medicine" },
+  { id: "diagnostic-imaging", name: "Diagnostic imaging (e.g., X-ray, ultrasound)", category_id: "health-medicine" },
+  { id: "physical-therapy", name: "Physical therapy techniques", category_id: "health-medicine" },
+  { id: "medical-coding", name: "Medical coding and billing", category_id: "health-medicine" },
+  { id: "nutrition-planning", name: "Nutrition planning", category_id: "health-medicine" },
+  { id: "emergency-response", name: "Emergency response and first aid", category_id: "health-medicine" },
   
   // Business and Finance
   { id: "financial-analysis", name: "Financial analysis and forecasting", category_id: "business-finance" },
   { id: "budgeting", name: "Budgeting and accounting principles", category_id: "business-finance" },
+  { id: "market-research", name: "Market research and analysis", category_id: "business-finance" },
+  { id: "business-strategy", name: "Business strategy development", category_id: "business-finance" },
+  { id: "financial-reporting", name: "Financial reporting and auditing", category_id: "business-finance" },
+  { id: "investment-management", name: "Investment management", category_id: "business-finance" },
+  { id: "project-management-finance", name: "Project management", category_id: "business-finance" },
+  { id: "sales-techniques", name: "Sales techniques", category_id: "business-finance" },
+  { id: "data-analysis-finance", name: "Data analysis (e.g., Excel, Tableau)", category_id: "business-finance" },
+  { id: "crm", name: "Customer relationship management (CRM)", category_id: "business-finance" },
+  
+  // Education
+  { id: "curriculum-development", name: "Curriculum development", category_id: "education" },
+  { id: "lesson-planning", name: "Lesson planning", category_id: "education" },
+  { id: "classroom-management", name: "Classroom management", category_id: "education" },
+  { id: "educational-assessment", name: "Educational assessment and evaluation", category_id: "education" },
+  { id: "special-education", name: "Special education techniques", category_id: "education" },
+  { id: "lms", name: "Learning management systems (LMS)", category_id: "education" },
+  { id: "tutoring", name: "Tutoring and mentoring", category_id: "education" },
+  { id: "academic-writing", name: "Research and academic writing", category_id: "education" },
   
   // Technology and IT
-  { id: "programming", name: "Programming languages", category_id: "technology-it" },
-  { id: "web-development", name: "Web development", category_id: "technology-it" },
+  { id: "programming", name: "Programming languages (e.g., Python, Java, C++)", category_id: "technology-it" },
+  { id: "web-development", name: "Web development (HTML, CSS, JavaScript)", category_id: "technology-it" },
+  { id: "database-management", name: "Database management (SQL, MongoDB)", category_id: "technology-it" },
+  { id: "cybersecurity", name: "Cybersecurity practices", category_id: "technology-it" },
+  { id: "cloud-computing", name: "Cloud computing (e.g., AWS, Azure)", category_id: "technology-it" },
+  { id: "network-configuration", name: "Network configuration and troubleshooting", category_id: "technology-it" },
+  { id: "software-development", name: "Software development and debugging", category_id: "technology-it" },
+  { id: "systems-administration", name: "Systems administration", category_id: "technology-it" },
+  { id: "machine-learning", name: "Machine learning and artificial intelligence", category_id: "technology-it" },
+  { id: "data-visualization", name: "Data analysis and visualization", category_id: "technology-it" },
+  
+  // Engineering
+  { id: "cad", name: "Computer-aided design (CAD)", category_id: "engineering" },
+  { id: "structural-analysis-eng", name: "Structural analysis", category_id: "engineering" },
+  { id: "circuit-design", name: "Circuit design and troubleshooting", category_id: "engineering" },
+  { id: "mechanical-systems", name: "Mechanical systems analysis", category_id: "engineering" },
+  { id: "thermodynamics", name: "Thermodynamics and fluid mechanics", category_id: "engineering" },
+  { id: "materials-science", name: "Materials science", category_id: "engineering" },
+  { id: "project-management-eng", name: "Project management", category_id: "engineering" },
+  { id: "quality-control", name: "Quality control and testing", category_id: "engineering" },
+  { id: "robotics", name: "Robotics and automation", category_id: "engineering" },
+  { id: "environmental-impact", name: "Environmental impact assessment", category_id: "engineering" },
+  
+  // Architecture and Design
+  { id: "architectural-drafting", name: "Architectural drafting and drawing", category_id: "architecture-design" },
+  { id: "bim", name: "Building information modeling (BIM)", category_id: "architecture-design" },
+  { id: "structural-analysis-arch", name: "Structural analysis", category_id: "architecture-design" },
+  { id: "construction-management", name: "Construction management", category_id: "architecture-design" },
+  { id: "environmental-design", name: "Environmental design principles", category_id: "architecture-design" },
+  { id: "urban-planning", name: "Urban planning", category_id: "architecture-design" },
+  { id: "3d-modeling", name: "3D modeling (e.g., AutoCAD, SketchUp)", category_id: "architecture-design" },
+  { id: "design-software", name: "Design software (e.g., Adobe Creative Suite)", category_id: "architecture-design" },
+  { id: "site-analysis", name: "Site analysis", category_id: "architecture-design" },
+  
+  // Law and Political Science
+  { id: "legal-research", name: "Legal research and analysis", category_id: "law-political-science" },
+  { id: "contract-drafting", name: "Contract drafting", category_id: "law-political-science" },
+  { id: "case-management", name: "Case management", category_id: "law-political-science" },
+  { id: "legal-writing", name: "Legal writing", category_id: "law-political-science" },
+  { id: "constitutional-law", name: "Understanding of constitutional law", category_id: "law-political-science" },
+  { id: "public-policy", name: "Public policy analysis", category_id: "law-political-science" },
+  { id: "litigation", name: "Litigation procedures", category_id: "law-political-science" },
+  { id: "legal-documentation", name: "Legal documentation and filing", category_id: "law-political-science" },
+  { id: "client-advocacy", name: "Client advocacy", category_id: "law-political-science" },
+  
+  // Maritime
+  { id: "ship-navigation", name: "Ship navigation and operation", category_id: "maritime" },
+  { id: "maritime-safety", name: "Maritime safety protocols", category_id: "maritime" },
+  { id: "vessel-maintenance", name: "Vessel maintenance and repair", category_id: "maritime" },
+  { id: "cargo-handling", name: "Cargo handling and logistics", category_id: "maritime" },
+  { id: "marine-engineering", name: "Marine engineering systems", category_id: "maritime" },
+  { id: "naval-architecture", name: "Naval architecture", category_id: "maritime" },
+  { id: "emergency-response-sea", name: "Emergency response at sea", category_id: "maritime" },
+  { id: "maritime-communication", name: "Communication with maritime authorities", category_id: "maritime" },
+  
+  // Arts and Communication
+  { id: "graphic-design", name: "Graphic design (e.g., Photoshop, Illustrator)", category_id: "arts-communication" },
+  { id: "video-editing", name: "Video editing (e.g., Premiere Pro, After Effects)", category_id: "arts-communication" },
+  { id: "public-speaking", name: "Public speaking", category_id: "arts-communication" },
+  { id: "writing-storytelling", name: "Writing and storytelling", category_id: "arts-communication" },
+  { id: "audio-production", name: "Audio production", category_id: "arts-communication" },
+  { id: "photography", name: "Photography and videography", category_id: "arts-communication" },
+  { id: "media-analysis", name: "Media analysis", category_id: "arts-communication" },
+  { id: "social-media", name: "Social media management", category_id: "arts-communication" },
+  { id: "branding", name: "Branding and marketing", category_id: "arts-communication" },
+  
+  // Agriculture and Environmental Science
+  { id: "crop-management", name: "Crop and soil management", category_id: "agriculture-environment" },
+  { id: "agricultural-machinery", name: "Agricultural machinery operation", category_id: "agriculture-environment" },
+  { id: "pest-control", name: "Pest control and management", category_id: "agriculture-environment" },
+  { id: "environmental-analysis", name: "Environmental impact analysis", category_id: "agriculture-environment" },
+  { id: "sustainable-farming", name: "Sustainable farming techniques", category_id: "agriculture-environment" },
+  { id: "irrigation-design", name: "Irrigation system design", category_id: "agriculture-environment" },
+  { id: "waste-management", name: "Waste management", category_id: "agriculture-environment" },
+  
+  // Social Sciences and Humanities
+  { id: "research-methodology", name: "Research methodology", category_id: "social-sciences" },
+  { id: "data-analysis-social", name: "Data analysis (e.g., SPSS)", category_id: "social-sciences" },
+  { id: "cultural-analysis", name: "Cultural analysis", category_id: "social-sciences" },
+  { id: "statistical-analysis", name: "Statistical analysis", category_id: "social-sciences" },
+  { id: "survey-design", name: "Survey design", category_id: "social-sciences" },
+  { id: "behavioral-analysis", name: "Behavioral analysis", category_id: "social-sciences" },
+  { id: "conflict-resolution", name: "Conflict resolution", category_id: "social-sciences" },
+  
+  // Sports and Recreation
+  { id: "athletic-training", name: "Athletic training techniques", category_id: "sports-recreation" },
+  { id: "sports-injury", name: "Sports injury management", category_id: "sports-recreation" },
+  { id: "exercise-programming", name: "Exercise programming", category_id: "sports-recreation" },
+  { id: "team-management-sports", name: "Team management", category_id: "sports-recreation" },
+  { id: "sports-psychology", name: "Sports psychology", category_id: "sports-recreation" },
+  { id: "event-coordination", name: "Event coordination", category_id: "sports-recreation" },
+  { id: "fitness-assessment", name: "Fitness assessment", category_id: "sports-recreation" },
+  
+  // Aviation
+  { id: "flight-navigation", name: "Flight navigation and control", category_id: "aviation" },
+  { id: "aircraft-maintenance", name: "Aircraft maintenance", category_id: "aviation" },
+  { id: "aviation-safety", name: "Aviation safety protocols", category_id: "aviation" },
+  { id: "air-traffic", name: "Air traffic communication", category_id: "aviation" },
+  { id: "meteorology-aviation", name: "Meteorology for aviation", category_id: "aviation" },
+  { id: "flight-simulation", name: "Flight simulation training", category_id: "aviation" },
+  
+  // Hospitality and Tourism
+  { id: "event-planning", name: "Event planning", category_id: "hospitality-tourism" },
+  { id: "customer-service", name: "Customer service", category_id: "hospitality-tourism" },
+  { id: "hospitality-software", name: "Hospitality management software", category_id: "hospitality-tourism" },
+  { id: "tourism-marketing", name: "Tourism marketing strategies", category_id: "hospitality-tourism" },
+  { id: "hotel-operations", name: "Hotel and restaurant operations", category_id: "hospitality-tourism" },
+  { id: "travel-coordination", name: "Travel coordination", category_id: "hospitality-tourism" },
   
   // Soft Skills - Communication
   { id: "active-listening", name: "Active listening", category_id: "communication" },
-  { id: "public-speaking", name: "Public speaking", category_id: "communication" },
+  { id: "public-speaking-soft", name: "Public speaking", category_id: "communication" },
+  { id: "written-communication", name: "Written communication", category_id: "communication" },
+  { id: "presentation-skills", name: "Presentation skills", category_id: "communication" },
+  { id: "interpersonal-communication", name: "Interpersonal communication", category_id: "communication" },
+  
+  // Teamwork and Collaboration
+  { id: "team-building", name: "Team building", category_id: "teamwork-collaboration" },
+  { id: "conflict-resolution-teamwork", name: "Conflict resolution", category_id: "teamwork-collaboration" },
+  { id: "collaboration", name: "Collaboration", category_id: "teamwork-collaboration" },
+  { id: "diversity-awareness", name: "Diversity awareness", category_id: "teamwork-collaboration" },
+  { id: "group-facilitation", name: "Group facilitation", category_id: "teamwork-collaboration" },
   
   // Leadership
-  { id: "team-management", name: "Leadership and team management", category_id: "leadership" },
+  { id: "team-management", name: "Team management", category_id: "leadership" },
   { id: "strategic-thinking", name: "Strategic thinking", category_id: "leadership" },
+  { id: "decision-making", name: "Decision making", category_id: "leadership" },
+  { id: "coaching-mentoring", name: "Coaching and mentoring", category_id: "leadership" },
+  { id: "delegation", name: "Delegation", category_id: "leadership" },
   
   // Problem-Solving
   { id: "critical-thinking", name: "Critical thinking", category_id: "problem-solving" },
   { id: "analytical-thinking", name: "Analytical thinking", category_id: "problem-solving" },
+  { id: "creative-problem-solving", name: "Creative problem solving", category_id: "problem-solving" },
+  { id: "decision-making-problem", name: "Decision making under pressure", category_id: "problem-solving" },
+  { id: "research-skills", name: "Research skills", category_id: "problem-solving" },
 ];
 
 // Export a simplified version with just a few skills for testing
