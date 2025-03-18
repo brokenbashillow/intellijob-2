@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Award } from "lucide-react";
-import { CertificateItem } from "@/hooks/useResumeData";
+import { CertificateItem } from "@/types/resume";
 
 interface CertificatesSectionProps {
   certificates: CertificateItem[];
