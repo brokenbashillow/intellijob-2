@@ -179,35 +179,16 @@ export const useSkillsData = () => {
       try {
         setLoading(true);
         
-        // Try to fetch from Supabase first
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('skill_categories')
-          .select('*');
-
-        const { data: skillsData, error: skillsError } = await supabase
-          .from('skills')
-          .select('*');
-
-        // If there are errors or no data, use our custom data
-        if (categoriesError || skillsError || !categoriesData?.length || !skillsData?.length) {
-          console.log("Using custom skills data instead of database data");
-          setCategories(customSkillCategories);
-          setSkills(customSkills);
-        } else {
-          // If Supabase data exists, use that instead
-          setCategories(categoriesData);
-          setSkills(skillsData);
-        }
-      } catch (error) {
-        console.error('Error fetching skills data:', error);
-        // Fallback to custom data on error
+        // Use custom data directly instead of fetching from Supabase
         setCategories(customSkillCategories);
         setSkills(customSkills);
         
+      } catch (error) {
+        console.error('Error with skills data:', error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load skills data from database. Using backup data.",
+          description: "Failed to load skills data.",
         });
       } finally {
         setLoading(false);

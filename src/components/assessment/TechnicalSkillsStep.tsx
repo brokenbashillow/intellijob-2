@@ -1,9 +1,14 @@
 
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSkillsData } from "@/hooks/useSkillsData";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface TechnicalSkillsStepProps {
   technicalSkills: string[];
@@ -14,18 +19,24 @@ const TechnicalSkillsStep = ({
   technicalSkills, 
   setTechnicalSkills 
 }: TechnicalSkillsStepProps) => {
-  const { skills } = useSkillsData();
+  const { categories, skills, loading } = useSkillsData();
   
-  const handleSkillToggle = (skill: string) => {
-    if (technicalSkills.includes(skill)) {
-      setTechnicalSkills(technicalSkills.filter(s => s !== skill));
+  const handleSkillToggle = (skillId: string) => {
+    if (technicalSkills.includes(skillId)) {
+      setTechnicalSkills(technicalSkills.filter(s => s !== skillId));
     } else {
       if (technicalSkills.length >= 5) {
         return; // Maximum limit reached
       }
-      setTechnicalSkills([...technicalSkills, skill]);
+      setTechnicalSkills([...technicalSkills, skillId]);
     }
   };
+
+  // Group skills by category
+  const skillsByCategory = categories.map(category => ({
+    category,
+    skills: skills.filter(skill => skill.category_id === category.id)
+  }));
 
   return (
     <div className="space-y-4">
@@ -54,24 +65,39 @@ const TechnicalSkillsStep = ({
         </Alert>
       )}
       
-      <div className="grid grid-cols-2 gap-4 mt-4">
-        {skills.map((skill) => (
-          <div key={skill.id} className="flex items-center space-x-2">
-            <Checkbox
-              id={`skill-${skill.id}`}
-              checked={technicalSkills.includes(skill.id)}
-              onCheckedChange={() => handleSkillToggle(skill.id)}
-              disabled={technicalSkills.length >= 5 && !technicalSkills.includes(skill.id)}
-            />
-            <label
-              htmlFor={`skill-${skill.id}`}
-              className="text-sm font-medium leading-none cursor-pointer"
-            >
-              {skill.name}
-            </label>
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-4">Loading skills...</div>
+      ) : (
+        <Accordion type="multiple" className="w-full">
+          {skillsByCategory.map(({ category, skills }) => (
+            <AccordionItem value={category.id} key={category.id}>
+              <AccordionTrigger className="text-base font-medium">
+                {category.name}
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                  {skills.map((skill) => (
+                    <div key={skill.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`skill-${skill.id}`}
+                        checked={technicalSkills.includes(skill.id)}
+                        onCheckedChange={() => handleSkillToggle(skill.id)}
+                        disabled={technicalSkills.length >= 5 && !technicalSkills.includes(skill.id)}
+                      />
+                      <label
+                        htmlFor={`skill-${skill.id}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {skill.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      )}
     </div>
   );
 };

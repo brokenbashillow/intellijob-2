@@ -25,6 +25,25 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
     throw new Error("Failed to create assessment");
   }
 
+  // Save each technical skill to the user_skills table
+  if (formData.technicalSkills && formData.technicalSkills.length > 0) {
+    const userSkillsData = formData.technicalSkills.map(skillId => ({
+      user_id: user.data.user.id,
+      skill_id: skillId,
+      assessment_id: assessmentData.id,
+      skill_type: 'technical'
+    }));
+
+    const { error: skillsError } = await supabase
+      .from('user_skills')
+      .insert(userSkillsData);
+
+    if (skillsError) {
+      console.error("Error saving technical skills:", skillsError);
+      // Continue execution, don't throw here to ensure assessment is still saved
+    }
+  }
+
   // Return the assessment ID which we'll need for other operations
   return assessmentData.id;
 };
