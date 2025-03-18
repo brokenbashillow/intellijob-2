@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { SkillItem } from "@/hooks/useResumeData";
+import { SkillItem } from "@/types/resume";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -36,7 +37,10 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
   const technicalSkills = skills.filter(skill => skill.type === 'technical');
   const softSkills = skills.filter(skill => skill.type === 'soft');
 
+  console.log("Current skills in SkillsSection:", skills);
+
   const removeSkill = (skillId: string) => {
+    console.log("Removing skill with ID:", skillId);
     setSkills(skills.filter(skill => skill.id !== skillId));
   };
 
@@ -68,8 +72,12 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
       return;
     }
 
+    // Generate a proper UUID for the skill ID to ensure database compatibility
+    const newSkillId = crypto.randomUUID ? crypto.randomUUID() : 
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
     const newSkillItem: SkillItem = {
-      id: Math.random().toString(36).substring(2, 11), // Generate a random ID
+      id: newSkillId,
       name: newSkill.trim(),
       type: skillType,
     };
@@ -99,6 +107,9 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add a New Skill</DialogTitle>
+              <DialogDescription>
+                Add skills that highlight your technical abilities and soft skills.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">

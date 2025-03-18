@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ResumeData, PersonalDetails } from "@/types/resume";
+import { ResumeData, PersonalDetails, SkillItem } from "@/types/resume";
 import { parseEducationData, parseWorkExperience, parseCertificate, parseReference } from "@/utils/resumeDataParser";
 
 export const fetchUserProfile = async () => {
@@ -56,8 +56,16 @@ export const saveResumeData = async (data: ResumeData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No authenticated user");
 
-  // First, prepare the skills data
-  const skillsJson = data.skills.map(skill => JSON.stringify(skill));
+  // First, prepare the skills data - ensure proper formatting
+  const skillsJson = data.skills.map(skill => {
+    // Make sure each skill has the required properties
+    return JSON.stringify({
+      id: skill.id,
+      name: skill.name,
+      type: skill.type
+    });
+  });
+  
   console.log("Saving skills to resume:", skillsJson);
 
   const resumeData = {
@@ -103,19 +111,27 @@ export const saveResumeData = async (data: ResumeData) => {
   
   if (existingResume) {
     // Update existing resume
+    console.log("Updating existing resume with skills data");
     const { error: updateError } = await supabase
       .from('resumes')
       .update(resumeData)
       .eq('user_id', user.id);
     
     error = updateError;
+    if (updateError) {
+      console.error("Error updating resume:", updateError);
+    }
   } else {
     // Insert new resume
+    console.log("Creating new resume with skills data");
     const { error: insertError } = await supabase
       .from('resumes')
       .insert(resumeData);
     
     error = insertError;
+    if (insertError) {
+      console.error("Error inserting resume:", insertError);
+    }
   }
 
   if (error) throw error;
@@ -132,33 +148,55 @@ export const saveResumeData = async (data: ResumeData) => {
   console.log("Updating assessment with technical skills:", techSkillIds);
   console.log("Updating assessment with soft skills:", softSkillIds);
 
-  const { data: assessmentData } = await supabase
+  // Get the assessment ID to update
+  const { data: assessmentData, error: assessmentFetchError } = await supabase
     .from('seeker_assessments')
     .select('id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
+  if (assessmentFetchError) {
+    console.error("Error fetching assessment:", assessmentFetchError);
+    throw assessmentFetchError;
+  }
+
   if (assessmentData) {
+    console.log("Updating assessment with ID:", assessmentData.id);
     const { error: assessmentError } = await supabase
       .from('seeker_assessments')
       .update({
         technical_skills: techSkillIds.length > 0 ? techSkillIds : null,
-        soft_skills: softSkillIds.length > 0 ? softSkillIds : null
+        soft_skills: softSkillIds.length > 0 ? softSkillIds : null,
+        // Also update the experience field from work experience
+        experience: data.workExperience.length > 0 ? data.workExperience[0].description : null
       })
       .eq('id', assessmentData.id);
 
-    if (assessmentError) throw assessmentError;
+    if (assessmentError) {
+      console.error("Error updating assessment:", assessmentError);
+      throw assessmentError;
+    } else {
+      console.log("Assessment updated successfully");
+    }
+  } else {
+    console.log("No assessment found to update");
   }
 
   // Also update the user_skills table
   if (data.skills.length > 0) {
     // First delete existing skills
+    console.log("Deleting existing user skills");
     const { error: deleteError } = await supabase
       .from('user_skills')
       .delete()
       .eq('user_id', user.id);
 
-    if (deleteError) throw deleteError;
+    if (deleteError) {
+      console.error("Error deleting user skills:", deleteError);
+      throw deleteError;
+    }
 
     // Then insert new skills
     const skillsToInsert = data.skills.map(skill => ({
@@ -167,13 +205,20 @@ export const saveResumeData = async (data: ResumeData) => {
       skill_type: skill.type,
       assessment_id: assessmentData?.id
     }));
+    
+    console.log("Inserting user skills:", skillsToInsert);
 
     if (skillsToInsert.length > 0) {
       const { error: insertSkillsError } = await supabase
         .from('user_skills')
         .insert(skillsToInsert);
 
-      if (insertSkillsError) throw insertSkillsError;
+      if (insertSkillsError) {
+        console.error("Error inserting user skills:", insertSkillsError);
+        throw insertSkillsError;
+      } else {
+        console.log("User skills inserted successfully");
+      }
     }
   }
 };
