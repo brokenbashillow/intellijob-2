@@ -5,6 +5,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Skill, SkillCategory } from "@/types/skills";
 import { useState } from "react";
+import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
 
 interface CategorySkillsStepProps {
   title: string;
@@ -23,7 +28,7 @@ const CategorySkillsStep = ({
   skills,
   type,
 }: CategorySkillsStepProps) => {
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   const handleSkillToggle = (skillId: string) => {
     if (selectedSkills.includes(skillId)) {
@@ -37,7 +42,7 @@ const CategorySkillsStep = ({
   };
 
   const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => ({
+    setOpenCategories(prev => ({
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
@@ -54,7 +59,7 @@ const CategorySkillsStep = ({
 
   return (
     <div className="space-y-4">
-      <Label>{title}</Label>
+      <Label className="text-lg font-medium">{title}</Label>
       
       {selectedSkills.length < 3 ? (
         <Alert variant="destructive">
@@ -76,47 +81,48 @@ const CategorySkillsStep = ({
         </Alert>
       )}
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-4">
         {categoriesWithSkills.map((category) => (
-          <div key={category.id} className="col-span-1 border rounded-md">
-            <div 
-              className="flex justify-between items-center p-3 cursor-pointer hover:bg-slate-50"
-              onClick={() => toggleCategory(category.id)}
-            >
+          <Collapsible
+            key={category.id}
+            open={openCategories[category.id]}
+            onOpenChange={() => toggleCategory(category.id)}
+            className="border rounded-md overflow-hidden"
+          >
+            <CollapsibleTrigger className="flex justify-between items-center w-full p-4 text-left hover:bg-slate-50">
               <h3 className="font-medium">{category.name}</h3>
-              {expandedCategories[category.id] ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              {openCategories[category.id] ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
               )}
-            </div>
+            </CollapsibleTrigger>
             
-            {expandedCategories[category.id] && (
-              <div className="p-3 pt-0 border-t">
-                <div className="grid grid-cols-1 gap-2">
-                  {getSkillsForCategory(category.id).map((skill) => (
-                    <div key={skill.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`skill-${skill.id}`}
-                        checked={selectedSkills.includes(skill.id)}
-                        onCheckedChange={() => handleSkillToggle(skill.id)}
-                        disabled={
-                          selectedSkills.length >= 5 &&
-                          !selectedSkills.includes(skill.id)
-                        }
-                      />
-                      <label
-                        htmlFor={`skill-${skill.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {skill.name}
-                      </label>
-                    </div>
-                  ))}
-                </div>
+            <CollapsibleContent className="px-4 pb-4 pt-1 border-t">
+              <div className="grid grid-cols-1 gap-3">
+                {getSkillsForCategory(category.id).map((skill) => (
+                  <div key={skill.id} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`skill-${skill.id}`}
+                      checked={selectedSkills.includes(skill.id)}
+                      onCheckedChange={() => handleSkillToggle(skill.id)}
+                      disabled={
+                        selectedSkills.length >= 5 &&
+                        !selectedSkills.includes(skill.id)
+                      }
+                      className="mt-1"
+                    />
+                    <label
+                      htmlFor={`skill-${skill.id}`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {skill.name}
+                    </label>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         ))}
       </div>
     </div>

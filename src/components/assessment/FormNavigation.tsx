@@ -21,7 +21,7 @@ const FormNavigation = ({
           Previous
         </Button>
       )}
-      <Button onClick={onNext} disabled={isSubmitting} className="bg-blue-900 hover:bg-blue-800">
+      <Button onClick={onNext} disabled={isSubmitting}>
         {currentStep === 5 ? "Submit" : "Next"}
       </Button>
     </div>
