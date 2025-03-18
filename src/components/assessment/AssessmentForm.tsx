@@ -1,4 +1,3 @@
-
 import { useSkillsData } from "@/hooks/useSkillsData";
 import { useAssessmentForm } from "@/hooks/useAssessmentForm";
 import EducationStep from "./EducationStep";
@@ -24,11 +23,11 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
   } = useAssessmentForm(onProgressChange);
 
   // Get skills data to validate and ensure proper UUIDs
-  const { skills } = useSkillsData();
+  const { skills, loading } = useSkillsData();
 
   // Validate and fix skills
   useEffect(() => {
-    if ((formData.technicalSkills?.length > 0 || formData.softSkills?.length > 0) && skills?.length > 0) {
+    if (!loading && skills?.length > 0 && (formData.technicalSkills?.length > 0 || formData.softSkills?.length > 0)) {
       console.log("Current technical skills:", formData.technicalSkills);
       console.log("Current soft skills:", formData.softSkills);
       
@@ -39,17 +38,22 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
         const validSkills: string[] = [];
         
         // Check if the skill names match any skills in the database by name
-        for (const skillName of skillNames) {
+        skillNames.forEach(skillName => {
           // If it's already a valid UUID, keep it
           if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(skillName)) {
-            validSkills.push(skillName);
-            console.log(`${skillType} skill ${skillName} is a valid UUID, keeping as is`);
-            continue;
+            // Verify that the UUID actually exists in our skills list
+            const skillExists = skills.some(s => s.id === skillName);
+            if (skillExists) {
+              validSkills.push(skillName);
+              console.log(`${skillType} skill ${skillName} is a valid UUID and exists in our skills list`);
+            } else {
+              console.warn(`${skillType} skill ${skillName} is a valid UUID but doesn't exist in our skills list`);
+            }
+            return;
           }
           
-          // Look for a matching skill by name or ID
+          // Look for a matching skill by name
           const matchingSkill = skills.find(s => 
-            s.id === skillName || 
             s.name.toLowerCase() === skillName.toLowerCase() ||
             s.name.toLowerCase().replace(/\s+/g, '-') === skillName.toLowerCase()
           );
@@ -60,7 +64,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
           } else {
             console.warn(`Could not find matching skill for ${skillType} skill: ${skillName}`);
           }
-        }
+        });
         
         return validSkills;
       };
@@ -68,10 +72,10 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       // Process technical skills
       if (formData.technicalSkills?.length) {
         const fixedTechnicalSkills = validateAndFixSkills(formData.technicalSkills, 'technical');
-        console.log(`Technical skills before: ${formData.technicalSkills.length}, after validation: ${fixedTechnicalSkills.length}`);
         
         if (fixedTechnicalSkills.length !== formData.technicalSkills.length || 
             !fixedTechnicalSkills.every((id, i) => id === formData.technicalSkills[i])) {
+          console.log(`Technical skills before: ${formData.technicalSkills.length}, after validation: ${fixedTechnicalSkills.length}`);
           console.log("Fixed technical skills:", fixedTechnicalSkills);
           setFormData(prev => ({
             ...prev,
@@ -83,10 +87,10 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       // Process soft skills
       if (formData.softSkills?.length) {
         const fixedSoftSkills = validateAndFixSkills(formData.softSkills, 'soft');
-        console.log(`Soft skills before: ${formData.softSkills.length}, after validation: ${fixedSoftSkills.length}`);
         
         if (fixedSoftSkills.length !== formData.softSkills.length || 
             !fixedSoftSkills.every((id, i) => id === formData.softSkills[i])) {
+          console.log(`Soft skills before: ${formData.softSkills.length}, after validation: ${fixedSoftSkills.length}`);
           console.log("Fixed soft skills:", fixedSoftSkills);
           setFormData(prev => ({
             ...prev,
@@ -95,7 +99,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
         }
       }
     }
-  }, [formData.technicalSkills, formData.softSkills, skills, setFormData]);
+  }, [formData.technicalSkills, formData.softSkills, skills, setFormData, loading]);
 
   return (
     <div className="space-y-6">
@@ -120,18 +124,20 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       {currentStep === 3 && (
         <TechnicalSkillsStep
           technicalSkills={formData.technicalSkills || []}
-          setTechnicalSkills={(technicalSkills) =>
-            setFormData((prev) => ({ ...prev, technicalSkills }))
-          }
+          setTechnicalSkills={(technicalSkills) => {
+            console.log("Setting technical skills:", technicalSkills);
+            setFormData((prev) => ({ ...prev, technicalSkills }));
+          }}
         />
       )}
 
       {currentStep === 4 && (
         <SoftSkillsStep
           softSkills={formData.softSkills || []}
-          setSoftSkills={(softSkills) =>
-            setFormData((prev) => ({ ...prev, softSkills }))
-          }
+          setSoftSkills={(softSkills) => {
+            console.log("Setting soft skills:", softSkills);
+            setFormData((prev) => ({ ...prev, softSkills }));
+          }}
         />
       )}
 

@@ -29,17 +29,8 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
       return isValidUuid;
     });
     
-    // If all IDs are valid UUIDs, return them directly
-    if (validUuidIds.length === skillIds.length) {
-      console.log(`All ${skillIds.length} ${skillType} skill IDs are valid UUIDs`);
-      return validUuidIds;
-    }
-    
-    // For non-UUID strings, try to find matching skills in the database
-    console.log(`Trying to match ${skillType} skill names to IDs`);
-    
+    // Get all skills to match against
     try {
-      // Get all skills to match against
       const { data: allSkills, error: skillsError } = await supabase
         .from('skills')
         .select('id, name');
@@ -108,20 +99,25 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
   console.log("Technical skills saved to assessment:", validTechnicalSkills);
   console.log("Soft skills saved to assessment:", validSoftSkills);
 
+  // Clear previous user skills before adding new ones
+  try {
+    const { error: deleteSkillsError } = await supabase
+      .from('user_skills')
+      .delete()
+      .eq('user_id', user.data.user.id);
+      
+    if (deleteSkillsError) {
+      console.error("Error deleting existing skills:", deleteSkillsError);
+    } else {
+      console.log("Successfully deleted previous user skills");
+    }
+  } catch (e) {
+    console.error("Exception deleting user skills:", e);
+  }
+
   // Save each technical skill to the user_skills table
   if (validTechnicalSkills.length > 0) {
     try {
-      // First delete existing technical skills for this user to avoid duplicates
-      const { error: deleteTechSkillsError } = await supabase
-        .from('user_skills')
-        .delete()
-        .eq('user_id', user.data.user.id)
-        .eq('skill_type', 'technical');
-        
-      if (deleteTechSkillsError) {
-        console.error("Error deleting existing technical skills:", deleteTechSkillsError);
-      }
-        
       const technicalSkillsData = validTechnicalSkills.map(skillId => ({
         user_id: user.data.user.id,
         skill_id: skillId,
@@ -146,17 +142,6 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
   // Save each soft skill to the user_skills table
   if (validSoftSkills.length > 0) {
     try {
-      // First delete existing soft skills for this user to avoid duplicates
-      const { error: deleteSoftSkillsError } = await supabase
-        .from('user_skills')
-        .delete()
-        .eq('user_id', user.data.user.id)
-        .eq('skill_type', 'soft');
-        
-      if (deleteSoftSkillsError) {
-        console.error("Error deleting existing soft skills:", deleteSoftSkillsError);
-      }
-      
       const softSkillsData = validSoftSkills.map(skillId => ({
         user_id: user.data.user.id,
         skill_id: skillId,

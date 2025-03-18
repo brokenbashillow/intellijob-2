@@ -28,6 +28,10 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
     try {
       setIsSubmitting(true);
       
+      // Log the skills before submission to help with debugging
+      console.log("Submitting assessment with technical skills:", formData.technicalSkills);
+      console.log("Submitting assessment with soft skills:", formData.softSkills);
+      
       // Save the assessment data without the location field
       const assessmentData = {
         education: formData.education,
@@ -45,6 +49,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
       
       // Save location data to the profile
       if (formData.location) {
+        console.log("Saving location data to profile:", formData.location);
         const { error: locationError } = await supabase
           .from('profiles')
           .update({
@@ -54,7 +59,12 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
           })
           .eq('id', user.id);
           
-        if (locationError) throw locationError;
+        if (locationError) {
+          console.error("Error saving location data:", locationError);
+          throw locationError;
+        } else {
+          console.log("Location data saved successfully");
+        }
       }
       
       toast({
