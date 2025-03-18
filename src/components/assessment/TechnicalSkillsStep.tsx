@@ -25,7 +25,9 @@ const TechnicalSkillsStep = ({
   
   useEffect(() => {
     console.log("TechnicalSkillsStep rendered with skills:", technicalSkills);
-  }, [technicalSkills]);
+    console.log("Available categories:", categories);
+    console.log("Available skills:", skills);
+  }, [technicalSkills, categories, skills]);
   
   const handleSkillToggle = (skillId: string) => {
     console.log("Toggle called for skill ID:", skillId);
@@ -107,6 +109,22 @@ const TechnicalSkillsStep = ({
       
       {loading ? (
         <div className="text-center py-4">Loading skills...</div>
+      ) : categories.length === 0 || skills.length === 0 ? (
+        <div className="text-center py-4">
+          <Alert variant="destructive">
+            <AlertDescription>
+              Failed to load skills. Please refresh the page or try again later.
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : categoriesWithSkills.length === 0 ? (
+        <div className="text-center py-4">
+          <Alert>
+            <AlertDescription>
+              No technical skill categories found. Please check your database setup.
+            </AlertDescription>
+          </Alert>
+        </div>
       ) : (
         <div className="space-y-4">
           {categoriesWithSkills.map((category) => (

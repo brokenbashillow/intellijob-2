@@ -9,6 +9,7 @@ export const useSkillsData = () => {
   const [categories, setCategories] = useState<SkillCategory[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     const fetchSkillsData = async () => {
@@ -54,6 +55,8 @@ export const useSkillsData = () => {
         if (formattedCategories.length === 0 || formattedSkills.length === 0) {
           console.log("No skills found in database, using fallback data");
           await populateSkillsData();
+          // Refresh the data after population by triggering another fetch
+          setRefreshTrigger(prev => prev + 1);
           return;
         }
         
@@ -70,6 +73,8 @@ export const useSkillsData = () => {
         
         // If there's an error, try to populate the database with our fallback data
         await populateSkillsData();
+        // Refresh the data after population by triggering another fetch
+        setRefreshTrigger(prev => prev + 1);
       } finally {
         setLoading(false);
       }
@@ -125,6 +130,33 @@ export const useSkillsData = () => {
             }
             
             console.log("Inserted skills into database");
+            
+            // Fetch the data from the database after populating it
+            const { data: freshCategoriesData } = await supabase
+              .from('skill_categories')
+              .select('*');
+            
+            const { data: freshSkillsData } = await supabase
+              .from('skills')
+              .select('*');
+            
+            if (freshCategoriesData && freshCategoriesData.length > 0) {
+              const freshCategories: SkillCategory[] = freshCategoriesData.map(category => ({
+                id: category.id,
+                name: category.name,
+                type: category.type as 'technical' | 'soft'
+              }));
+              setCategories(freshCategories);
+            }
+            
+            if (freshSkillsData && freshSkillsData.length > 0) {
+              const freshSkills: Skill[] = freshSkillsData.map(skill => ({
+                id: skill.id,
+                name: skill.name,
+                category_id: skill.category_id || ''
+              }));
+              setSkills(freshSkills);
+            }
           }
         }
       } catch (error) {
@@ -133,7 +165,7 @@ export const useSkillsData = () => {
     };
 
     fetchSkillsData();
-  }, [toast]);
+  }, [toast, refreshTrigger]);
 
   return { categories, skills, loading };
 };
