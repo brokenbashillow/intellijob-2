@@ -180,7 +180,7 @@ export const useResumeData = () => {
     try {
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('seeker_assessments')
-        .select('education, experience')
+        .select('education, experience, technical_skills, soft_skills')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -208,6 +208,59 @@ export const useResumeData = () => {
 
         // Fetch skills from user_skills table
         await fetchUserSkills(userId);
+
+        // If no skills were fetched, try to initialize from assessment technical_skills and soft_skills
+        if (skills.length === 0) {
+          const skillPromises = [];
+          
+          // Process technical skills
+          if (assessmentData.technical_skills && assessmentData.technical_skills.length > 0) {
+            const techSkillPromise = supabase
+              .from('skills')
+              .select('id, name')
+              .in('id', assessmentData.technical_skills);
+            skillPromises.push(techSkillPromise);
+          }
+          
+          // Process soft skills
+          if (assessmentData.soft_skills && assessmentData.soft_skills.length > 0) {
+            const softSkillPromise = supabase
+              .from('skills')
+              .select('id, name')
+              .in('id', assessmentData.soft_skills);
+            skillPromises.push(softSkillPromise);
+          }
+          
+          if (skillPromises.length > 0) {
+            const results = await Promise.all(skillPromises);
+            
+            const allSkills: SkillItem[] = [];
+            
+            // Add technical skills
+            if (results[0] && !results[0].error && results[0].data) {
+              const techSkills = results[0].data.map(skill => ({
+                id: skill.id,
+                name: skill.name,
+                type: 'technical' as const
+              }));
+              allSkills.push(...techSkills);
+            }
+            
+            // Add soft skills
+            if (results[1] && !results[1].error && results[1].data) {
+              const softSkills = results[1].data.map(skill => ({
+                id: skill.id,
+                name: skill.name,
+                type: 'soft' as const
+              }));
+              allSkills.push(...softSkills);
+            }
+            
+            if (allSkills.length > 0) {
+              setSkills(allSkills);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error initializing from assessment:', error);
@@ -230,6 +283,15 @@ export const useResumeData = () => {
       const certificatesStrings = certificates.length > 0 ? certificates.map(item => JSON.stringify(item)) : null;
       const referencesStrings = references.length > 0 ? references.map(item => JSON.stringify(item)) : null;
       const skillsStrings = skills.length > 0 ? skills.map(item => JSON.stringify(item)) : null;
+
+      // Extract technical and soft skill IDs for seeker_assessments update
+      const technicalSkillIds = skills
+        .filter(skill => skill.type === 'technical')
+        .map(skill => skill.id);
+      
+      const softSkillIds = skills
+        .filter(skill => skill.type === 'soft')
+        .map(skill => skill.id);
 
       const { data: existingResume } = await supabase
         .from('resumes')
@@ -270,6 +332,7 @@ export const useResumeData = () => {
 
       if (error) throw error;
 
+      // Update the profile with first and last name
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -279,6 +342,54 @@ export const useResumeData = () => {
         .eq('id', user.id);
 
       if (profileError) throw profileError;
+
+      // Update or create seeker_assessment with the extracted skills
+      const { data: assessmentData, error: getAssessmentError } = await supabase
+        .from('seeker_assessments')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (getAssessmentError) throw getAssessmentError;
+
+      // Update the assessment with technical_skills and soft_skills
+      if (assessmentData) {
+        const { error: updateAssessmentError } = await supabase
+          .from('seeker_assessments')
+          .update({
+            technical_skills: technicalSkillIds.length > 0 ? technicalSkillIds : null,
+            soft_skills: softSkillIds.length > 0 ? softSkillIds : null,
+            experience: workExperience.length > 0 ? workExperience[0].description : "",
+          })
+          .eq('id', assessmentData.id);
+
+        if (updateAssessmentError) throw updateAssessmentError;
+      }
+
+      // Sync user_skills table with the current skills
+      if (skills.length > 0) {
+        // First, delete existing user skills
+        const { error: deleteError } = await supabase
+          .from('user_skills')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (deleteError) throw deleteError;
+
+        // Then, insert the current skills
+        const skillsToInsert = skills.map(skill => ({
+          user_id: user.id,
+          skill_id: skill.id,
+          skill_type: skill.type,
+          assessment_id: assessmentData?.id
+        }));
+
+        const { error: insertSkillsError } = await supabase
+          .from('user_skills')
+          .insert(skillsToInsert);
+
+        if (insertSkillsError) throw insertSkillsError;
+      }
 
       setHasResumeData(true);
 
@@ -291,11 +402,6 @@ export const useResumeData = () => {
         console.error("Error triggering assessment re-evaluation:", analyzeError);
         // We don't want to fail the whole save operation if the analysis fails
       }
-
-      toast({
-        title: "Success",
-        description: "Resume data saved successfully",
-      });
     } catch (error: any) {
       console.error('Error saving resume data:', error);
       toast({
@@ -303,6 +409,7 @@ export const useResumeData = () => {
         title: "Error",
         description: error.message || "Failed to save resume data",
       });
+      throw error; // Rethrow to allow handling in the UI
     } finally {
       setIsLoading(false);
     }

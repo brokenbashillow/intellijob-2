@@ -15,12 +15,14 @@ import { WorkExperienceSection } from "./WorkExperienceSection";
 import { CertificatesSection } from "./CertificatesSection";
 import { ReferencesSection } from "./ReferencesSection";
 import { SkillsSection } from "./SkillsSection";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ResumeProps {
   onSave?: () => void;
 }
 
 const Resume = ({ onSave }: ResumeProps) => {
+  const { toast } = useToast();
   const {
     personalDetails,
     setPersonalDetails,
@@ -41,9 +43,55 @@ const Resume = ({ onSave }: ResumeProps) => {
   } = useResumeData();
 
   const handleSaveWithCallback = async () => {
-    await handleSave();
-    if (onSave) {
-      onSave();
+    try {
+      // Validate required fields before saving
+      if (workExperience.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Missing information",
+          description: "Please add at least one work experience entry before saving.",
+        });
+        return;
+      }
+
+      // Check if there are any technical skills
+      const hasTechnicalSkills = skills.some(skill => skill.type === 'technical');
+      if (!hasTechnicalSkills) {
+        toast({
+          variant: "destructive",
+          title: "Missing information",
+          description: "Please add at least one technical skill before saving.",
+        });
+        return;
+      }
+
+      // Check if there are any soft skills
+      const hasSoftSkills = skills.some(skill => skill.type === 'soft');
+      if (!hasSoftSkills) {
+        toast({
+          variant: "destructive",
+          title: "Missing information",
+          description: "Please add at least one soft skill before saving.",
+        });
+        return;
+      }
+
+      await handleSave();
+      toast({
+        title: "Success",
+        description: "Resume saved successfully and assessment updated.",
+      });
+      
+      if (onSave) {
+        onSave();
+      }
+    } catch (error) {
+      console.error("Error saving resume:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save resume. Please try again.",
+      });
     }
   };
 
