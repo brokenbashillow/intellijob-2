@@ -26,18 +26,6 @@ export const validateAssessmentStep = (
   }
 
   if (currentStep === 3) {
-    if (!formData.location.country || !formData.location.city) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter your country and city",
-      });
-      return false;
-    }
-    return true;
-  }
-
-  if (currentStep === 4) {
     if (!formData.technicalSkills || formData.technicalSkills.length < 3) {
       toast({
         variant: "destructive",
@@ -51,6 +39,18 @@ export const validateAssessmentStep = (
         variant: "destructive",
         title: "Error",
         description: "Please select at most 5 technical skills",
+      });
+      return false;
+    }
+    return true;
+  }
+
+  if (currentStep === 4) {
+    if (!formData.location.country || !formData.location.city) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter your country and city",
       });
       return false;
     }

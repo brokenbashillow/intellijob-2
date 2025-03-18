@@ -69,7 +69,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const handleNext = () => {
     if (!validateAssessmentStep(currentStep, formData, toast)) return;
 
-    if (currentStep === 4) { // Updated from 3 to 4
+    if (currentStep === 4) {
       handleSubmit();
       return;
     }

@@ -42,19 +42,19 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       )}
 
       {currentStep === 3 && (
-        <LocationStep
-          location={formData.location}
-          setLocation={(location) =>
-            setFormData((prev) => ({ ...prev, location }))
+        <TechnicalSkillsStep
+          technicalSkills={formData.technicalSkills || []}
+          setTechnicalSkills={(technicalSkills) =>
+            setFormData((prev) => ({ ...prev, technicalSkills }))
           }
         />
       )}
 
       {currentStep === 4 && (
-        <TechnicalSkillsStep
-          technicalSkills={formData.technicalSkills || []}
-          setTechnicalSkills={(technicalSkills) =>
-            setFormData((prev) => ({ ...prev, technicalSkills }))
+        <LocationStep
+          location={formData.location}
+          setLocation={(location) =>
+            setFormData((prev) => ({ ...prev, location }))
           }
         />
       )}
