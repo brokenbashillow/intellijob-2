@@ -206,41 +206,104 @@ export const useJobRecommendations = () => {
   };
 
   const setFallbackJobs = () => {
-    // Always set fallback jobs when there are no real ones
+    // More diverse fallback jobs across different industries
     setJobs([
       { 
         id: "fallback-1",
-        title: "Frontend Developer", 
-        company: "IntelliJob",
+        title: "Marketing Specialist", 
+        company: "Global Brands Inc.",
         location: "Remote", 
-        description: "Join our team to build modern web applications using React, TypeScript, and other cutting-edge technologies.",
+        description: "Join our marketing team to develop and implement digital marketing strategies that drive customer engagement and brand awareness. Experience with social media management and content creation required.",
         postedAt: new Date().toISOString(), 
         platform: "fallback",
         url: "#",
-        reason: "Example job recommendation"
+        field: "Marketing",
+        reason: "Suggested based on your profile"
       },
       { 
         id: "fallback-2",
-        title: "UX/UI Designer", 
-        company: "IntelliJob",
+        title: "Data Scientist", 
+        company: "Analytics Solutions",
         location: "Remote", 
-        description: "Looking for a talented UX/UI designer to help create intuitive and engaging user experiences for digital products.",
+        description: "Looking for a skilled data scientist to analyze large datasets and build predictive models. Experience with Python, R, and machine learning frameworks required.",
         postedAt: new Date().toISOString(), 
         platform: "fallback",
         url: "#",
-        reason: "Example job recommendation"
+        field: "Data Science",
+        reason: "Matches your technical skills"
       },
       { 
         id: "fallback-3",
-        title: "Full Stack Engineer", 
-        company: "IntelliJob",
+        title: "UX/UI Designer", 
+        company: "Creative Digital Agency",
         location: "Remote", 
-        description: "Seeking a full stack developer with experience in React, Node.js, and database management to join our growing team.",
+        description: "Design intuitive and engaging user experiences for web and mobile applications. Proficiency in Figma, Adobe XD, and user research methodologies is essential.",
         postedAt: new Date().toISOString(), 
         platform: "fallback",
         url: "#",
-        reason: "Example job recommendation"
+        field: "Design",
+        reason: "Aligns with your design experience"
       },
+      { 
+        id: "fallback-4",
+        title: "Project Manager", 
+        company: "Innovative Solutions",
+        location: "Remote", 
+        description: "Lead cross-functional teams to deliver successful projects on time and within budget. Strong communication, organization, and stakeholder management skills required.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        field: "Project Management",
+        reason: "Relevant to your leadership experience"
+      },
+      { 
+        id: "fallback-5",
+        title: "Financial Analyst", 
+        company: "Global Investment Partners",
+        location: "Remote", 
+        description: "Analyze financial data, prepare reports, and provide recommendations to support business decision-making. Strong Excel skills and financial modeling experience required.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        field: "Finance",
+        reason: "Suggested based on market demand"
+      },
+      { 
+        id: "fallback-6",
+        title: "Content Writer", 
+        company: "Media Publishing Group",
+        location: "Remote", 
+        description: "Create compelling content across various platforms including blogs, articles, and social media. Strong writing skills and SEO knowledge required.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        field: "Content Creation",
+        reason: "Matches your communication skills"
+      },
+      { 
+        id: "fallback-7",
+        title: "Human Resources Specialist", 
+        company: "People First HR",
+        location: "Remote", 
+        description: "Support talent acquisition, employee relations, and HR policy implementation. Experience with HRIS systems and knowledge of employment laws required.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        field: "Human Resources",
+        reason: "Growing field with opportunities"
+      },
+      { 
+        id: "fallback-8",
+        title: "Product Manager", 
+        company: "Tech Innovations Ltd",
+        location: "Remote", 
+        description: "Lead product development from conception to launch, working closely with engineering, design, and marketing teams. Experience with agile methodologies required.",
+        postedAt: new Date().toISOString(), 
+        platform: "fallback",
+        url: "#",
+        field: "Product Management",
+        reason: "Aligns with your strategic thinking skills"
+      }
     ]);
   };
 
