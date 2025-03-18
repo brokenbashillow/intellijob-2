@@ -22,33 +22,21 @@ const SoftSkillsStep = ({
   const { categories, skills, loading } = useSkillsData();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   
-  useEffect(() => {
-    console.log("SoftSkillsStep rendered with skills:", softSkills);
-    console.log("Available categories:", categories);
-    console.log("Available skills:", skills);
-  }, [softSkills, categories, skills]);
-  
+  // Handle skill selection/deselection
   const handleSkillToggle = (skillId: string) => {
-    console.log("Toggle called for skill ID:", skillId);
-    
-    if (!skillId) {
-      console.error("Invalid skill ID provided");
-      return;
-    }
-    
     if (softSkills.includes(skillId)) {
-      // Remove the skill - create a new array to ensure React detects the change
+      // Remove the skill
       setSoftSkills(softSkills.filter(id => id !== skillId));
     } else {
-      // Add the skill if under limit - create a new array to ensure React detects the change
+      // Add the skill if under limit
       if (softSkills.length >= 5) {
-        console.log("Max skills limit reached (5)");
         return;
       }
       setSoftSkills([...softSkills, skillId]);
     }
   };
 
+  // Toggle category expansion
   const toggleCategory = (categoryId: string) => {
     setOpenCategories(prev => ({
       ...prev,
@@ -103,19 +91,11 @@ const SoftSkillsStep = ({
       
       {loading ? (
         <div className="text-center py-4">Loading skills...</div>
-      ) : categories.length === 0 || skills.length === 0 ? (
-        <div className="text-center py-4">
-          <Alert variant="destructive">
-            <AlertDescription>
-              Failed to load skills. Please refresh the page or try again later.
-            </AlertDescription>
-          </Alert>
-        </div>
       ) : categoriesWithSkills.length === 0 ? (
         <div className="text-center py-4">
           <Alert>
             <AlertDescription>
-              No soft skill categories found. Please check your database setup.
+              No soft skill categories found.
             </AlertDescription>
           </Alert>
         </div>
