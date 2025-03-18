@@ -51,39 +51,86 @@ serve(async (req) => {
       );
     }
 
-    // Validate technical_skills and soft_skills to ensure they're valid UUIDs
-    if (assessment.technical_skills) {
-      const validTechnicalSkills = assessment.technical_skills.filter(id => {
-        // Check if the ID is a valid UUID (basic check)
+    // Function to validate and convert skills to proper format
+    const validateAndHandleSkills = async (skillIds: string[] | null, skillType: 'technical' | 'soft') => {
+      if (!skillIds || skillIds.length === 0) return [];
+      
+      console.log(`Processing ${skillType} skills:`, skillIds);
+      
+      // First check if skills are valid UUIDs
+      const validUuidSkills = skillIds.filter(id => {
         return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       });
       
-      if (validTechnicalSkills.length !== assessment.technical_skills.length) {
-        console.warn(
-          "Some technical skills had invalid UUIDs. Original:", 
-          assessment.technical_skills, 
-          "Filtered:", 
-          validTechnicalSkills
-        );
-        assessment.technical_skills = validTechnicalSkills;
+      // If all skills are valid UUIDs, use them directly
+      if (validUuidSkills.length === skillIds.length) {
+        console.log(`All ${skillType} skills are valid UUIDs, using directly`);
+        return validUuidSkills;
       }
-    }
+      
+      // For any non-UUID skills, try to look them up by name or slug
+      console.log(`Some ${skillType} skills aren't valid UUIDs, trying to match by name`);
+      
+      // Get all skills from the database for matching
+      const { data: allSkills, error: skillsError } = await supabaseClient
+        .from("skills")
+        .select("id, name");
+        
+      if (skillsError) {
+        console.error(`Error fetching all skills for ${skillType} matching:`, skillsError);
+        return validUuidSkills; // Return the valid UUIDs we already found
+      }
+      
+      // For each non-UUID skill, try to find a match
+      const skillMatches = new Set([...validUuidSkills]); // Start with valid UUIDs
+      
+      for (const skillId of skillIds) {
+        if (validUuidSkills.includes(skillId)) continue; // Skip already validated UUIDs
+        
+        // Try to match by name or slug-like ID
+        const matchingSkill = allSkills.find(s => 
+          s.name.toLowerCase() === skillId.toLowerCase() || 
+          s.name.toLowerCase().replace(/\s+/g, '-') === skillId.toLowerCase()
+        );
+        
+        if (matchingSkill) {
+          console.log(`Found matching skill for '${skillId}': ${matchingSkill.id} (${matchingSkill.name})`);
+          skillMatches.add(matchingSkill.id);
+        } else {
+          console.warn(`No matching skill found for '${skillId}'`);
+        }
+      }
+      
+      return Array.from(skillMatches);
+    };
     
-    if (assessment.soft_skills) {
-      const validSoftSkills = assessment.soft_skills.filter(id => {
-        // Check if the ID is a valid UUID (basic check)
-        return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      });
-      
-      if (validSoftSkills.length !== assessment.soft_skills.length) {
-        console.warn(
-          "Some soft skills had invalid UUIDs. Original:", 
-          assessment.soft_skills, 
-          "Filtered:", 
-          validSoftSkills
-        );
-        assessment.soft_skills = validSoftSkills;
+    // Process technical and soft skills
+    const validatedTechnicalSkills = await validateAndHandleSkills(assessment.technical_skills, 'technical');
+    const validatedSoftSkills = await validateAndHandleSkills(assessment.soft_skills, 'soft');
+    
+    // Update the assessment with the validated skills if needed
+    if (
+      (assessment.technical_skills && validatedTechnicalSkills.length !== assessment.technical_skills.length) || 
+      (assessment.soft_skills && validatedSoftSkills.length !== assessment.soft_skills.length)
+    ) {
+      console.log("Updating assessment with validated skills");
+      const { error: updateSkillsError } = await supabaseClient
+        .from("seeker_assessments")
+        .update({ 
+          technical_skills: validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : null,
+          soft_skills: validatedSoftSkills.length > 0 ? validatedSoftSkills : null
+        })
+        .eq("id", assessment.id);
+        
+      if (updateSkillsError) {
+        console.error("Error updating assessment with validated skills:", updateSkillsError);
+      } else {
+        console.log("Successfully updated assessment with validated skills");
       }
+      
+      // Update the assessment object for future use
+      assessment.technical_skills = validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : null;
+      assessment.soft_skills = validatedSoftSkills.length > 0 ? validatedSoftSkills : null;
     }
 
     // Then get resume data if it exists

@@ -1,4 +1,3 @@
-
 import { useSkillsData } from "@/hooks/useSkillsData";
 import { useAssessmentForm } from "@/hooks/useAssessmentForm";
 import EducationStep from "./EducationStep";
@@ -23,43 +22,66 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
     isSubmitting,
   } = useAssessmentForm(onProgressChange);
 
-  // Validate that skills are UUIDs
+  // Get skills data to validate and ensure proper UUIDs
   const { skills } = useSkillsData();
 
-  // Log skills for debugging
+  // Validate and fix skills
   useEffect(() => {
     if (formData.technicalSkills?.length || formData.softSkills?.length) {
       console.log("Current technical skills:", formData.technicalSkills);
       console.log("Current soft skills:", formData.softSkills);
       
-      // Validate each skill ID is a valid UUID
-      const validateSkills = (skillIds: string[]) => {
-        const validSkills = skillIds.filter(id => {
-          // Check if the ID exists in the skills data
-          return skills.some(s => s.id === id);
-        });
+      // Function to ensure skill IDs are valid UUIDs or convert them to real skill IDs
+      const validateAndFixSkills = (skillNames: string[]) => {
+        if (!skillNames?.length || !skills?.length) return [];
+        
+        const validSkills = [];
+        
+        // Check if the skill names match any skills in the database by name
+        for (const skillName of skillNames) {
+          // If it's already a valid UUID, keep it
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(skillName)) {
+            validSkills.push(skillName);
+            continue;
+          }
+          
+          // Look for a matching skill by name or ID
+          const matchingSkill = skills.find(s => 
+            s.id === skillName || 
+            s.name.toLowerCase() === skillName.toLowerCase() ||
+            s.name.toLowerCase().replace(/\s+/g, '-') === skillName.toLowerCase()
+          );
+          
+          if (matchingSkill) {
+            validSkills.push(matchingSkill.id);
+          } else {
+            console.warn(`Could not find matching skill for: ${skillName}`);
+          }
+        }
+        
         return validSkills;
       };
       
-      // If there are invalid skills, update the form data
+      // Process technical skills
       if (formData.technicalSkills?.length) {
-        const validTechnicalSkills = validateSkills(formData.technicalSkills);
-        if (validTechnicalSkills.length !== formData.technicalSkills.length) {
-          console.warn("Found invalid technical skills, filtering...");
+        const fixedTechnicalSkills = validateAndFixSkills(formData.technicalSkills);
+        if (fixedTechnicalSkills.length !== formData.technicalSkills.length) {
+          console.log("Fixed technical skills:", fixedTechnicalSkills);
           setFormData(prev => ({
             ...prev,
-            technicalSkills: validTechnicalSkills
+            technicalSkills: fixedTechnicalSkills
           }));
         }
       }
       
+      // Process soft skills
       if (formData.softSkills?.length) {
-        const validSoftSkills = validateSkills(formData.softSkills);
-        if (validSoftSkills.length !== formData.softSkills.length) {
-          console.warn("Found invalid soft skills, filtering...");
+        const fixedSoftSkills = validateAndFixSkills(formData.softSkills);
+        if (fixedSoftSkills.length !== formData.softSkills.length) {
+          console.log("Fixed soft skills:", fixedSoftSkills);
           setFormData(prev => ({
             ...prev,
-            softSkills: validSoftSkills
+            softSkills: fixedSoftSkills
           }));
         }
       }

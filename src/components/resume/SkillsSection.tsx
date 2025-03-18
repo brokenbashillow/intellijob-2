@@ -72,9 +72,26 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
       return;
     }
 
-    // Generate a proper UUID for the skill ID to ensure database compatibility
-    const newSkillId = crypto.randomUUID ? crypto.randomUUID() : 
-      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Generate a proper UUID for the skill ID
+    let newSkillId;
+    try {
+      // Use crypto.randomUUID() if available (modern browsers)
+      if (crypto.randomUUID) {
+        newSkillId = crypto.randomUUID();
+      } else {
+        // Fallback to a UUID v4 implementation
+        newSkillId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+      
+      console.log("Generated UUID for new skill:", newSkillId);
+    } catch (error) {
+      console.error("Error generating UUID:", error);
+      // Default to a simpler random ID if crypto fails
+      newSkillId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
 
     const newSkillItem: SkillItem = {
       id: newSkillId,

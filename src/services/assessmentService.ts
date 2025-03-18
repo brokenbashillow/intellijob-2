@@ -8,25 +8,74 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
     throw new Error("No authenticated user found");
   }
 
-  // Validate that skills are properly formatted (UUIDs)
-  const validateSkillIds = (skillIds: string[] | undefined) => {
+  // Function to process and validate skill IDs
+  const processSkillIds = async (skillIds: string[] | undefined, skillType: 'technical' | 'soft') => {
     if (!skillIds || skillIds.length === 0) return [];
     
-    // Check if each ID is a valid UUID
-    const validatedIds = skillIds.filter(id => {
+    console.log(`Processing ${skillType} skills:`, skillIds);
+    
+    // First check if all IDs are already valid UUIDs
+    const validUuidIds = skillIds.filter(id => {
       const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       if (!isValidUuid) {
-        console.warn(`Invalid skill ID format (not a UUID): ${id}`);
+        console.warn(`Invalid UUID format for ${skillType} skill: ${id}`);
       }
       return isValidUuid;
     });
     
-    console.log("Validated skill IDs:", validatedIds);
-    return validatedIds;
+    // If all IDs are valid UUIDs, return them directly
+    if (validUuidIds.length === skillIds.length) {
+      console.log(`All ${skillIds.length} ${skillType} skill IDs are valid UUIDs`);
+      return validUuidIds;
+    }
+    
+    // For non-UUID strings, try to find matching skills in the database
+    console.log(`Trying to match ${skillType} skill names to IDs`);
+    
+    try {
+      // Get all skills to match against
+      const { data: allSkills, error: skillsError } = await supabase
+        .from('skills')
+        .select('id, name');
+        
+      if (skillsError) {
+        console.error(`Error fetching skills for ${skillType} matching:`, skillsError);
+        return validUuidIds; // Return at least the valid UUIDs
+      }
+      
+      const skillMatches = new Set([...validUuidIds]); // Start with valid UUIDs
+      
+      // Try to match remaining skills by name
+      for (const skillId of skillIds) {
+        if (validUuidIds.includes(skillId)) continue; // Skip already validated UUIDs
+        
+        // Try to match by name or slug-like ID
+        const matchingSkill = allSkills.find(skill => 
+          skill.name.toLowerCase() === skillId.toLowerCase() || 
+          skill.name.toLowerCase().replace(/\s+/g, '-') === skillId.toLowerCase()
+        );
+        
+        if (matchingSkill) {
+          console.log(`Found matching skill for '${skillId}': ${matchingSkill.id} (${matchingSkill.name})`);
+          skillMatches.add(matchingSkill.id);
+        } else {
+          console.warn(`No matching skill found for '${skillId}'`);
+        }
+      }
+      
+      const processedSkills = Array.from(skillMatches);
+      console.log(`Processed ${processedSkills.length} ${skillType} skills (from original ${skillIds.length})`);
+      return processedSkills;
+      
+    } catch (error) {
+      console.error(`Error processing ${skillType} skills:`, error);
+      return validUuidIds; // Return at least the valid UUIDs
+    }
   };
   
-  const validTechnicalSkills = validateSkillIds(formData.technicalSkills);
-  const validSoftSkills = validateSkillIds(formData.softSkills);
+  // Process and validate both technical and soft skills
+  const validTechnicalSkills = await processSkillIds(formData.technicalSkills, 'technical');
+  const validSoftSkills = await processSkillIds(formData.softSkills, 'soft');
 
   // Save the assessment data
   const { data: assessmentData, error: assessmentError } = await supabase
