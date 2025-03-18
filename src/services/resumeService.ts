@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ResumeData, PersonalDetails, SkillItem } from "@/types/resume";
 import { parseEducationData, parseWorkExperience, parseCertificate, parseReference } from "@/utils/resumeDataParser";
@@ -55,7 +56,7 @@ export const saveResumeData = async (data: ResumeData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No authenticated user");
 
-  // Fix: Ensure each skill is properly stringified with correct fields only
+  // Fix: Store skills as JSON strings with consistent structure
   const skillsJson = data.skills.map(skill => {
     return JSON.stringify({
       id: skill.id,
