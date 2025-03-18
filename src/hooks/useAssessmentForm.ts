@@ -100,7 +100,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   };
 
   const handleNext = () => {
-    if (!validateAssessmentStep(currentStep, formData, toast.bind(null))) return;
+    if (!validateAssessmentStep(currentStep, formData, toast)) return;
 
     if (currentStep === 5) {
       handleSubmit();

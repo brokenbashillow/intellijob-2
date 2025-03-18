@@ -19,6 +19,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
     setFormData,
     handleNext,
     handlePrevious,
+    isSubmitting,
   } = useAssessmentForm(onProgressChange);
 
   return (
@@ -80,6 +81,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
         currentStep={currentStep}
         onNext={handleNext}
         onPrevious={handlePrevious}
+        isSubmitting={isSubmitting}
       />
     </div>
   );
