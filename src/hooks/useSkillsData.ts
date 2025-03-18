@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +5,7 @@ import type { SkillCategory, Skill } from "@/types/skills";
 
 // Define our custom skills data
 const customSkillCategories: SkillCategory[] = [
+  // Technical skill categories
   { id: "health-medicine", name: "Health and Medicine", type: "technical" },
   { id: "business-finance", name: "Business and Finance", type: "technical" },
   { id: "education", name: "Education", type: "technical" },
@@ -20,9 +20,18 @@ const customSkillCategories: SkillCategory[] = [
   { id: "sports-recreation", name: "Sports and Recreation", type: "technical" },
   { id: "aviation", name: "Aviation", type: "technical" },
   { id: "hospitality-tourism", name: "Hospitality and Tourism", type: "technical" },
+  
+  // Soft skill categories
+  { id: "communication", name: "Communication", type: "soft" },
+  { id: "leadership", name: "Leadership", type: "soft" },
+  { id: "interpersonal", name: "Interpersonal Skills", type: "soft" },
+  { id: "problem-solving", name: "Problem Solving", type: "soft" },
+  { id: "work-ethic", name: "Work Ethic", type: "soft" },
+  { id: "adaptability", name: "Adaptability", type: "soft" },
 ];
 
 const customSkills: Skill[] = [
+  // Technical Skills - keeping the existing ones
   // Health and Medicine
   { id: "clinical-procedures", name: "Clinical procedures (e.g., venipuncture, catheterization)", category_id: "health-medicine" },
   { id: "medical-terminology", name: "Medical terminology", category_id: "health-medicine" },
@@ -166,6 +175,61 @@ const customSkills: Skill[] = [
   { id: "tourism-marketing", name: "Tourism marketing strategies", category_id: "hospitality-tourism" },
   { id: "hotel-operations", name: "Hotel and restaurant operations", category_id: "hospitality-tourism" },
   { id: "travel-coordination", name: "Travel coordination", category_id: "hospitality-tourism" },
+  
+  // Soft Skills - Adding the requested soft skill list
+  // Communication
+  { id: "verbal-communication", name: "Verbal communication", category_id: "communication" },
+  { id: "active-listening", name: "Active listening", category_id: "communication" },
+  { id: "written-communication", name: "Written communication", category_id: "communication" },
+  { id: "presentation-skills", name: "Presentation skills", category_id: "communication" },
+  { id: "public-speaking-soft", name: "Public speaking", category_id: "communication" },
+  { id: "nonverbal-communication", name: "Nonverbal communication", category_id: "communication" },
+  { id: "storytelling", name: "Storytelling", category_id: "communication" },
+  
+  // Leadership
+  { id: "team-management-soft", name: "Team management", category_id: "leadership" },
+  { id: "decision-making", name: "Decision making", category_id: "leadership" },
+  { id: "delegation", name: "Delegation", category_id: "leadership" },
+  { id: "motivation", name: "Motivation", category_id: "leadership" },
+  { id: "strategic-thinking", name: "Strategic thinking", category_id: "leadership" },
+  { id: "coaching-mentoring", name: "Coaching and mentoring", category_id: "leadership" },
+  { id: "vision-setting", name: "Vision setting", category_id: "leadership" },
+  
+  // Interpersonal Skills
+  { id: "empathy", name: "Empathy", category_id: "interpersonal" },
+  { id: "teamwork", name: "Teamwork", category_id: "interpersonal" },
+  { id: "conflict-resolution-soft", name: "Conflict resolution", category_id: "interpersonal" },
+  { id: "negotiation", name: "Negotiation", category_id: "interpersonal" },
+  { id: "relationship-building", name: "Relationship building", category_id: "interpersonal" },
+  { id: "cultural-sensitivity", name: "Cultural sensitivity", category_id: "interpersonal" },
+  { id: "emotional-intelligence", name: "Emotional intelligence", category_id: "interpersonal" },
+  
+  // Problem Solving
+  { id: "critical-thinking", name: "Critical thinking", category_id: "problem-solving" },
+  { id: "analytical-skills", name: "Analytical skills", category_id: "problem-solving" },
+  { id: "creativity", name: "Creativity", category_id: "problem-solving" },
+  { id: "research", name: "Research", category_id: "problem-solving" },
+  { id: "troubleshooting", name: "Troubleshooting", category_id: "problem-solving" },
+  { id: "design-thinking", name: "Design thinking", category_id: "problem-solving" },
+  { id: "root-cause-analysis", name: "Root cause analysis", category_id: "problem-solving" },
+  
+  // Work Ethic
+  { id: "time-management", name: "Time management", category_id: "work-ethic" },
+  { id: "organization", name: "Organization", category_id: "work-ethic" },
+  { id: "reliability", name: "Reliability", category_id: "work-ethic" },
+  { id: "attention-to-detail", name: "Attention to detail", category_id: "work-ethic" },
+  { id: "initiative", name: "Initiative", category_id: "work-ethic" },
+  { id: "responsibility", name: "Responsibility", category_id: "work-ethic" },
+  { id: "professionalism", name: "Professionalism", category_id: "work-ethic" },
+  
+  // Adaptability
+  { id: "flexibility", name: "Flexibility", category_id: "adaptability" },
+  { id: "learning-agility", name: "Learning agility", category_id: "adaptability" },
+  { id: "stress-management", name: "Stress management", category_id: "adaptability" },
+  { id: "resilience", name: "Resilience", category_id: "adaptability" },
+  { id: "open-mindedness", name: "Open-mindedness", category_id: "adaptability" },
+  { id: "change-management", name: "Change management", category_id: "adaptability" },
+  { id: "innovation", name: "Innovation", category_id: "adaptability" },
 ];
 
 export const useSkillsData = () => {

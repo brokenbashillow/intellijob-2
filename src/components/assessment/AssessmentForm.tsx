@@ -5,6 +5,7 @@ import EducationStep from "./EducationStep";
 import ExperienceStep from "./ExperienceStep";
 import LocationStep from "./LocationStep";
 import TechnicalSkillsStep from "./TechnicalSkillsStep";
+import SoftSkillsStep from "./SoftSkillsStep";
 import FormNavigation from "./FormNavigation";
 
 interface AssessmentFormProps {
@@ -51,6 +52,15 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       )}
 
       {currentStep === 4 && (
+        <SoftSkillsStep
+          softSkills={formData.softSkills || []}
+          setSoftSkills={(softSkills) =>
+            setFormData((prev) => ({ ...prev, softSkills }))
+          }
+        />
+      )}
+
+      {currentStep === 5 && (
         <LocationStep
           location={formData.location}
           setLocation={(location) =>

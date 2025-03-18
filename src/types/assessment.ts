@@ -8,4 +8,5 @@ export interface FormData {
     city: string;
   };
   technicalSkills: string[];
+  softSkills: string[];
 }

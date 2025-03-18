@@ -16,6 +16,7 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       education: formData.education,
       experience: formData.experience,
       technical_skills: formData.technicalSkills,
+      soft_skills: formData.softSkills,
     })
     .select()
     .single();
@@ -27,19 +28,38 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
 
   // Save each technical skill to the user_skills table
   if (formData.technicalSkills && formData.technicalSkills.length > 0) {
-    const userSkillsData = formData.technicalSkills.map(skillId => ({
+    const technicalSkillsData = formData.technicalSkills.map(skillId => ({
       user_id: user.data.user.id,
       skill_id: skillId,
       assessment_id: assessmentData.id,
       skill_type: 'technical'
     }));
 
-    const { error: skillsError } = await supabase
+    const { error: technicalSkillsError } = await supabase
       .from('user_skills')
-      .insert(userSkillsData);
+      .insert(technicalSkillsData);
 
-    if (skillsError) {
-      console.error("Error saving technical skills:", skillsError);
+    if (technicalSkillsError) {
+      console.error("Error saving technical skills:", technicalSkillsError);
+      // Continue execution, don't throw here to ensure assessment is still saved
+    }
+  }
+
+  // Save each soft skill to the user_skills table
+  if (formData.softSkills && formData.softSkills.length > 0) {
+    const softSkillsData = formData.softSkills.map(skillId => ({
+      user_id: user.data.user.id,
+      skill_id: skillId,
+      assessment_id: assessmentData.id,
+      skill_type: 'soft'
+    }));
+
+    const { error: softSkillsError } = await supabase
+      .from('user_skills')
+      .insert(softSkillsData);
+
+    if (softSkillsError) {
+      console.error("Error saving soft skills:", softSkillsError);
       // Continue execution, don't throw here to ensure assessment is still saved
     }
   }
