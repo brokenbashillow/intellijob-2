@@ -51,6 +51,41 @@ serve(async (req) => {
       );
     }
 
+    // Validate technical_skills and soft_skills to ensure they're valid UUIDs
+    if (assessment.technical_skills) {
+      const validTechnicalSkills = assessment.technical_skills.filter(id => {
+        // Check if the ID is a valid UUID (basic check)
+        return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      });
+      
+      if (validTechnicalSkills.length !== assessment.technical_skills.length) {
+        console.warn(
+          "Some technical skills had invalid UUIDs. Original:", 
+          assessment.technical_skills, 
+          "Filtered:", 
+          validTechnicalSkills
+        );
+        assessment.technical_skills = validTechnicalSkills;
+      }
+    }
+    
+    if (assessment.soft_skills) {
+      const validSoftSkills = assessment.soft_skills.filter(id => {
+        // Check if the ID is a valid UUID (basic check)
+        return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      });
+      
+      if (validSoftSkills.length !== assessment.soft_skills.length) {
+        console.warn(
+          "Some soft skills had invalid UUIDs. Original:", 
+          assessment.soft_skills, 
+          "Filtered:", 
+          validSoftSkills
+        );
+        assessment.soft_skills = validSoftSkills;
+      }
+    }
+
     // Then get resume data if it exists
     const { data: resumeData, error: resumeError } = await supabaseClient
       .from("resumes")
@@ -124,6 +159,45 @@ serve(async (req) => {
         console.log("Processed user skills:", skills);
       } else {
         console.log("No user skills found");
+        
+        // As a fallback, if we have valid skill IDs in the assessment, fetch those skills directly
+        if (assessment.technical_skills && assessment.technical_skills.length > 0) {
+          const { data: techSkills, error: techSkillsError } = await supabaseClient
+            .from("skills")
+            .select("id, name")
+            .in("id", assessment.technical_skills);
+            
+          if (techSkillsError) {
+            console.error("Error fetching technical skills by IDs:", techSkillsError);
+          } else if (techSkills) {
+            const technicalSkillsData = techSkills.map(skill => ({
+              id: skill.id,
+              name: skill.name,
+              type: 'technical' as const
+            }));
+            skills.push(...technicalSkillsData);
+            console.log("Added technical skills from assessment:", technicalSkillsData);
+          }
+        }
+        
+        if (assessment.soft_skills && assessment.soft_skills.length > 0) {
+          const { data: softSkills, error: softSkillsError } = await supabaseClient
+            .from("skills")
+            .select("id, name")
+            .in("id", assessment.soft_skills);
+            
+          if (softSkillsError) {
+            console.error("Error fetching soft skills by IDs:", softSkillsError);
+          } else if (softSkills) {
+            const softSkillsData = softSkills.map(skill => ({
+              id: skill.id,
+              name: skill.name,
+              type: 'soft' as const
+            }));
+            skills.push(...softSkillsData);
+            console.log("Added soft skills from assessment:", softSkillsData);
+          }
+        }
       }
     }
 

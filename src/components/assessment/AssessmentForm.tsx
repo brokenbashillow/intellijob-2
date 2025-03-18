@@ -7,6 +7,7 @@ import LocationStep from "./LocationStep";
 import TechnicalSkillsStep from "./TechnicalSkillsStep";
 import SoftSkillsStep from "./SoftSkillsStep";
 import FormNavigation from "./FormNavigation";
+import { useEffect } from "react";
 
 interface AssessmentFormProps {
   onProgressChange: (step: number) => void;
@@ -21,6 +22,49 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
     handlePrevious,
     isSubmitting,
   } = useAssessmentForm(onProgressChange);
+
+  // Validate that skills are UUIDs
+  const { skills } = useSkillsData();
+
+  // Log skills for debugging
+  useEffect(() => {
+    if (formData.technicalSkills?.length || formData.softSkills?.length) {
+      console.log("Current technical skills:", formData.technicalSkills);
+      console.log("Current soft skills:", formData.softSkills);
+      
+      // Validate each skill ID is a valid UUID
+      const validateSkills = (skillIds: string[]) => {
+        const validSkills = skillIds.filter(id => {
+          // Check if the ID exists in the skills data
+          return skills.some(s => s.id === id);
+        });
+        return validSkills;
+      };
+      
+      // If there are invalid skills, update the form data
+      if (formData.technicalSkills?.length) {
+        const validTechnicalSkills = validateSkills(formData.technicalSkills);
+        if (validTechnicalSkills.length !== formData.technicalSkills.length) {
+          console.warn("Found invalid technical skills, filtering...");
+          setFormData(prev => ({
+            ...prev,
+            technicalSkills: validTechnicalSkills
+          }));
+        }
+      }
+      
+      if (formData.softSkills?.length) {
+        const validSoftSkills = validateSkills(formData.softSkills);
+        if (validSoftSkills.length !== formData.softSkills.length) {
+          console.warn("Found invalid soft skills, filtering...");
+          setFormData(prev => ({
+            ...prev,
+            softSkills: validSoftSkills
+          }));
+        }
+      }
+    }
+  }, [formData.technicalSkills, formData.softSkills, skills, setFormData]);
 
   return (
     <div className="space-y-6">
