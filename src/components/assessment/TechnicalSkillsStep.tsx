@@ -4,12 +4,17 @@ import { useSkillsData } from "@/hooks/useSkillsData";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { 
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger 
 } from "@/components/ui/collapsible";
+import type { Skill as SkillType } from "@/types/skills";
+
+// Create an extended Skill type that includes the type property
+interface ExtendedSkill extends SkillType {
+  type?: string;
+}
 
 interface TechnicalSkillsStepProps {
   technicalSkills: string[];
@@ -53,7 +58,11 @@ const TechnicalSkillsStep = ({
   };
 
   const getSkillsForCategory = (categoryId: string) => {
-    return skills.filter((skill) => skill.category_id === categoryId && skill.type === 'technical');
+    // Cast skills to ExtendedSkill[] to satisfy TypeScript
+    return (skills as ExtendedSkill[]).filter((skill) => 
+      skill.category_id === categoryId && 
+      (!skill.type || skill.type === 'technical')
+    );
   };
   
   // Use useEffect to prefill some categories as open for better user experience
