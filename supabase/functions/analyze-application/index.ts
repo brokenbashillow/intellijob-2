@@ -51,6 +51,11 @@ serve(async (req) => {
       );
     }
 
+    // Log the assessment data for debugging
+    console.log("Assessment data:", assessment);
+    console.log("Technical skills in assessment:", assessment.technical_skills);
+    console.log("Soft skills in assessment:", assessment.soft_skills);
+
     // Function to validate and convert skills to proper format
     const validateAndHandleSkills = async (skillIds: string[] | null, skillType: 'technical' | 'soft') => {
       if (!skillIds || skillIds.length === 0) return [];
@@ -117,8 +122,8 @@ serve(async (req) => {
       const { error: updateSkillsError } = await supabaseClient
         .from("seeker_assessments")
         .update({ 
-          technical_skills: validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : null,
-          soft_skills: validatedSoftSkills.length > 0 ? validatedSoftSkills : null
+          technical_skills: validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : [],
+          soft_skills: validatedSoftSkills.length > 0 ? validatedSoftSkills : []
         })
         .eq("id", assessment.id);
         
@@ -129,8 +134,8 @@ serve(async (req) => {
       }
       
       // Update the assessment object for future use
-      assessment.technical_skills = validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : null;
-      assessment.soft_skills = validatedSoftSkills.length > 0 ? validatedSoftSkills : null;
+      assessment.technical_skills = validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : [];
+      assessment.soft_skills = validatedSoftSkills.length > 0 ? validatedSoftSkills : [];
     }
 
     // Then get resume data if it exists

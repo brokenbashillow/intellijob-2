@@ -15,21 +15,23 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
   }
 
   // Ensure we always have arrays for skills, never null
+  // This is critical - empty arrays are better than null
   const technicalSkills = formData.technicalSkills || [];
   const softSkills = formData.softSkills || [];
   
   console.log("Processing technical skills for saving:", technicalSkills);
   console.log("Processing soft skills for saving:", softSkills);
 
-  // Save the assessment data - ensure we're passing empty arrays instead of null
+  // Save the assessment data - ensure we're passing arrays, not null
   const { data: assessmentData, error: assessmentError } = await supabase
     .from('seeker_assessments')
     .insert({
       user_id: user.data.user.id,
       education: formData.education,
       experience: formData.experience,
-      technical_skills: technicalSkills.length > 0 ? technicalSkills : [],
-      soft_skills: softSkills.length > 0 ? softSkills : []
+      // Important: Don't convert empty arrays to null
+      technical_skills: technicalSkills,
+      soft_skills: softSkills
     })
     .select()
     .single();

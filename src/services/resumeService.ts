@@ -56,7 +56,8 @@ export const saveResumeData = async (data: ResumeData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No authenticated user");
 
-  // Fix: Store skills as JSON strings with consistent structure
+  // Convert skills to the correct format for storage
+  // This ensures each skill has consistent structure when saved
   const skillsJson = data.skills.map(skill => {
     return JSON.stringify({
       id: skill.id,
@@ -136,6 +137,7 @@ export const saveResumeData = async (data: ResumeData) => {
   if (error) throw error;
 
   // Now also update the seeker assessment with the skills
+  // Extract just the IDs for technical and soft skills
   const techSkillIds = data.skills
     .filter(skill => skill.type === 'technical')
     .map(skill => skill.id);
@@ -166,10 +168,11 @@ export const saveResumeData = async (data: ResumeData) => {
     const { error: assessmentError } = await supabase
       .from('seeker_assessments')
       .update({
-        technical_skills: techSkillIds.length > 0 ? techSkillIds : null,
-        soft_skills: softSkillIds.length > 0 ? softSkillIds : null,
+        // Important: Don't pass null or empty arrays, use actual arrays with values
+        technical_skills: techSkillIds,
+        soft_skills: softSkillIds,
         // Also update the experience field from work experience
-        experience: data.workExperience.length > 0 ? data.workExperience[0].description : null
+        experience: data.workExperience.length > 0 ? data.workExperience[0].description : ''
       })
       .eq('id', assessmentData.id);
 
