@@ -1,8 +1,14 @@
 
-import { FormData } from "@/types/assessment";
 import { supabase } from "@/integrations/supabase/client";
 
-export const saveAssessmentData = async (formData: FormData): Promise<string> => {
+type AssessmentData = {
+  education: string;
+  experience: string;
+  technicalSkills?: string[];
+  softSkills?: string[];
+};
+
+export const saveAssessmentData = async (formData: AssessmentData): Promise<string> => {
   const user = await supabase.auth.getUser();
   if (!user.data.user) {
     throw new Error("No authenticated user found");
@@ -88,8 +94,7 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       education: formData.education,
       experience: formData.experience,
       technical_skills: validTechnicalSkills.length > 0 ? validTechnicalSkills : null,
-      soft_skills: validSoftSkills.length > 0 ? validSoftSkills : null,
-      location: formData.location
+      soft_skills: validSoftSkills.length > 0 ? validSoftSkills : null
     })
     .select()
     .single();

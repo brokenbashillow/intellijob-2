@@ -28,8 +28,16 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
     try {
       setIsSubmitting(true);
       
+      // Save the assessment data without the location field
+      const assessmentData = {
+        education: formData.education,
+        experience: formData.experience,
+        technicalSkills: formData.technicalSkills,
+        softSkills: formData.softSkills
+      };
+      
       // First save the assessment data
-      const assessmentId = await saveAssessmentData(formData);
+      const assessmentId = await saveAssessmentData(assessmentData);
       
       // Get the user ID
       const { data: { user } } = await supabase.auth.getUser();
