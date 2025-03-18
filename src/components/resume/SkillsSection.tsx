@@ -44,6 +44,27 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
     setSkills(skills.filter(skill => skill.id !== skillId));
   };
 
+  // Helper function to generate proper UUIDs
+  const generateUUID = (): string => {
+    try {
+      // Use crypto.randomUUID() for modern browsers
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+      
+      // Fallback implementation
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    } catch (error) {
+      console.error("Error generating UUID:", error);
+      // Last resort fallback
+      return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+  };
+
   const addSkill = () => {
     if (!newSkill.trim()) return;
     
@@ -72,26 +93,9 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
       return;
     }
 
-    // Generate a proper UUID for the skill ID
-    let newSkillId;
-    try {
-      // Use crypto.randomUUID() if available (modern browsers)
-      if (crypto.randomUUID) {
-        newSkillId = crypto.randomUUID();
-      } else {
-        // Fallback to a UUID v4 implementation
-        newSkillId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
-        });
-      }
-      
-      console.log("Generated UUID for new skill:", newSkillId);
-    } catch (error) {
-      console.error("Error generating UUID:", error);
-      // Default to a simpler random ID if crypto fails
-      newSkillId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    }
+    // Generate a proper UUID
+    const newSkillId = generateUUID();
+    console.log("Generated UUID for new skill:", newSkillId);
 
     const newSkillItem: SkillItem = {
       id: newSkillId,

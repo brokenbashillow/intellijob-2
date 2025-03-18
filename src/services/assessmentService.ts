@@ -77,6 +77,9 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
   const validTechnicalSkills = await processSkillIds(formData.technicalSkills, 'technical');
   const validSoftSkills = await processSkillIds(formData.softSkills, 'soft');
 
+  console.log("Final validated technical skills:", validTechnicalSkills);
+  console.log("Final validated soft skills:", validSoftSkills);
+
   // Save the assessment data
   const { data: assessmentData, error: assessmentError } = await supabase
     .from('seeker_assessments')
@@ -86,6 +89,7 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       experience: formData.experience,
       technical_skills: validTechnicalSkills.length > 0 ? validTechnicalSkills : null,
       soft_skills: validSoftSkills.length > 0 ? validSoftSkills : null,
+      location: formData.location
     })
     .select()
     .single();
@@ -96,12 +100,23 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
   }
   
   console.log("Assessment saved successfully with ID:", assessmentData.id);
-  console.log("Technical skills to save:", validTechnicalSkills);
-  console.log("Soft skills to save:", validSoftSkills);
+  console.log("Technical skills saved to assessment:", validTechnicalSkills);
+  console.log("Soft skills saved to assessment:", validSoftSkills);
 
   // Save each technical skill to the user_skills table
   if (validTechnicalSkills.length > 0) {
     try {
+      // First delete existing technical skills for this user to avoid duplicates
+      const { error: deleteTechSkillsError } = await supabase
+        .from('user_skills')
+        .delete()
+        .eq('user_id', user.data.user.id)
+        .eq('skill_type', 'technical');
+        
+      if (deleteTechSkillsError) {
+        console.error("Error deleting existing technical skills:", deleteTechSkillsError);
+      }
+        
       const technicalSkillsData = validTechnicalSkills.map(skillId => ({
         user_id: user.data.user.id,
         skill_id: skillId,
@@ -115,9 +130,8 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
 
       if (technicalSkillsError) {
         console.error("Error saving technical skills:", technicalSkillsError);
-        // Continue execution, don't throw here to ensure assessment is still saved
       } else {
-        console.log("Technical skills saved successfully");
+        console.log("Technical skills saved successfully to user_skills table");
       }
     } catch (e) {
       console.error("Exception saving technical skills:", e);
@@ -127,6 +141,17 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
   // Save each soft skill to the user_skills table
   if (validSoftSkills.length > 0) {
     try {
+      // First delete existing soft skills for this user to avoid duplicates
+      const { error: deleteSoftSkillsError } = await supabase
+        .from('user_skills')
+        .delete()
+        .eq('user_id', user.data.user.id)
+        .eq('skill_type', 'soft');
+        
+      if (deleteSoftSkillsError) {
+        console.error("Error deleting existing soft skills:", deleteSoftSkillsError);
+      }
+      
       const softSkillsData = validSoftSkills.map(skillId => ({
         user_id: user.data.user.id,
         skill_id: skillId,
@@ -140,9 +165,8 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
 
       if (softSkillsError) {
         console.error("Error saving soft skills:", softSkillsError);
-        // Continue execution, don't throw here to ensure assessment is still saved
       } else {
-        console.log("Soft skills saved successfully");
+        console.log("Soft skills saved successfully to user_skills table");
       }
     } catch (e) {
       console.error("Exception saving soft skills:", e);
