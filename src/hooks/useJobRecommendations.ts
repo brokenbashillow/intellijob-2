@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -25,14 +24,13 @@ export const useJobRecommendations = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
-  const { skills, workExperience } = useResumeData();
+  const { skills, workExperience, education } = useResumeData();
   const [userFields, setUserFields] = useState<string[]>([]);
+  const [educationFields, setEducationFields] = useState<string[]>([]);
 
   useEffect(() => {
     if (skills && skills.length > 0) {
       const skillNames = skills.map((skill) => skill.name);
-      // Update this section to match the SkillItem type which doesn't have a 'category' property
-      // Instead, use the 'type' property which is defined in the SkillItem interface
       const categories = skills
         .filter((skill) => skill.type)
         .map((skill) => skill.type);
@@ -40,7 +38,15 @@ export const useJobRecommendations = () => {
       const fields = [...new Set([...skillNames, ...categories])];
       setUserFields(fields);
     }
-  }, [skills]);
+    
+    if (education && education.length > 0) {
+      const degrees = education
+        .filter(edu => edu.degree && edu.degree.trim() !== '')
+        .map(edu => edu.degree.toLowerCase());
+      
+      setEducationFields(degrees);
+    }
+  }, [skills, education]);
 
   const fetchJobPostings = async () => {
     try {
@@ -49,7 +55,6 @@ export const useJobRecommendations = () => {
       
       console.log("Fetching job postings...");
       
-      // First try to fetch job postings
       const { data: jobPostingsData, error: jobPostingsError } = await supabase
         .from('job_postings')
         .select('*')
@@ -60,7 +65,6 @@ export const useJobRecommendations = () => {
         throw new Error(`Error fetching jobs: ${jobPostingsError.message}`);
       }
       
-      // Then fetch job templates to supplement
       const { data: jobTemplatesData, error: jobTemplatesError } = await supabase
         .from('job_templates')
         .select('*');
@@ -69,18 +73,16 @@ export const useJobRecommendations = () => {
         console.error("Job templates database error:", jobTemplatesError);
       }
       
-      // Combine job postings and templates, with priority to real postings
       let allJobsData = [];
       
       if (jobPostingsData && jobPostingsData.length > 0) {
         console.log("Job postings fetched:", jobPostingsData.length);
         
-        // Map job postings to our Job interface
         const mappedJobPostings: Job[] = jobPostingsData.map(job => ({
           id: job.id,
           title: job.title || "Untitled Position",
-          company: job.employer_id || "IntelliJob", // Use employer_id as fallback
-          location: "Remote", // Default location since it doesn't exist in the table
+          company: job.employer_id || "IntelliJob",
+          location: "Remote",
           description: job.description || "No description provided",
           postedAt: job.created_at || new Date().toISOString(),
           platform: "IntelliJob",
@@ -91,11 +93,9 @@ export const useJobRecommendations = () => {
         allJobsData = mappedJobPostings;
       }
       
-      // Add job templates if needed (only if we have few or no job postings)
       if ((!jobPostingsData || jobPostingsData.length < 5) && jobTemplatesData && jobTemplatesData.length > 0) {
         console.log("Adding job templates:", jobTemplatesData.length);
         
-        // Map job templates to our Job interface
         const mappedJobTemplates: Job[] = jobTemplatesData.map(template => ({
           id: `template-${template.id}`,
           title: template.title,
@@ -104,12 +104,11 @@ export const useJobRecommendations = () => {
           description: template.requirements || "No description provided",
           postedAt: template.created_at || new Date().toISOString(),
           platform: "Template",
-          url: "#", // Templates don't have a direct URL
+          url: "#",
           field: template.field,
           salary: template.salary
         }));
         
-        // Combine real postings with templates
         allJobsData = [...allJobsData, ...mappedJobTemplates];
       }
       
@@ -121,12 +120,52 @@ export const useJobRecommendations = () => {
       
       console.log("Total jobs data combined:", allJobsData.length);
       
-      // Score the jobs based on user skills and experience
       const scoredJobs = allJobsData.map(job => {
         let score = 0;
         let matchReason = "";
         
-        // Check if job field matches user fields
+        const hasHealthcareEducation = educationFields.some(degree => 
+          /nursing|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
+        );
+        
+        const hasBusinessEducation = educationFields.some(degree => 
+          /business|finance|accounting|marketing|management|mba|economics/i.test(degree)
+        );
+        
+        const hasEngineeringEducation = educationFields.some(degree => 
+          /engineering|computer science|information technology|software|it|programming|development/i.test(degree)
+        );
+        
+        const hasEducationEducation = educationFields.some(degree => 
+          /education|teaching|pedagogy|instructional/i.test(degree)
+        );
+        
+        const hasArtsEducation = educationFields.some(degree => 
+          /arts|design|creative|music|film|theater|media/i.test(degree)
+        );
+        
+        if (hasHealthcareEducation && 
+            /nurse|nursing|healthcare|medical|clinical|patient|health|hospital|doctor|pharma/i.test(`${job.title} ${job.field || ''}`)) {
+          score += 10;
+          matchReason = "Matches your nursing/healthcare education";
+        } else if (hasBusinessEducation && 
+            /business|finance|accounting|marketing|management|analyst|consultant/i.test(`${job.title} ${job.field || ''}`)) {
+          score += 10;
+          matchReason = "Matches your business education";
+        } else if (hasEngineeringEducation && 
+            /engineer|developer|software|IT|programming|technical|technology/i.test(`${job.title} ${job.field || ''}`)) {
+          score += 10;
+          matchReason = "Matches your technical education";
+        } else if (hasEducationEducation && 
+            /teacher|professor|instructor|educator|tutor|school|education/i.test(`${job.title} ${job.field || ''}`)) {
+          score += 10;
+          matchReason = "Matches your education background";
+        } else if (hasArtsEducation && 
+            /design|creative|artist|writer|content|media|art/i.test(`${job.title} ${job.field || ''}`)) {
+          score += 10;
+          matchReason = "Matches your creative education";
+        }
+        
         if (job.field && userFields.some(field => 
           job.field?.toLowerCase().includes(field.toLowerCase()) ||
           field.toLowerCase().includes(job.field?.toLowerCase() || '')
@@ -136,10 +175,11 @@ export const useJobRecommendations = () => {
             job.field?.toLowerCase().includes(field.toLowerCase()) ||
             field.toLowerCase().includes(job.field?.toLowerCase() || '')
           );
-          matchReason = `Matched to your experience in ${matchedField}`;
+          if (!matchReason) {
+            matchReason = `Matched to your experience in ${matchedField}`;
+          }
         }
         
-        // Check if job title matches user work experience
         if (workExperience && workExperience.length > 0) {
           const jobTitles = workExperience.map(exp => exp.title || '').filter(Boolean);
           
@@ -158,7 +198,6 @@ export const useJobRecommendations = () => {
           }
         }
         
-        // Check if job mentions user skills
         if (skills && skills.length > 0) {
           const skillNames = skills.map((skill) => skill.name.toLowerCase());
           const jobText = `${job.title} ${job.description} ${job.field || ''}`.toLowerCase();
@@ -183,7 +222,6 @@ export const useJobRecommendations = () => {
         };
       });
       
-      // Sort jobs by score in descending order
       scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
       console.log("Scored and sorted jobs:", scoredJobs.length);
       
@@ -197,7 +235,6 @@ export const useJobRecommendations = () => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
-      // Set fallback jobs if we can't fetch from the database
       setFallbackJobs();
     } finally {
       setIsLoading(false);
@@ -206,105 +243,209 @@ export const useJobRecommendations = () => {
   };
 
   const setFallbackJobs = () => {
-    // More diverse fallback jobs across different industries
-    setJobs([
-      { 
-        id: "fallback-1",
-        title: "Marketing Specialist", 
-        company: "Global Brands Inc.",
-        location: "Remote", 
-        description: "Join our marketing team to develop and implement digital marketing strategies that drive customer engagement and brand awareness. Experience with social media management and content creation required.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Marketing",
-        reason: "Suggested based on your profile"
-      },
-      { 
-        id: "fallback-2",
-        title: "Data Scientist", 
-        company: "Analytics Solutions",
-        location: "Remote", 
-        description: "Looking for a skilled data scientist to analyze large datasets and build predictive models. Experience with Python, R, and machine learning frameworks required.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Data Science",
-        reason: "Matches your technical skills"
-      },
-      { 
-        id: "fallback-3",
-        title: "UX/UI Designer", 
-        company: "Creative Digital Agency",
-        location: "Remote", 
-        description: "Design intuitive and engaging user experiences for web and mobile applications. Proficiency in Figma, Adobe XD, and user research methodologies is essential.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Design",
-        reason: "Aligns with your design experience"
-      },
-      { 
-        id: "fallback-4",
-        title: "Project Manager", 
-        company: "Innovative Solutions",
-        location: "Remote", 
-        description: "Lead cross-functional teams to deliver successful projects on time and within budget. Strong communication, organization, and stakeholder management skills required.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Project Management",
-        reason: "Relevant to your leadership experience"
-      },
-      { 
-        id: "fallback-5",
-        title: "Financial Analyst", 
-        company: "Global Investment Partners",
-        location: "Remote", 
-        description: "Analyze financial data, prepare reports, and provide recommendations to support business decision-making. Strong Excel skills and financial modeling experience required.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Finance",
-        reason: "Suggested based on market demand"
-      },
-      { 
-        id: "fallback-6",
-        title: "Content Writer", 
-        company: "Media Publishing Group",
-        location: "Remote", 
-        description: "Create compelling content across various platforms including blogs, articles, and social media. Strong writing skills and SEO knowledge required.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Content Creation",
-        reason: "Matches your communication skills"
-      },
-      { 
-        id: "fallback-7",
-        title: "Human Resources Specialist", 
-        company: "People First HR",
-        location: "Remote", 
-        description: "Support talent acquisition, employee relations, and HR policy implementation. Experience with HRIS systems and knowledge of employment laws required.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Human Resources",
-        reason: "Growing field with opportunities"
-      },
-      { 
-        id: "fallback-8",
-        title: "Product Manager", 
-        company: "Tech Innovations Ltd",
-        location: "Remote", 
-        description: "Lead product development from conception to launch, working closely with engineering, design, and marketing teams. Experience with agile methodologies required.",
-        postedAt: new Date().toISOString(), 
-        platform: "fallback",
-        url: "#",
-        field: "Product Management",
-        reason: "Aligns with your strategic thinking skills"
-      }
-    ]);
+    const hasMedicalEducation = educationFields.some(degree => 
+      /nursing|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
+    );
+    
+    if (hasMedicalEducation) {
+      setJobs([
+        { 
+          id: "fallback-1",
+          title: "Registered Nurse", 
+          company: "City General Hospital",
+          location: "Remote", 
+          description: "Join our nursing team to provide high-quality patient care. We're seeking licensed RNs with excellent communication skills and a compassionate approach to healthcare.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Healthcare",
+          reason: "Matches your nursing education"
+        },
+        { 
+          id: "fallback-2",
+          title: "Nurse Practitioner", 
+          company: "Family Health Clinic",
+          location: "Remote", 
+          description: "Advanced practice position for a certified Nurse Practitioner. Responsibilities include patient assessment, diagnosis, treatment planning, and preventive care education.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Healthcare",
+          reason: "Relevant to your nursing background"
+        },
+        { 
+          id: "fallback-3",
+          title: "Clinical Nurse Specialist", 
+          company: "Memorial Healthcare System",
+          location: "Remote", 
+          description: "Specialized nursing role focused on improving patient outcomes through expert clinical practice, education, and leadership. Advanced degree and certification required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Healthcare",
+          reason: "Builds on your nursing expertise"
+        },
+        { 
+          id: "fallback-4",
+          title: "Healthcare Administrator", 
+          company: "Regional Medical Center",
+          location: "Remote", 
+          description: "Management position overseeing healthcare operations and policies. Ideal for nursing professionals looking to transition into healthcare administration.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Healthcare Administration",
+          reason: "Career advancement opportunity in healthcare"
+        },
+        { 
+          id: "fallback-5",
+          title: "Public Health Nurse", 
+          company: "County Health Department",
+          location: "Remote", 
+          description: "Community-focused nursing role addressing population health needs through education, outreach, and preventive care programs.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Public Health",
+          reason: "Applies your nursing skills in community settings"
+        },
+        { 
+          id: "fallback-6",
+          title: "Telehealth Nurse", 
+          company: "Virtual Care Solutions",
+          location: "Remote", 
+          description: "Provide nursing care via telemedicine platforms. Position requires strong communication skills and ability to assess patients remotely.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Healthcare",
+          reason: "Modern application of nursing in digital health"
+        },
+        { 
+          id: "fallback-7",
+          title: "Nursing Educator", 
+          company: "Medical Training Institute",
+          location: "Remote", 
+          description: "Train the next generation of nurses as an instructor in clinical and classroom settings. Advanced degree and clinical experience required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Education",
+          reason: "Opportunity to share your nursing knowledge"
+        },
+        { 
+          id: "fallback-8",
+          title: "Healthcare Consultant", 
+          company: "Medical Advisory Group",
+          location: "Remote", 
+          description: "Apply your nursing expertise to help healthcare organizations improve processes, patient outcomes, and regulatory compliance.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Consulting",
+          reason: "Strategic role leveraging your healthcare background"
+        }
+      ]);
+    } else {
+      setJobs([
+        { 
+          id: "fallback-1",
+          title: "Marketing Specialist", 
+          company: "Global Brands Inc.",
+          location: "Remote", 
+          description: "Join our marketing team to develop and implement digital marketing strategies that drive customer engagement and brand awareness. Experience with social media management and content creation required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Marketing",
+          reason: "Suggested based on your profile"
+        },
+        { 
+          id: "fallback-2",
+          title: "Data Scientist", 
+          company: "Analytics Solutions",
+          location: "Remote", 
+          description: "Looking for a skilled data scientist to analyze large datasets and build predictive models. Experience with Python, R, and machine learning frameworks required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Data Science",
+          reason: "Matches your technical skills"
+        },
+        { 
+          id: "fallback-3",
+          title: "UX/UI Designer", 
+          company: "Creative Digital Agency",
+          location: "Remote", 
+          description: "Design intuitive and engaging user experiences for web and mobile applications. Proficiency in Figma, Adobe XD, and user research methodologies is essential.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Design",
+          reason: "Aligns with your design experience"
+        },
+        { 
+          id: "fallback-4",
+          title: "Project Manager", 
+          company: "Innovative Solutions",
+          location: "Remote", 
+          description: "Lead cross-functional teams to deliver successful projects on time and within budget. Strong communication, organization, and stakeholder management skills required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Project Management",
+          reason: "Relevant to your leadership experience"
+        },
+        { 
+          id: "fallback-5",
+          title: "Financial Analyst", 
+          company: "Global Investment Partners",
+          location: "Remote", 
+          description: "Analyze financial data, prepare reports, and provide recommendations to support business decision-making. Strong Excel skills and financial modeling experience required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Finance",
+          reason: "Suggested based on market demand"
+        },
+        { 
+          id: "fallback-6",
+          title: "Content Writer", 
+          company: "Media Publishing Group",
+          location: "Remote", 
+          description: "Create compelling content across various platforms including blogs, articles, and social media. Strong writing skills and SEO knowledge required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Content Creation",
+          reason: "Matches your communication skills"
+        },
+        { 
+          id: "fallback-7",
+          title: "Human Resources Specialist", 
+          company: "People First HR",
+          location: "Remote", 
+          description: "Support talent acquisition, employee relations, and HR policy implementation. Experience with HRIS systems and knowledge of employment laws required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Human Resources",
+          reason: "Growing field with opportunities"
+        },
+        { 
+          id: "fallback-8",
+          title: "Product Manager", 
+          company: "Tech Innovations Ltd",
+          location: "Remote", 
+          description: "Lead product development from conception to launch, working closely with engineering, design, and marketing teams. Experience with agile methodologies required.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Product Management",
+          reason: "Aligns with your strategic thinking skills"
+        }
+      ]);
+    }
   };
 
   const handleRefresh = () => {
@@ -314,7 +455,7 @@ export const useJobRecommendations = () => {
 
   useEffect(() => {
     fetchJobPostings();
-  }, [userFields]);
+  }, [userFields, educationFields]);
 
   return {
     jobs,
