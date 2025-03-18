@@ -70,14 +70,17 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   };
 
   const handleNext = () => {
-    const stepValidation = validateAssessmentStep(currentStep, formData, (title, description) => {
+    // Fix the type mismatch by using a proper toast function wrapper
+    const showToast = (title: string, description: string) => {
       toast({
         variant: "destructive",
         title,
         description,
       });
       return false;
-    });
+    };
+    
+    const stepValidation = validateAssessmentStep(currentStep, formData, showToast);
     
     if (!stepValidation) return;
 
