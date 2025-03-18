@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Briefcase } from "lucide-react";
-import { WorkExperienceItem } from "@/types/resume";
+import { WorkExperienceItem } from "@/hooks/useResumeData";
 
 interface WorkExperienceSectionProps {
   workExperience: WorkExperienceItem[];

@@ -1,40 +1,43 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import type { SkillCategory, Skill } from "@/types/skills";
-import { customSkillCategories, customSkills } from "@/data/skillsData";
 
 export const useSkillsData = () => {
   const { toast } = useToast();
   const [categories, setCategories] = useState<SkillCategory[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadSkillsData = () => {
+    const fetchSkillsData = async () => {
       try {
-        setLoading(true);
-        console.log("Loading hardcoded skill data");
-        
-        // Use the hardcoded data directly
-        setCategories(customSkillCategories);
-        setSkills(customSkills);
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('skill_categories')
+          .select('*');
+
+        if (categoriesError) throw categoriesError;
+
+        const { data: skillsData, error: skillsError } = await supabase
+          .from('skills')
+          .select('*');
+
+        if (skillsError) throw skillsError;
+
+        setCategories(categoriesData);
+        setSkills(skillsData);
       } catch (error) {
-        console.error('Error loading skills data:', error);
+        console.error('Error fetching skills data:', error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load skills data."
+          description: "Failed to load skills data. Please try again.",
         });
-      } finally {
-        setLoading(false);
       }
     };
 
-    loadSkillsData();
+    fetchSkillsData();
   }, [toast]);
 
-  return { categories, skills, loading };
+  return { categories, skills };
 };
-
-export default useSkillsData;

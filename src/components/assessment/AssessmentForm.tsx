@@ -3,9 +3,8 @@ import { useSkillsData } from "@/hooks/useSkillsData";
 import { useAssessmentForm } from "@/hooks/useAssessmentForm";
 import EducationStep from "./EducationStep";
 import ExperienceStep from "./ExperienceStep";
+import CategorySkillsStep from "./CategorySkillsStep";
 import LocationStep from "./LocationStep";
-import TechnicalSkillsStep from "./TechnicalSkillsStep";
-import SoftSkillsStep from "./SoftSkillsStep";
 import FormNavigation from "./FormNavigation";
 
 interface AssessmentFormProps {
@@ -13,13 +12,13 @@ interface AssessmentFormProps {
 }
 
 export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
+  const { categories, skills } = useSkillsData();
   const {
     currentStep,
     formData,
     setFormData,
     handleNext,
     handlePrevious,
-    isSubmitting,
   } = useAssessmentForm(onProgressChange);
 
   return (
@@ -43,22 +42,28 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       )}
 
       {currentStep === 3 && (
-        <TechnicalSkillsStep
-          technicalSkills={formData.technicalSkills || []}
-          setTechnicalSkills={(technicalSkills) => {
-            console.log("Setting technical skills in form:", technicalSkills);
-            setFormData((prev) => ({ ...prev, technicalSkills }));
-          }}
+        <CategorySkillsStep
+          title="Select your technical skills (min 3, max 5)"
+          selectedSkills={formData.technicalSkills}
+          setSelectedSkills={(skills) =>
+            setFormData((prev) => ({ ...prev, technicalSkills: skills }))
+          }
+          categories={categories}
+          skills={skills}
+          type="technical"
         />
       )}
 
       {currentStep === 4 && (
-        <SoftSkillsStep
-          softSkills={formData.softSkills || []}
-          setSoftSkills={(softSkills) => {
-            console.log("Setting soft skills in form:", softSkills);
-            setFormData((prev) => ({ ...prev, softSkills }));
-          }}
+        <CategorySkillsStep
+          title="Select your soft skills (min 3, max 5)"
+          selectedSkills={formData.softSkills}
+          setSelectedSkills={(skills) =>
+            setFormData((prev) => ({ ...prev, softSkills: skills }))
+          }
+          categories={categories}
+          skills={skills}
+          type="soft"
         />
       )}
 
@@ -75,7 +80,6 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
         currentStep={currentStep}
         onNext={handleNext}
         onPrevious={handlePrevious}
-        isSubmitting={isSubmitting}
       />
     </div>
   );

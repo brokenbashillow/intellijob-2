@@ -14,13 +14,13 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const [formData, setFormData] = useState<FormData>({
     education: "",
     experience: "",
+    technicalSkills: [],
+    softSkills: [],
     location: {
       country: "",
       province: "",
       city: "",
     },
-    technicalSkills: [],
-    softSkills: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,32 +28,47 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
     try {
       setIsSubmitting(true);
       
-      // Ensure technical skills and soft skills are never null but empty arrays
-      const technicalSkillsArray = formData.technicalSkills || [];
-      const softSkillsArray = formData.softSkills || [];
-      
-      // Log the skills before submission to help with debugging
-      console.log("Submitting assessment with technical skills:", technicalSkillsArray);
-      console.log("Submitting assessment with soft skills:", softSkillsArray);
-      
-      // Make a copy of the form data that we'll submit to ensure we send arrays not null
-      const assessmentData = {
-        education: formData.education,
-        experience: formData.experience,
-        technicalSkills: technicalSkillsArray,
-        softSkills: softSkillsArray
-      };
-      
       // First save the assessment data
-      const assessmentId = await saveAssessmentData(assessmentData);
+      const assessmentId = await saveAssessmentData(formData);
       
       // Get the user ID
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
       
+      // Save technical skills
+      if (formData.technicalSkills && formData.technicalSkills.length > 0 && assessmentId) {
+        const technicalSkillsData = formData.technicalSkills.map(skillId => ({
+          user_id: user.id,
+          skill_id: skillId,
+          skill_type: 'technical' as const,
+          assessment_id: assessmentId
+        }));
+        
+        const { error: techSkillsError } = await supabase
+          .from('user_skills')
+          .insert(technicalSkillsData);
+          
+        if (techSkillsError) throw techSkillsError;
+      }
+      
+      // Save soft skills
+      if (formData.softSkills && formData.softSkills.length > 0 && assessmentId) {
+        const softSkillsData = formData.softSkills.map(skillId => ({
+          user_id: user.id,
+          skill_id: skillId,
+          skill_type: 'soft' as const,
+          assessment_id: assessmentId
+        }));
+        
+        const { error: softSkillsError } = await supabase
+          .from('user_skills')
+          .insert(softSkillsData);
+          
+        if (softSkillsError) throw softSkillsError;
+      }
+      
       // Save location data to the profile
       if (formData.location) {
-        console.log("Saving location data to profile:", formData.location);
         const { error: locationError } = await supabase
           .from('profiles')
           .update({
@@ -63,12 +78,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
           })
           .eq('id', user.id);
           
-        if (locationError) {
-          console.error("Error saving location data:", locationError);
-          throw locationError;
-        } else {
-          console.log("Location data saved successfully");
-        }
+        if (locationError) throw locationError;
       }
       
       toast({
@@ -90,7 +100,7 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   };
 
   const handleNext = () => {
-    if (!validateAssessmentStep(currentStep, formData, toast)) return;
+    if (!validateAssessmentStep(currentStep, formData, toast.bind(null))) return;
 
     if (currentStep === 5) {
       handleSubmit();

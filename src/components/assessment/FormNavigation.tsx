@@ -1,52 +1,22 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Send } from "lucide-react";
 
 interface FormNavigationProps {
   currentStep: number;
   onNext: () => void;
   onPrevious: () => void;
-  isSubmitting?: boolean;
 }
 
-const FormNavigation = ({ 
-  currentStep, 
-  onNext, 
-  onPrevious,
-  isSubmitting = false
-}: FormNavigationProps) => {
+const FormNavigation = ({ currentStep, onNext, onPrevious }: FormNavigationProps) => {
   return (
-    <div className="flex justify-between mt-8">
-      {currentStep > 1 ? (
-        <Button 
-          variant="outline" 
-          onClick={onPrevious} 
-          disabled={isSubmitting}
-          className="flex items-center"
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
+    <div className="flex justify-end space-x-4">
+      {currentStep > 1 && (
+        <Button variant="outline" onClick={onPrevious}>
           Previous
         </Button>
-      ) : (
-        <div></div> // Empty div to maintain the space when no previous button
       )}
-      
-      <Button 
-        onClick={onNext} 
-        disabled={isSubmitting}
-        className="flex items-center"
-      >
-        {currentStep === 5 ? ( // Updated from 4 to 5 to show the submit button on the Location step
-          <>
-            Submit
-            <Send className="h-4 w-4 ml-2" />
-          </>
-        ) : (
-          <>
-            Next
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </>
-        )}
+      <Button onClick={onNext}>
+        {currentStep === 6 ? "Submit" : "Next"}
       </Button>
     </div>
   );

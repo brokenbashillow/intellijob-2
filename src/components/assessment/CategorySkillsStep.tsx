@@ -1,15 +1,11 @@
 
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState } from "react";
+import { Check } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skill, SkillCategory } from "@/types/skills";
-import { useState } from "react";
-import { 
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger 
-} from "@/components/ui/collapsible";
 
 interface CategorySkillsStepProps {
   title: string;
@@ -28,8 +24,6 @@ const CategorySkillsStep = ({
   skills,
   type,
 }: CategorySkillsStepProps) => {
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
-
   const handleSkillToggle = (skillId: string) => {
     if (selectedSkills.includes(skillId)) {
       setSelectedSkills(selectedSkills.filter((id) => id !== skillId));
@@ -39,13 +33,6 @@ const CategorySkillsStep = ({
       }
       setSelectedSkills([...selectedSkills, skillId]);
     }
-  };
-
-  const toggleCategory = (categoryId: string) => {
-    setOpenCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
   };
 
   const getSkillsForCategory = (categoryId: string) => {
@@ -59,7 +46,7 @@ const CategorySkillsStep = ({
 
   return (
     <div className="space-y-4">
-      <Label className="text-lg font-medium">{title}</Label>
+      <Label>{title}</Label>
       
       {selectedSkills.length < 3 ? (
         <Alert variant="destructive">
@@ -81,48 +68,40 @@ const CategorySkillsStep = ({
         </Alert>
       )}
       
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {categoriesWithSkills.map((category) => (
-          <Collapsible
-            key={category.id}
-            open={openCategories[category.id]}
-            onOpenChange={() => toggleCategory(category.id)}
-            className="border rounded-md overflow-hidden"
-          >
-            <CollapsibleTrigger className="flex justify-between items-center w-full p-4 text-left hover:bg-slate-50">
-              <h3 className="font-medium">{category.name}</h3>
-              {openCategories[category.id] ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              )}
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent className="px-4 pb-4 pt-1 border-t">
-              <div className="grid grid-cols-1 gap-3">
-                {getSkillsForCategory(category.id).map((skill) => (
-                  <div key={skill.id} className="flex items-start space-x-2">
-                    <Checkbox
-                      id={`skill-${skill.id}`}
-                      checked={selectedSkills.includes(skill.id)}
-                      onCheckedChange={() => handleSkillToggle(skill.id)}
-                      disabled={
-                        selectedSkills.length >= 5 &&
-                        !selectedSkills.includes(skill.id)
-                      }
-                      className="mt-1"
-                    />
-                    <label
-                      htmlFor={`skill-${skill.id}`}
-                      className="text-sm cursor-pointer"
-                    >
-                      {skill.name}
-                    </label>
+          <div key={category.id} className="col-span-1">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value={category.id}>
+                <AccordionTrigger className="text-left">
+                  {category.name}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-1 gap-2">
+                    {getSkillsForCategory(category.id).map((skill) => (
+                      <div key={skill.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`skill-${skill.id}`}
+                          checked={selectedSkills.includes(skill.id)}
+                          onCheckedChange={() => handleSkillToggle(skill.id)}
+                          disabled={
+                            selectedSkills.length >= 5 &&
+                            !selectedSkills.includes(skill.id)
+                          }
+                        />
+                        <label
+                          htmlFor={`skill-${skill.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {skill.name}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
         ))}
       </div>
     </div>

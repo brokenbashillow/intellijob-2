@@ -1,229 +1,260 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+// Follow this setup guide to integrate the Deno runtime and Gemini into your Supabase database: https://deno.com/supabase
+// This edge function uses the Gemini API to analyze user application data
 
-interface SkillData {
-  id: string;
-  name: string;
-  type: 'technical' | 'soft';
-}
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-serve(async (req) => {
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
+    // Get request body
     const { userId } = await req.json();
     
     if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "User ID is required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      throw new Error("User ID is required");
     }
 
-    console.log(`Analyzing application for user: ${userId}`);
+    console.log("Analyzing application for user:", userId);
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // Initialize Supabase client with admin rights from environment variables
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Supabase environment variables not set");
+    }
 
-    // First get the assessment to make sure it exists
-    const { data: assessment, error: assessmentError } = await supabaseClient
-      .from("seeker_assessments")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get resume data for the user
+    const { data: resumeData, error: resumeError } = await supabase
+      .from('resumes')
+      .select('*')
+      .eq('user_id', userId)
       .maybeSingle();
 
-    if (assessmentError) {
-      console.error("Error fetching assessment:", assessmentError);
-      return new Response(
-        JSON.stringify({ error: assessmentError.message }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+    if (resumeError) {
+      throw new Error(`Error fetching resume data: ${resumeError.message}`);
     }
 
-    if (!assessment) {
-      console.error("No assessment found for user");
-      return new Response(
-        JSON.stringify({ error: "No assessment found for user" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+    if (!resumeData) {
+      throw new Error("No resume data found for user");
     }
 
-    // Log the assessment data for debugging
-    console.log("Assessment data:", assessment);
-    console.log("Technical skills in assessment:", assessment.technical_skills);
-    console.log("Soft skills in assessment:", assessment.soft_skills);
+    console.log("Retrieved resume data:", JSON.stringify(resumeData, null, 2));
 
-    // Function to validate and convert skills to proper format
-    const validateAndHandleSkills = async (skillIds: string[] | null, skillType: 'technical' | 'soft') => {
-      if (!skillIds || skillIds.length === 0) return [];
-      
-      console.log(`Processing ${skillType} skills:`, skillIds);
-      
-      // First check if skills are valid UUIDs
-      const validUuidSkills = skillIds.filter(id => {
-        return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      });
-      
-      // If all skills are valid UUIDs, use them directly
-      if (validUuidSkills.length === skillIds.length) {
-        console.log(`All ${skillType} skills are valid UUIDs, using directly`);
-        return validUuidSkills;
-      }
-      
-      // For any non-UUID skills, try to look them up by name or slug
-      console.log(`Some ${skillType} skills aren't valid UUIDs, trying to match by name`);
-      
-      // Get all skills from the database for matching
-      const { data: allSkills, error: skillsError } = await supabaseClient
-        .from("skills")
-        .select("id, name");
-        
-      if (skillsError) {
-        console.error(`Error fetching all skills for ${skillType} matching:`, skillsError);
-        return validUuidSkills; // Return the valid UUIDs we already found
-      }
-      
-      // For each non-UUID skill, try to find a match
-      const skillMatches = new Set([...validUuidSkills]); // Start with valid UUIDs
-      
-      for (const skillId of skillIds) {
-        if (validUuidSkills.includes(skillId)) continue; // Skip already validated UUIDs
-        
-        // Try to match by name or slug-like ID
-        const matchingSkill = allSkills.find(s => 
-          s.name.toLowerCase() === skillId.toLowerCase() || 
-          s.name.toLowerCase().replace(/\s+/g, '-') === skillId.toLowerCase()
-        );
-        
-        if (matchingSkill) {
-          console.log(`Found matching skill for '${skillId}': ${matchingSkill.id} (${matchingSkill.name})`);
-          skillMatches.add(matchingSkill.id);
-        } else {
-          console.warn(`No matching skill found for '${skillId}'`);
+    // Get user skills
+    const { data: skillsData, error: skillsError } = await supabase
+      .from('user_skills')
+      .select(`
+        *,
+        skills (
+          name,
+          category_id
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (skillsError) {
+      throw new Error(`Error fetching user skills: ${skillsError.message}`);
+    }
+
+    // Prepare the prompt for Gemini API
+    const formattedEducation = resumeData.education
+      ? JSON.stringify(resumeData.education)
+      : "No education data available";
+
+    const formattedExperience = resumeData.work_experience
+      ? JSON.stringify(resumeData.work_experience)
+      : "No work experience data available";
+
+    const formattedSkills = resumeData.skills
+      ? JSON.stringify(resumeData.skills)
+      : "No skills data available";
+
+    const formattedCertificates = resumeData.certificates
+      ? JSON.stringify(resumeData.certificates)
+      : "No certificates data available";
+
+    const formattedReferences = resumeData.reference_list
+      ? JSON.stringify(resumeData.reference_list)
+      : "No references data available";
+
+    const prompt = `
+Given the following job application data, analyze and return a score from 0-100 based on education, experience, skills, certifications, and references.
+
+Education: ${formattedEducation}
+Work Experience: ${formattedExperience}
+Skills: ${formattedSkills}
+Certificates: ${formattedCertificates}
+References: ${formattedReferences}
+
+Only return the score for the education, experience, competency (the alignment of technical skills) and personality (the alignment of soft skills). Also return the overall score of each one and provide 2-3 comments about how each of the data aligns with each other.
+
+Structure your response EXACTLY as a JSON object with this format:
+{
+  "education": {
+    "score": [number between 0-100],
+    "comment": [string with brief assessment]
+  },
+  "experience": {
+    "score": [number between 0-100],
+    "comment": [string with brief assessment]
+  },
+  "competency": {
+    "score": [number between 0-100],
+    "comment": [string with brief assessment]
+  },
+  "personality": {
+    "score": [number between 0-100],
+    "comment": [string with brief assessment]
+  },
+  "overall": {
+    "score": [number between 0-100],
+    "comments": [array of 2-3 strings with overall assessment]
+  }
+}
+`;
+
+    // Get Gemini API key
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!geminiApiKey) {
+      throw new Error("Gemini API key not set");
+    }
+
+    console.log("Sending request to Gemini API...");
+
+    // Call Gemini API
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
         }
-      }
-      
-      return Array.from(skillMatches);
-    };
-    
-    // Process technical and soft skills
-    const validatedTechnicalSkills = await validateAndHandleSkills(assessment.technical_skills, 'technical');
-    const validatedSoftSkills = await validateAndHandleSkills(assessment.soft_skills, 'soft');
-    
-    // Update the assessment with the validated skills if needed
-    if (
-      (assessment.technical_skills && validatedTechnicalSkills.length !== assessment.technical_skills.length) || 
-      (assessment.soft_skills && validatedSoftSkills.length !== assessment.soft_skills.length)
-    ) {
-      console.log("Updating assessment with validated skills");
-      const { error: updateSkillsError } = await supabaseClient
-        .from("seeker_assessments")
-        .update({ 
-          technical_skills: validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : [],
-          soft_skills: validatedSoftSkills.length > 0 ? validatedSoftSkills : []
-        })
-        .eq("id", assessment.id);
-        
-      if (updateSkillsError) {
-        console.error("Error updating assessment with validated skills:", updateSkillsError);
-      } else {
-        console.log("Successfully updated assessment with validated skills");
-      }
-      
-      // Update the assessment object for future use
-      assessment.technical_skills = validatedTechnicalSkills.length > 0 ? validatedTechnicalSkills : [];
-      assessment.soft_skills = validatedSoftSkills.length > 0 ? validatedSoftSkills : [];
+      })
+    });
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error("Gemini API error:", errorText);
+      throw new Error(`Gemini API error: ${geminiResponse.status} ${errorText}`);
     }
 
-    // Fetch skill names from the database for the analysis
-    let technicalSkillNames: string[] = [];
-    let softSkillNames: string[] = [];
-    
-    if (validatedTechnicalSkills.length > 0) {
-      const { data: techSkillsData } = await supabaseClient
-        .from("skills")
-        .select("name")
-        .in("id", validatedTechnicalSkills);
-        
-      if (techSkillsData && techSkillsData.length > 0) {
-        technicalSkillNames = techSkillsData.map(s => s.name);
-      }
-    }
-    
-    if (validatedSoftSkills.length > 0) {
-      const { data: softSkillsData } = await supabaseClient
-        .from("skills")
-        .select("name")
-        .in("id", validatedSoftSkills);
-        
-      if (softSkillsData && softSkillsData.length > 0) {
-        softSkillNames = softSkillsData.map(s => s.name);
-      }
+    const geminiData = await geminiResponse.json();
+    console.log("Gemini API response:", JSON.stringify(geminiData, null, 2));
+
+    // Extract the text content from Gemini's response
+    const generatedText = geminiData.candidates[0]?.content?.parts?.[0]?.text;
+    if (!generatedText) {
+      throw new Error("Invalid or empty response from Gemini API");
     }
 
-    // Then get resume data if it exists
-    const { data: resumeData, error: resumeError } = await supabaseClient
-      .from("resumes")
-      .select("*")
-      .eq("user_id", userId)
+    // Try to parse the JSON from the generated text
+    // First, let's find the JSON object in the response
+    let jsonStart = generatedText.indexOf('{');
+    let jsonEnd = generatedText.lastIndexOf('}') + 1;
+    
+    if (jsonStart === -1 || jsonEnd === 0) {
+      throw new Error("Could not find valid JSON in Gemini's response");
+    }
+    
+    const jsonString = generatedText.substring(jsonStart, jsonEnd);
+    let analysis;
+    
+    try {
+      analysis = JSON.parse(jsonString);
+    } catch (e) {
+      console.error("Failed to parse JSON:", e, "JSON string:", jsonString);
+      throw new Error("Failed to parse Gemini's response as JSON");
+    }
+
+    // Store the analysis results in the user's assessment record
+    const { data: assessmentData, error: assessmentFetchError } = await supabase
+      .from('seeker_assessments')
+      .select('id')
+      .eq('user_id', userId)
       .maybeSingle();
 
-    if (resumeError && resumeError.code !== "PGRST116") {
-      console.error("Error fetching resume:", resumeError);
+    if (assessmentFetchError) {
+      throw new Error(`Error fetching assessment: ${assessmentFetchError.message}`);
     }
 
-    // Prepare analysis results
-    const analysisResults = {
-      timestamp: new Date().toISOString(),
-      resume_status: resumeData ? "complete" : "incomplete",
-      technical_skills: technicalSkillNames,
-      soft_skills: softSkillNames,
-      skill_count: technicalSkillNames.length + softSkillNames.length,
-      job_readiness: technicalSkillNames.length >= 3 && softSkillNames.length >= 2 ? "high" : "medium",
-      recommendations: []
-    };
+    if (assessmentData) {
+      // Update existing assessment
+      const { error: updateError } = await supabase
+        .from('seeker_assessments')
+        .update({
+          analysis_results: analysis
+        })
+        .eq('id', assessmentData.id);
 
-    // Add recommendations based on assessment
-    if (technicalSkillNames.length < 3) {
-      analysisResults.recommendations.push("Add more technical skills to improve job matches");
-    }
-    
-    if (softSkillNames.length < 2) {
-      analysisResults.recommendations.push("Add more soft skills to showcase your workplace abilities");
-    }
-    
-    if (!resumeData || !resumeData.work_experience || resumeData.work_experience.length === 0) {
-      analysisResults.recommendations.push("Add work experience to your resume");
-    }
+      if (updateError) {
+        throw new Error(`Error updating assessment: ${updateError.message}`);
+      }
+    } else {
+      // Create new assessment
+      const { error: insertError } = await supabase
+        .from('seeker_assessments')
+        .insert({
+          user_id: userId,
+          education: "Generated from resume",
+          experience: "Generated from resume",
+          analysis_results: analysis
+        });
 
-    console.log("Analysis results:", analysisResults);
-
-    // Update the assessment with the analysis results
-    const { error: updateError } = await supabaseClient
-      .from("seeker_assessments")
-      .update({ analysis_results: analysisResults })
-      .eq("id", assessment.id);
-
-    if (updateError) {
-      console.error("Error updating assessment with analysis:", updateError);
-      return new Response(
-        JSON.stringify({ error: updateError.message }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+      if (insertError) {
+        throw new Error(`Error creating assessment: ${insertError.message}`);
+      }
     }
 
+    console.log("Analysis completed and saved successfully");
+
+    // Return success response with analysis data
     return new Response(
-      JSON.stringify({ success: true, analysisResults }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({
+        success: true,
+        analysis: analysis
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200
+      }
     );
+
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Error in analyze-application function:", error);
+    
     return new Response(
-      JSON.stringify({ error: error.message || "Unknown error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({
+        success: false,
+        error: error.message || "An unknown error occurred"
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500
+      }
     );
   }
 });

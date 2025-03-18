@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Book } from "lucide-react";
-import { EducationItem } from "@/types/resume";
+import { EducationItem } from "@/hooks/useResumeData";
 
 interface EducationSectionProps {
   education: EducationItem[];

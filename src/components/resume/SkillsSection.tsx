@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { SkillItem } from "@/types/resume";
+import { useState } from "react";
+import { SkillItem } from "@/hooks/useResumeData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -21,8 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
-import { useSkillsData } from "@/hooks/useSkillsData";
 
 interface SkillsSectionProps {
   skills: SkillItem[];
@@ -33,96 +30,32 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
   const [newSkill, setNewSkill] = useState("");
   const [skillType, setSkillType] = useState<"technical" | "soft">("technical");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const { skills: availableSkills, loading } = useSkillsData();
 
   const technicalSkills = skills.filter(skill => skill.type === 'technical');
   const softSkills = skills.filter(skill => skill.type === 'soft');
 
-  console.log("Current skills in SkillsSection:", skills);
-
-  useEffect(() => {
-    console.log("Available skills from API:", availableSkills);
-  }, [availableSkills]);
-
   const removeSkill = (skillId: string) => {
-    console.log("Removing skill with ID:", skillId);
     setSkills(skills.filter(skill => skill.id !== skillId));
-  };
-
-  // Helper function to generate proper UUIDs
-  const generateUUID = (): string => {
-    try {
-      // Use crypto.randomUUID() for modern browsers
-      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-        return window.crypto.randomUUID();
-      }
-      
-      // Fallback implementation
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    } catch (error) {
-      console.error("Error generating UUID:", error);
-      // Last resort fallback
-      return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    }
   };
 
   const addSkill = () => {
     if (!newSkill.trim()) return;
     
-    // First, check if we can find the skill in the available skills
-    const foundSkill = availableSkills.find(
-      s => s.name.toLowerCase() === newSkill.trim().toLowerCase()
-    );
-    
     // Check if we've reached the limit of 5 skills for the selected type
     const currentSkillsOfType = skills.filter(skill => skill.type === skillType);
     if (currentSkillsOfType.length >= 5) {
-      toast({
-        variant: "destructive",
-        title: "Skill Limit Reached",
-        description: `You can only add up to 5 ${skillType} skills.`
-      });
-      return;
+      return; // Don't add if we've reached the limit
     }
-
-    // Check if the skill already exists with the same name and type
-    const skillExists = skills.some(
-      skill => skill.name.toLowerCase() === newSkill.trim().toLowerCase() && skill.type === skillType
-    );
-    
-    if (skillExists) {
-      toast({
-        variant: "destructive",
-        title: "Duplicate Skill",
-        description: "This skill already exists in your list."
-      });
-      return;
-    }
-
-    // Use the found skill ID if available, otherwise generate a new UUID
-    const skillId = foundSkill ? foundSkill.id : generateUUID();
-    console.log("Using skill ID:", skillId, "for skill:", newSkill);
 
     const newSkillItem: SkillItem = {
-      id: skillId,
+      id: Math.random().toString(36).substring(2, 11), // Generate a random ID
       name: newSkill.trim(),
       type: skillType,
     };
 
-    console.log("Adding new skill:", newSkillItem);
     setSkills([...skills, newSkillItem]);
     setNewSkill("");
     setDialogOpen(false);
-    
-    toast({
-      title: "Skill Added",
-      description: `${newSkill} has been added to your ${skillType} skills.`
-    });
   };
 
   return (
@@ -139,9 +72,6 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add a New Skill</DialogTitle>
-              <DialogDescription>
-                Add skills that highlight your technical abilities and soft skills.
-              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -163,12 +93,6 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
                   value={newSkill} 
                   onChange={(e) => setNewSkill(e.target.value)}
                   placeholder="Enter skill name"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newSkill.trim()) {
-                      e.preventDefault();
-                      addSkill();
-                    }
-                  }}
                 />
               </div>
               <div className="pt-4">

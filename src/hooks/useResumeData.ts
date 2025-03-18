@@ -1,16 +1,57 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { fetchResumeData, fetchUserProfile, fetchAssessmentData, saveResumeData, uploadProfileImage } from "@/services/resumeService";
-import { 
-  PersonalDetails, 
-  EducationItem, 
-  WorkExperienceItem, 
-  CertificateItem, 
-  ReferenceItem, 
-  SkillItem, 
-  ResumeData 
-} from "@/types/resume";
+
+export interface PersonalDetails {
+  firstName: string;
+  lastName: string;
+  profilePicture?: string;
+}
+
+export interface EducationItem {
+  degree: string;
+  school: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface WorkExperienceItem {
+  company: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+}
+
+export interface CertificateItem {
+  name: string;
+  organization: string;
+  dateObtained: string;
+}
+
+export interface ReferenceItem {
+  name: string;
+  title: string;
+  company: string;
+  email: string;
+  phone: string;
+}
+
+export interface SkillItem {
+  id: string;
+  name: string;
+  type: 'technical' | 'soft';
+}
+
+export interface ResumeData {
+  personalDetails: PersonalDetails;
+  education: EducationItem[];
+  workExperience: WorkExperienceItem[];
+  certificates: CertificateItem[];
+  references: ReferenceItem[];
+  skills: SkillItem[];
+}
 
 export const useResumeData = () => {
   const { toast } = useToast();
@@ -28,33 +69,36 @@ export const useResumeData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasResumeData, setHasResumeData] = useState(false);
 
+  // Modified to handle both string arrays and JSON arrays
   const parseJsonArray = <T,>(data: any[] | null): T[] => {
     if (!data) return [];
     try {
       return data.map(item => {
         if (typeof item === 'string') {
-          try {
-            return JSON.parse(item) as T;
-          } catch (e) {
-            console.error('Error parsing JSON item:', e, item);
-            return null;
-          }
+          return JSON.parse(item) as T;
         }
         return item as T;
-      }).filter(Boolean) as T[];
+      });
     } catch (error) {
       console.error('Error parsing JSON array:', error);
       return [];
     }
   };
 
-  const fetchData = async () => {
+  const fetchResumeData = async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      const profileData = await fetchUserProfile();
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
       if (profileData) {
         setPersonalDetails(prev => ({
           ...prev,
@@ -63,32 +107,32 @@ export const useResumeData = () => {
         }));
       }
 
-      const resumeData = await fetchResumeData();
+      // First, check if the user has a resume already
+      const { data: resumeData, error: resumeError } = await supabase
+        .from('resumes')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       if (resumeData) {
-        console.log("Found existing resume data:", resumeData);
+        // User has a resume, use that data
+        if (resumeError) throw resumeError;
         
         setEducation(parseJsonArray<EducationItem>(resumeData.education));
         setWorkExperience(parseJsonArray<WorkExperienceItem>(resumeData.work_experience));
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
         setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
         
-        if (resumeData.skills && resumeData.skills.length > 0) {
-          console.log("Found skills in resume data:", resumeData.skills);
-          try {
-            const parsedSkills = parseJsonArray<SkillItem>(resumeData.skills);
-            console.log("Parsed skills:", parsedSkills);
-            setSkills(parsedSkills);
-          } catch (e) {
-            console.error("Error parsing skills from resume:", e);
-            await fetchUserSkills(user.id);
-          }
+        // Parse skills from the skills column with our updated parseJsonArray function
+        if (resumeData.skills) {
+          setSkills(parseJsonArray<SkillItem>(resumeData.skills));
         } else {
-          console.log("No skills found in resume, fetching from user_skills");
+          // If no skills in resume data, try to fetch from user_skills
           await fetchUserSkills(user.id);
         }
         setHasResumeData(true);
       } else {
-        console.log("No resume found, initializing from assessment");
+        // User doesn't have a resume yet, initialize with assessment data
         await initializeFromAssessment(user.id);
         setHasResumeData(false);
       }
@@ -97,7 +141,7 @@ export const useResumeData = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load resume data: " + error.message,
+        description: "Failed to load resume data",
       });
     } finally {
       setIsLoading(false);
@@ -106,36 +150,26 @@ export const useResumeData = () => {
 
   const fetchUserSkills = async (userId: string) => {
     try {
-      console.log("Fetching user skills for user:", userId);
       const { data: userSkillsData, error: userSkillsError } = await supabase
         .from('user_skills')
         .select(`
           skill_id,
           skill_type,
           skills (
-            id,
             name
           )
         `)
         .eq('user_id', userId);
 
-      if (userSkillsError) {
-        console.error("Error fetching user skills:", userSkillsError);
-        throw userSkillsError;
-      }
-
-      console.log("User skills data:", userSkillsData);
+      if (userSkillsError) throw userSkillsError;
 
       if (userSkillsData && userSkillsData.length > 0) {
         const formattedSkills: SkillItem[] = userSkillsData.map(skillData => ({
           id: skillData.skill_id,
-          name: skillData.skills?.name || "Unknown Skill",
+          name: skillData.skills.name,
           type: skillData.skill_type as 'technical' | 'soft',
         }));
-        console.log("Formatted skills from user_skills:", formattedSkills);
         setSkills(formattedSkills);
-      } else {
-        console.log("No user skills found");
       }
     } catch (error) {
       console.error('Error fetching user skills:', error);
@@ -144,94 +178,36 @@ export const useResumeData = () => {
 
   const initializeFromAssessment = async (userId: string) => {
     try {
-      console.log("Initializing from assessment for user:", userId);
-      const assessmentData = await fetchAssessmentData();
-      
-      if (!assessmentData) {
-        console.log("No assessment data found");
-        return;
-      }
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from('seeker_assessments')
+        .select('education, experience')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      console.log("Assessment data:", assessmentData);
+      if (assessmentError) throw assessmentError;
 
-      const initialEducation: EducationItem = {
-        degree: assessmentData.education || "",
-        school: "",
-        startDate: "",
-        endDate: "",
-      };
-      setEducation([initialEducation]);
+      if (assessmentData) {
+        // Initialize education from assessment
+        const initialEducation: EducationItem = {
+          degree: assessmentData.education || "",
+          school: "",
+          startDate: "",
+          endDate: "",
+        };
+        setEducation([initialEducation]);
 
-      const initialWorkExperience: WorkExperienceItem = {
-        company: "",
-        title: "",
-        startDate: "",
-        endDate: "",
-        description: assessmentData.experience || "",
-      };
-      setWorkExperience([initialWorkExperience]);
+        // Initialize work experience from assessment
+        const initialWorkExperience: WorkExperienceItem = {
+          company: "",
+          title: "",
+          startDate: "",
+          endDate: "",
+          description: assessmentData.experience || "",
+        };
+        setWorkExperience([initialWorkExperience]);
 
-      console.log("Technical skills from assessment:", assessmentData.technical_skills);
-      console.log("Soft skills from assessment:", assessmentData.soft_skills);
-
-      if (
-        (assessmentData.technical_skills && assessmentData.technical_skills.length > 0) ||
-        (assessmentData.soft_skills && assessmentData.soft_skills.length > 0)
-      ) {
-        const skillsList: SkillItem[] = [];
-        
-        if (assessmentData.technical_skills && assessmentData.technical_skills.length > 0) {
-          try {
-            const { data: techSkillsData, error: techSkillsError } = await supabase
-              .from('skills')
-              .select('id, name')
-              .in('id', assessmentData.technical_skills);
-            
-            if (techSkillsError) throw techSkillsError;
-            
-            if (techSkillsData && techSkillsData.length > 0) {
-              const techSkills = techSkillsData.map(skill => ({
-                id: skill.id,
-                name: skill.name,
-                type: 'technical' as const
-              }));
-              skillsList.push(...techSkills);
-              console.log("Added technical skills:", techSkills);
-            }
-          } catch (error) {
-            console.error("Error fetching technical skills:", error);
-          }
-        }
-        
-        if (assessmentData.soft_skills && assessmentData.soft_skills.length > 0) {
-          try {
-            const { data: softSkillsData, error: softSkillsError } = await supabase
-              .from('skills')
-              .select('id, name')
-              .in('id', assessmentData.soft_skills);
-            
-            if (softSkillsError) throw softSkillsError;
-            
-            if (softSkillsData && softSkillsData.length > 0) {
-              const softSkills = softSkillsData.map(skill => ({
-                id: skill.id,
-                name: skill.name,
-                type: 'soft' as const
-              }));
-              skillsList.push(...softSkills);
-              console.log("Added soft skills:", softSkills);
-            }
-          } catch (error) {
-            console.error("Error fetching soft skills:", error);
-          }
-        }
-        
-        if (skillsList.length > 0) {
-          console.log("Setting skills from assessment:", skillsList);
-          setSkills(skillsList);
-        }
-      } else {
-        console.log("No skills found in assessment");
+        // Fetch skills from user_skills table
+        await fetchUserSkills(userId);
       }
     } catch (error) {
       console.error('Error initializing from assessment:', error);
@@ -239,28 +215,87 @@ export const useResumeData = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchResumeData();
   }, []);
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      console.log("Saving resume data with skills:", skills);
-      
-      const resumeData: ResumeData = {
-        personalDetails,
-        education,
-        workExperience,
-        certificates,
-        references,
-        skills
-      };
-      
-      await saveResumeData(resumeData);
-      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      // Only convert to JSON strings if we're not using null values
+      const educationStrings = education.length > 0 ? education.map(item => JSON.stringify(item)) : null;
+      const workExperienceStrings = workExperience.length > 0 ? workExperience.map(item => JSON.stringify(item)) : null;
+      const certificatesStrings = certificates.length > 0 ? certificates.map(item => JSON.stringify(item)) : null;
+      const referencesStrings = references.length > 0 ? references.map(item => JSON.stringify(item)) : null;
+      const skillsStrings = skills.length > 0 ? skills.map(item => JSON.stringify(item)) : null;
+
+      const { data: existingResume } = await supabase
+        .from('resumes')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let error;
+      if (existingResume) {
+        const { error: updateError } = await supabase
+          .from('resumes')
+          .update({
+            first_name: personalDetails.firstName,
+            last_name: personalDetails.lastName,
+            education: educationStrings,
+            work_experience: workExperienceStrings,
+            certificates: certificatesStrings,
+            reference_list: referencesStrings,
+            skills: skillsStrings,
+          })
+          .eq('user_id', user.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('resumes')
+          .insert({
+            first_name: personalDetails.firstName,
+            last_name: personalDetails.lastName,
+            education: educationStrings,
+            work_experience: workExperienceStrings,
+            certificates: certificatesStrings,
+            reference_list: referencesStrings,
+            skills: skillsStrings,
+            user_id: user.id,
+          });
+        error = insertError;
+      }
+
+      if (error) throw error;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: personalDetails.firstName,
+          last_name: personalDetails.lastName,
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
       setHasResumeData(true);
-      
-      console.log("Resume data saved successfully");
+
+      // Trigger a re-evaluation of the assessment results
+      try {
+        await supabase.functions.invoke('analyze-application', {
+          body: { userId: user.id }
+        });
+      } catch (analyzeError) {
+        console.error("Error triggering assessment re-evaluation:", analyzeError);
+        // We don't want to fail the whole save operation if the analysis fails
+      }
+
+      toast({
+        title: "Success",
+        description: "Resume data saved successfully",
+      });
     } catch (error: any) {
       console.error('Error saving resume data:', error);
       toast({
@@ -268,38 +303,22 @@ export const useResumeData = () => {
         title: "Error",
         description: error.message || "Failed to save resume data",
       });
-      throw error; // Rethrow to allow handling in the UI
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        setIsLoading(true);
-        const imageUrl = await uploadProfileImage(file);
-        
+      const reader = new FileReader();
+      reader.onloadend = () => {
         setPersonalDetails(prev => ({
           ...prev,
-          profilePicture: imageUrl
+          profilePicture: reader.result as string
         }));
-        
-        toast({
-          title: "Image Uploaded",
-          description: "Profile picture updated successfully"
-        });
-      } catch (error: any) {
-        console.error("Error uploading image:", error);
-        toast({
-          variant: "destructive",
-          title: "Upload Failed",
-          description: error.message || "Failed to upload profile picture"
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      };
+      reader.readAsDataURL(file);
     }
   };
 

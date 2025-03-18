@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
-import { ReferenceItem } from "@/types/resume";
+import { ReferenceItem } from "@/hooks/useResumeData";
 
 interface ReferencesSectionProps {
   references: ReferenceItem[];

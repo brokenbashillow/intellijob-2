@@ -2,7 +2,7 @@
 export interface PersonalDetails {
   firstName: string;
   lastName: string;
-  profilePicture?: string;  // Changed to optional with the question mark
+  profilePicture: string;
 }
 
 export interface EducationItem {
@@ -34,17 +34,10 @@ export interface ReferenceItem {
   phone: string;
 }
 
-export interface SkillItem {
-  id: string;
-  name: string;
-  type: 'technical' | 'soft';
-}
-
 export interface ResumeData {
   personalDetails: PersonalDetails;
   education: EducationItem[];
   workExperience: WorkExperienceItem[];
   certificates: CertificateItem[];
   references: ReferenceItem[];
-  skills: SkillItem[];
 }

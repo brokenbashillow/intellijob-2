@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const Assessment = () => {
   const [progress, setProgress] = useState(1);
-  const totalSteps = 5; // Updated from 4 to 5 to include Soft Skills step
+  const totalSteps = 5;
 
   return (
     <div className="min-h-screen bg-background p-6">
