@@ -56,9 +56,15 @@ Deno.serve(async (req) => {
     let skills = [];
     if (resumeData.skills && resumeData.skills.length > 0) {
       try {
+        // Try to parse JSON strings into objects
         skills = resumeData.skills.map(skillString => {
           if (typeof skillString === 'string') {
-            return JSON.parse(skillString);
+            const parsed = JSON.parse(skillString);
+            return {
+              id: parsed.id,
+              name: parsed.name,
+              type: parsed.type
+            };
           }
           return skillString;
         });
