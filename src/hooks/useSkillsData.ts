@@ -21,13 +21,17 @@ const customSkillCategories: SkillCategory[] = [
   { id: "aviation", name: "Aviation", type: "technical" },
   { id: "hospitality-tourism", name: "Hospitality and Tourism", type: "technical" },
   
-  // Soft skill categories
+  // Soft skill categories - Updated with the user's new categories
   { id: "communication", name: "Communication", type: "soft" },
+  { id: "teamwork-collaboration", name: "Teamwork and Collaboration", type: "soft" },
   { id: "leadership", name: "Leadership", type: "soft" },
-  { id: "interpersonal", name: "Interpersonal Skills", type: "soft" },
-  { id: "problem-solving", name: "Problem Solving", type: "soft" },
-  { id: "work-ethic", name: "Work Ethic", type: "soft" },
-  { id: "adaptability", name: "Adaptability", type: "soft" },
+  { id: "problem-solving", name: "Problem-Solving and Critical Thinking", type: "soft" },
+  { id: "adaptability", name: "Adaptability and Flexibility", type: "soft" },
+  { id: "emotional-intelligence", name: "Emotional Intelligence and Interpersonal Skills", type: "soft" },
+  { id: "creativity", name: "Creativity and Innovation", type: "soft" },
+  { id: "attention-to-detail", name: "Attention to Detail", type: "soft" },
+  { id: "time-management", name: "Time Management and Organization", type: "soft" },
+  { id: "professionalism", name: "Professionalism and Work Ethic", type: "soft" },
 ];
 
 const customSkills: Skill[] = [
@@ -176,60 +180,102 @@ const customSkills: Skill[] = [
   { id: "hotel-operations", name: "Hotel and restaurant operations", category_id: "hospitality-tourism" },
   { id: "travel-coordination", name: "Travel coordination", category_id: "hospitality-tourism" },
   
-  // Soft Skills - Adding the requested soft skill list
+  // Soft Skills - Updated with the user's new list
   // Communication
-  { id: "verbal-communication", name: "Verbal communication", category_id: "communication" },
+  { id: "patient-communication", name: "Communication with patients and families", category_id: "communication" },
   { id: "active-listening", name: "Active listening", category_id: "communication" },
-  { id: "written-communication", name: "Written communication", category_id: "communication" },
-  { id: "presentation-skills", name: "Presentation skills", category_id: "communication" },
-  { id: "public-speaking-soft", name: "Public speaking", category_id: "communication" },
-  { id: "nonverbal-communication", name: "Nonverbal communication", category_id: "communication" },
+  { id: "public-speaking", name: "Public speaking", category_id: "communication" },
+  { id: "non-technical-communication", name: "Communication with non-technical stakeholders", category_id: "communication" },
+  { id: "client-communication", name: "Client communication", category_id: "communication" },
+  { id: "crew-communication", name: "Communication with crew and authorities", category_id: "communication" },
   { id: "storytelling", name: "Storytelling", category_id: "communication" },
+  { id: "cross-cultural-communication", name: "Cross-cultural communication", category_id: "communication" },
+  { id: "atc-communication", name: "Communication with air traffic control", category_id: "communication" },
+  { id: "diverse-clients-communication", name: "Communication with diverse clients", category_id: "communication" },
+  { id: "professional-networking-comm", name: "Professional networking", category_id: "communication" },
+  
+  // Teamwork and Collaboration
+  { id: "high-stress-teamwork", name: "Teamwork in high-stress environments", category_id: "teamwork-collaboration" },
+  { id: "cross-functional", name: "Cross-functional collaboration", category_id: "teamwork-collaboration" },
+  { id: "team-projects", name: "Collaboration in team projects", category_id: "teamwork-collaboration" },
+  { id: "engineer-client-collab", name: "Collaboration with engineers and clients", category_id: "teamwork-collaboration" },
+  { id: "confined-teamwork", name: "Teamwork in confined spaces", category_id: "teamwork-collaboration" },
+  { id: "creative-collaboration", name: "Collaboration with creative teams", category_id: "teamwork-collaboration" },
+  { id: "community-collaboration", name: "Collaboration with local communities", category_id: "teamwork-collaboration" },
+  { id: "research-collaboration", name: "Collaboration in research projects", category_id: "teamwork-collaboration" },
+  { id: "sports-teamwork", name: "Teamwork with teammates and coaches", category_id: "teamwork-collaboration" },
+  { id: "flight-crew-collaboration", name: "Collaboration with flight crew", category_id: "teamwork-collaboration" },
   
   // Leadership
-  { id: "team-management-soft", name: "Team management", category_id: "leadership" },
-  { id: "decision-making", name: "Decision making", category_id: "leadership" },
-  { id: "delegation", name: "Delegation", category_id: "leadership" },
-  { id: "motivation", name: "Motivation", category_id: "leadership" },
+  { id: "team-management", name: "Leadership and team management", category_id: "leadership" },
+  { id: "professional-integrity-lead", name: "Professional integrity", category_id: "leadership" },
   { id: "strategic-thinking", name: "Strategic thinking", category_id: "leadership" },
-  { id: "coaching-mentoring", name: "Coaching and mentoring", category_id: "leadership" },
-  { id: "vision-setting", name: "Vision setting", category_id: "leadership" },
+  { id: "sustainability-leadership", name: "Leading in sustainability", category_id: "leadership" },
+  { id: "motivation", name: "Motivation and inspiration", category_id: "leadership" },
+  { id: "crisis-management", name: "Crisis management", category_id: "leadership" },
+  { id: "high-stress-leadership", name: "Leadership in high-stress environments", category_id: "leadership" },
+  { id: "situational-awareness", name: "Situational awareness", category_id: "leadership" },
+  { id: "inspiring-creative-teams", name: "Inspiring creative teams", category_id: "leadership" },
   
-  // Interpersonal Skills
-  { id: "empathy", name: "Empathy", category_id: "interpersonal" },
-  { id: "teamwork", name: "Teamwork", category_id: "interpersonal" },
-  { id: "conflict-resolution-soft", name: "Conflict resolution", category_id: "interpersonal" },
-  { id: "negotiation", name: "Negotiation", category_id: "interpersonal" },
-  { id: "relationship-building", name: "Relationship building", category_id: "interpersonal" },
-  { id: "cultural-sensitivity", name: "Cultural sensitivity", category_id: "interpersonal" },
-  { id: "emotional-intelligence", name: "Emotional intelligence", category_id: "interpersonal" },
-  
-  // Problem Solving
+  // Problem-Solving and Critical Thinking
   { id: "critical-thinking", name: "Critical thinking", category_id: "problem-solving" },
-  { id: "analytical-skills", name: "Analytical skills", category_id: "problem-solving" },
-  { id: "creativity", name: "Creativity", category_id: "problem-solving" },
-  { id: "research", name: "Research", category_id: "problem-solving" },
-  { id: "troubleshooting", name: "Troubleshooting", category_id: "problem-solving" },
-  { id: "design-thinking", name: "Design thinking", category_id: "problem-solving" },
-  { id: "root-cause-analysis", name: "Root cause analysis", category_id: "problem-solving" },
+  { id: "troubleshooting-skill", name: "Troubleshooting", category_id: "problem-solving" },
+  { id: "analytical-thinking", name: "Analytical thinking", category_id: "problem-solving" },
+  { id: "pressure-decision-making", name: "Decision-making under pressure", category_id: "problem-solving" },
+  { id: "technical-problem-solving", name: "Problem-solving in technical settings", category_id: "problem-solving" },
+  { id: "creative-problem-solving", name: "Creative problem-solving", category_id: "problem-solving" },
+  { id: "ethical-decision-making-ps", name: "Ethical decision-making", category_id: "problem-solving" },
+  { id: "conflict-resolution-ps", name: "Conflict resolution", category_id: "problem-solving" },
+  { id: "research-analytical", name: "Research and analytical thinking", category_id: "problem-solving" },
   
-  // Work Ethic
-  { id: "time-management", name: "Time management", category_id: "work-ethic" },
-  { id: "organization", name: "Organization", category_id: "work-ethic" },
-  { id: "reliability", name: "Reliability", category_id: "work-ethic" },
-  { id: "attention-to-detail", name: "Attention to detail", category_id: "work-ethic" },
-  { id: "initiative", name: "Initiative", category_id: "work-ethic" },
-  { id: "responsibility", name: "Responsibility", category_id: "work-ethic" },
-  { id: "professionalism", name: "Professionalism", category_id: "work-ethic" },
+  // Adaptability and Flexibility
+  { id: "tech-adaptability", name: "Adaptability to new technologies", category_id: "adaptability" },
+  { id: "design-adaptability", name: "Adaptability to design changes", category_id: "adaptability" },
+  { id: "environmental-adaptability", name: "Adaptability to environmental changes", category_id: "adaptability" },
+  { id: "high-stress-flexibility", name: "Flexibility in high-stress environments", category_id: "adaptability" },
+  { id: "cultural-adaptability", name: "Adjusting to different cultural settings", category_id: "adaptability" },
+  { id: "industry-adaptability", name: "Adaptability to industry trends", category_id: "adaptability" },
   
-  // Adaptability
-  { id: "flexibility", name: "Flexibility", category_id: "adaptability" },
-  { id: "learning-agility", name: "Learning agility", category_id: "adaptability" },
-  { id: "stress-management", name: "Stress management", category_id: "adaptability" },
-  { id: "resilience", name: "Resilience", category_id: "adaptability" },
-  { id: "open-mindedness", name: "Open-mindedness", category_id: "adaptability" },
-  { id: "change-management", name: "Change management", category_id: "adaptability" },
-  { id: "innovation", name: "Innovation", category_id: "adaptability" },
+  // Emotional Intelligence and Interpersonal Skills
+  { id: "empathy", name: "Empathy and compassion", category_id: "emotional-intelligence" },
+  { id: "emotional-resilience", name: "Emotional resilience", category_id: "emotional-intelligence" },
+  { id: "professional-integrity-ei", name: "Professional integrity", category_id: "emotional-intelligence" },
+  { id: "stress-management", name: "Stress management", category_id: "emotional-intelligence" },
+  { id: "patience", name: "Patience", category_id: "emotional-intelligence" },
+  { id: "motivational-skills", name: "Motivational skills", category_id: "emotional-intelligence" },
+  { id: "cultural-sensitivity", name: "Cultural sensitivity", category_id: "emotional-intelligence" },
+  { id: "conflict-resolution-ei", name: "Conflict resolution", category_id: "emotional-intelligence" },
+  { id: "persuasion-negotiation", name: "Persuasion and negotiation", category_id: "emotional-intelligence" },
+  
+  // Creativity and Innovation
+  { id: "creativity-innovation", name: "Creativity and innovation", category_id: "creativity" },
+  { id: "storytelling-creativity", name: "Storytelling", category_id: "creativity" },
+  { id: "aesthetic-sense", name: "Aesthetic sense", category_id: "creativity" },
+  { id: "out-of-box-thinking", name: "Out-of-the-box thinking", category_id: "creativity" },
+  { id: "design-flexibility", name: "Design flexibility", category_id: "creativity" },
+  { id: "creative-problem-solving-cr", name: "Creative problem-solving", category_id: "creativity" },
+  
+  // Attention to Detail
+  { id: "technical-detail", name: "Attention to detail in technical tasks", category_id: "attention-to-detail" },
+  { id: "financial-accuracy", name: "Financial analysis accuracy", category_id: "attention-to-detail" },
+  { id: "patient-care-precision", name: "Patient care precision", category_id: "attention-to-detail" },
+  { id: "architectural-precision", name: "Architectural and design precision", category_id: "attention-to-detail" },
+  { id: "legal-documentation", name: "Legal documentation review", category_id: "attention-to-detail" },
+  { id: "aviation-precision", name: "Precision in aviation control", category_id: "attention-to-detail" },
+  
+  // Time Management and Organization
+  { id: "professional-time-management", name: "Time management in professional settings", category_id: "time-management" },
+  { id: "planning-scheduling", name: "Planning and scheduling", category_id: "time-management" },
+  { id: "task-prioritization", name: "Task prioritization", category_id: "time-management" },
+  { id: "deadline-pressure", name: "Meeting deadlines under pressure", category_id: "time-management" },
+  { id: "complex-logistics", name: "Handling complex logistics", category_id: "time-management" },
+  
+  // Professionalism and Work Ethic
+  { id: "professional-demeanor", name: "Professional demeanor", category_id: "professionalism" },
+  { id: "ethical-decision-making-prof", name: "Ethical decision-making", category_id: "professionalism" },
+  { id: "accountability", name: "Accountability and reliability", category_id: "professionalism" },
+  { id: "industry-standards", name: "Upholding industry standards", category_id: "professionalism" },
+  { id: "professional-networking", name: "Professional networking and relationship building", category_id: "professionalism" },
 ];
 
 export const useSkillsData = () => {
@@ -264,3 +310,4 @@ export const useSkillsData = () => {
 
   return { categories, skills, loading };
 };
+

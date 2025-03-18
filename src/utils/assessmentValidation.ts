@@ -46,6 +46,26 @@ export const validateAssessmentStep = (
   }
 
   if (currentStep === 4) {
+    if (!formData.softSkills || formData.softSkills.length < 3) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select at least 3 soft skills",
+      });
+      return false;
+    }
+    if (formData.softSkills.length > 5) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select at most 5 soft skills",
+      });
+      return false;
+    }
+    return true;
+  }
+
+  if (currentStep === 5) {
     if (!formData.location.country || !formData.location.city) {
       toast({
         variant: "destructive",
