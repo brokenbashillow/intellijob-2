@@ -56,9 +56,8 @@ export const saveResumeData = async (data: ResumeData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No authenticated user");
 
-  // First, prepare the skills data - ensure proper formatting
+  // Fix: Ensure each skill is properly stringified with correct fields only
   const skillsJson = data.skills.map(skill => {
-    // Make sure each skill has the required properties
     return JSON.stringify({
       id: skill.id,
       name: skill.name,
@@ -111,7 +110,7 @@ export const saveResumeData = async (data: ResumeData) => {
   
   if (existingResume) {
     // Update existing resume
-    console.log("Updating existing resume with skills data");
+    console.log("Updating existing resume with skills data:", skillsJson);
     const { error: updateError } = await supabase
       .from('resumes')
       .update(resumeData)
@@ -123,7 +122,7 @@ export const saveResumeData = async (data: ResumeData) => {
     }
   } else {
     // Insert new resume
-    console.log("Creating new resume with skills data");
+    console.log("Creating new resume with skills data:", skillsJson);
     const { error: insertError } = await supabase
       .from('resumes')
       .insert(resumeData);
@@ -186,39 +185,44 @@ export const saveResumeData = async (data: ResumeData) => {
 
   // Also update the user_skills table
   if (data.skills.length > 0) {
-    // First delete existing skills
-    console.log("Deleting existing user skills");
-    const { error: deleteError } = await supabase
-      .from('user_skills')
-      .delete()
-      .eq('user_id', user.id);
-
-    if (deleteError) {
-      console.error("Error deleting user skills:", deleteError);
-      throw deleteError;
-    }
-
-    // Then insert new skills
-    const skillsToInsert = data.skills.map(skill => ({
-      user_id: user.id,
-      skill_id: skill.id,
-      skill_type: skill.type,
-      assessment_id: assessmentData?.id
-    }));
-    
-    console.log("Inserting user skills:", skillsToInsert);
-
-    if (skillsToInsert.length > 0) {
-      const { error: insertSkillsError } = await supabase
+    try {
+      // First delete existing skills
+      console.log("Deleting existing user skills");
+      const { error: deleteError } = await supabase
         .from('user_skills')
-        .insert(skillsToInsert);
+        .delete()
+        .eq('user_id', user.id);
 
-      if (insertSkillsError) {
-        console.error("Error inserting user skills:", insertSkillsError);
-        throw insertSkillsError;
-      } else {
-        console.log("User skills inserted successfully");
+      if (deleteError) {
+        console.error("Error deleting user skills:", deleteError);
+        throw deleteError;
       }
+
+      // Then insert new skills
+      const skillsToInsert = data.skills.map(skill => ({
+        user_id: user.id,
+        skill_id: skill.id,
+        skill_type: skill.type,
+        assessment_id: assessmentData?.id
+      }));
+      
+      console.log("Inserting user skills:", skillsToInsert);
+
+      if (skillsToInsert.length > 0) {
+        const { error: insertSkillsError } = await supabase
+          .from('user_skills')
+          .insert(skillsToInsert);
+
+        if (insertSkillsError) {
+          console.error("Error inserting user skills:", insertSkillsError);
+          throw insertSkillsError;
+        } else {
+          console.log("User skills inserted successfully");
+        }
+      }
+    } catch (e) {
+      console.error("Exception in user skills update:", e);
+      // Don't fail the entire operation if user_skills update fails
     }
   }
 };
