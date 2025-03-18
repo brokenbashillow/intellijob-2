@@ -1,9 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSkillsData } from "@/hooks/useSkillsData";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
 
 interface SoftSkillsStepProps {
   softSkills: string[];
@@ -17,14 +22,35 @@ const SoftSkillsStep = ({
   const { categories, skills, loading } = useSkillsData();
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   
+  // Improved logging to debug the issue
+  useEffect(() => {
+    console.log("SoftSkillsStep rendered with skills:", softSkills);
+  }, [softSkills]);
+  
   const handleSkillToggle = (skillId: string) => {
+    console.log("Toggle called for skill:", skillId);
+    
+    // Ensure skillId is a valid UUID format, not a string name
+    if (!skillId || typeof skillId !== 'string') {
+      console.error("Invalid skill ID:", skillId);
+      return;
+    }
+    
+    // Create a new array to ensure React detects the change
     if (softSkills.includes(skillId)) {
-      setSoftSkills(softSkills.filter(s => s !== skillId));
+      // Remove the skill
+      const updatedSkills = softSkills.filter(id => id !== skillId);
+      console.log("Removing skill, new array:", updatedSkills);
+      setSoftSkills([...updatedSkills]);
     } else {
+      // Add the skill if under limit
       if (softSkills.length >= 5) {
-        return; // Maximum limit reached
+        console.log("Max skills limit reached (5)");
+        return;
       }
-      setSoftSkills([...softSkills, skillId]);
+      const updatedSkills = [...softSkills, skillId];
+      console.log("Adding skill, new array:", updatedSkills);
+      setSoftSkills([...updatedSkills]);
     }
   };
 
@@ -35,13 +61,23 @@ const SoftSkillsStep = ({
     }));
   };
 
+  // Open first soft skill category automatically for better UX
+  useEffect(() => {
+    if (!loading && categories.length > 0) {
+      const softCategories = categories.filter(cat => cat.type === 'soft');
+      if (softCategories.length > 0) {
+        setOpenCategories(prev => ({
+          ...prev,
+          [softCategories[0].id]: true
+        }));
+      }
+    }
+  }, [loading, categories]);
+
   // Group skills by category - filter for soft skills only
-  const skillsByCategory = categories
+  const categoriesWithSkills = categories
     .filter(category => category.type === 'soft')
-    .map(category => ({
-      category,
-      skills: skills.filter(skill => skill.category_id === category.id)
-    }));
+    .filter(category => skills.some(skill => skill.category_id === category.id));
 
   return (
     <div className="space-y-4">
@@ -73,44 +109,47 @@ const SoftSkillsStep = ({
       {loading ? (
         <div className="text-center py-4">Loading skills...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {skillsByCategory.map(({ category, skills }) => (
-            <div key={category.id} className="border rounded-md overflow-hidden">
-              <button
-                type="button"
-                onClick={() => toggleCategory(category.id)}
-                className="w-full p-3 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors text-left"
-              >
-                <span className="font-medium">{category.name}</span>
+        <div className="space-y-4">
+          {categoriesWithSkills.map((category) => (
+            <Collapsible
+              key={category.id}
+              open={openCategories[category.id]}
+              onOpenChange={() => toggleCategory(category.id)}
+              className="border rounded-md overflow-hidden"
+            >
+              <CollapsibleTrigger className="flex justify-between items-center w-full p-4 text-left hover:bg-slate-50">
+                <h3 className="font-medium">{category.name}</h3>
                 {openCategories[category.id] ? (
                   <ChevronUp className="h-5 w-5 text-muted-foreground" />
                 ) : (
                   <ChevronDown className="h-5 w-5 text-muted-foreground" />
                 )}
-              </button>
+              </CollapsibleTrigger>
               
-              {openCategories[category.id] && (
-                <div className="p-3 border-t space-y-2">
-                  {skills.map((skill) => (
-                    <div key={skill.id} className="flex items-start space-x-2">
-                      <Checkbox
-                        id={`soft-skill-${skill.id}`}
-                        checked={softSkills.includes(skill.id)}
-                        onCheckedChange={() => handleSkillToggle(skill.id)}
-                        disabled={softSkills.length >= 5 && !softSkills.includes(skill.id)}
-                        className="mt-0.5"
-                      />
-                      <label
-                        htmlFor={`soft-skill-${skill.id}`}
-                        className="text-sm cursor-pointer leading-tight"
-                      >
-                        {skill.name}
-                      </label>
-                    </div>
-                  ))}
+              <CollapsibleContent className="px-4 pb-4 pt-1 border-t">
+                <div className="grid grid-cols-1 gap-3">
+                  {skills
+                    .filter(skill => skill.category_id === category.id)
+                    .map((skill) => (
+                      <div key={skill.id} className="flex items-start space-x-2">
+                        <Checkbox
+                          id={`soft-skill-${skill.id}`}
+                          checked={softSkills.includes(skill.id)}
+                          onCheckedChange={() => handleSkillToggle(skill.id)}
+                          disabled={softSkills.length >= 5 && !softSkills.includes(skill.id)}
+                          className="mt-0.5"
+                        />
+                        <label
+                          htmlFor={`soft-skill-${skill.id}`}
+                          className="text-sm cursor-pointer leading-tight"
+                        >
+                          {skill.name}
+                        </label>
+                      </div>
+                    ))}
                 </div>
-              )}
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
           ))}
         </div>
       )}

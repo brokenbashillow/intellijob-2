@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SkillItem } from "@/types/resume";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { useSkillsData } from "@/hooks/useSkillsData";
 
 interface SkillsSectionProps {
   skills: SkillItem[];
@@ -33,11 +34,16 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
   const [skillType, setSkillType] = useState<"technical" | "soft">("technical");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { skills: availableSkills, loading } = useSkillsData();
 
   const technicalSkills = skills.filter(skill => skill.type === 'technical');
   const softSkills = skills.filter(skill => skill.type === 'soft');
 
   console.log("Current skills in SkillsSection:", skills);
+
+  useEffect(() => {
+    console.log("Available skills from API:", availableSkills);
+  }, [availableSkills]);
 
   const removeSkill = (skillId: string) => {
     console.log("Removing skill with ID:", skillId);
@@ -68,6 +74,11 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
   const addSkill = () => {
     if (!newSkill.trim()) return;
     
+    // First, check if we can find the skill in the available skills
+    const foundSkill = availableSkills.find(
+      s => s.name.toLowerCase() === newSkill.trim().toLowerCase()
+    );
+    
     // Check if we've reached the limit of 5 skills for the selected type
     const currentSkillsOfType = skills.filter(skill => skill.type === skillType);
     if (currentSkillsOfType.length >= 5) {
@@ -93,12 +104,12 @@ export function SkillsSection({ skills, setSkills }: SkillsSectionProps) {
       return;
     }
 
-    // Generate a proper UUID
-    const newSkillId = generateUUID();
-    console.log("Generated UUID for new skill:", newSkillId);
+    // Use the found skill ID if available, otherwise generate a new UUID
+    const skillId = foundSkill ? foundSkill.id : generateUUID();
+    console.log("Using skill ID:", skillId, "for skill:", newSkill);
 
     const newSkillItem: SkillItem = {
-      id: newSkillId,
+      id: skillId,
       name: newSkill.trim(),
       type: skillType,
     };

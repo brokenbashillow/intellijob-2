@@ -36,6 +36,12 @@ const TechnicalSkillsStep = ({
   const handleSkillToggle = (skillId: string) => {
     console.log("Toggle called for skill:", skillId);
     
+    // Ensure skillId is a valid UUID format, not a string name
+    if (!skillId || typeof skillId !== 'string') {
+      console.error("Invalid skill ID:", skillId);
+      return;
+    }
+    
     // Create a new array to ensure React detects the change
     if (technicalSkills.includes(skillId)) {
       // Remove the skill
