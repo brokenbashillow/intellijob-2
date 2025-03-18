@@ -24,12 +24,12 @@ const customSkillCategories: SkillCategory[] = [
 
 const customSkills: Skill[] = [
   // Health and Medicine
-  { id: "clinical-procedures", name: "Clinical procedures", category_id: "health-medicine" },
+  { id: "clinical-procedures", name: "Clinical procedures (e.g., venipuncture, catheterization)", category_id: "health-medicine" },
   { id: "medical-terminology", name: "Medical terminology", category_id: "health-medicine" },
   { id: "patient-care", name: "Patient care and assessment", category_id: "health-medicine" },
   { id: "lab-testing", name: "Laboratory testing and analysis", category_id: "health-medicine" },
   { id: "pharmacology", name: "Pharmacology and drug administration", category_id: "health-medicine" },
-  { id: "diagnostic-imaging", name: "Diagnostic imaging", category_id: "health-medicine" },
+  { id: "diagnostic-imaging", name: "Diagnostic imaging (e.g., X-ray, ultrasound)", category_id: "health-medicine" },
   { id: "physical-therapy", name: "Physical therapy techniques", category_id: "health-medicine" },
   { id: "medical-coding", name: "Medical coding and billing", category_id: "health-medicine" },
   { id: "nutrition-planning", name: "Nutrition planning", category_id: "health-medicine" },
@@ -44,7 +44,7 @@ const customSkills: Skill[] = [
   { id: "investment-management", name: "Investment management", category_id: "business-finance" },
   { id: "project-management-biz", name: "Project management", category_id: "business-finance" },
   { id: "sales-techniques", name: "Sales techniques", category_id: "business-finance" },
-  { id: "data-analysis-biz", name: "Data analysis (Excel, Tableau)", category_id: "business-finance" },
+  { id: "data-analysis-biz", name: "Data analysis (e.g., Excel, Tableau)", category_id: "business-finance" },
   { id: "crm", name: "Customer relationship management (CRM)", category_id: "business-finance" },
 
   // Education
@@ -58,11 +58,11 @@ const customSkills: Skill[] = [
   { id: "academic-writing", name: "Research and academic writing", category_id: "education" },
 
   // Technology and IT
-  { id: "programming", name: "Programming languages", category_id: "technology-it" },
-  { id: "web-development", name: "Web development", category_id: "technology-it" },
-  { id: "database-management", name: "Database management", category_id: "technology-it" },
+  { id: "programming", name: "Programming languages (e.g., Python, Java, C++)", category_id: "technology-it" },
+  { id: "web-development", name: "Web development (HTML, CSS, JavaScript)", category_id: "technology-it" },
+  { id: "database-management", name: "Database management (SQL, MongoDB)", category_id: "technology-it" },
   { id: "cybersecurity", name: "Cybersecurity practices", category_id: "technology-it" },
-  { id: "cloud-computing", name: "Cloud computing", category_id: "technology-it" },
+  { id: "cloud-computing", name: "Cloud computing (e.g., AWS, Azure)", category_id: "technology-it" },
   { id: "network-config", name: "Network configuration and troubleshooting", category_id: "technology-it" },
   { id: "software-development", name: "Software development and debugging", category_id: "technology-it" },
   { id: "systems-admin", name: "Systems administration", category_id: "technology-it" },
@@ -88,8 +88,8 @@ const customSkills: Skill[] = [
   { id: "construction-management", name: "Construction management", category_id: "architecture-design" },
   { id: "environmental-design", name: "Environmental design principles", category_id: "architecture-design" },
   { id: "urban-planning", name: "Urban planning", category_id: "architecture-design" },
-  { id: "3d-modeling", name: "3D modeling", category_id: "architecture-design" },
-  { id: "design-software", name: "Design software", category_id: "architecture-design" },
+  { id: "3d-modeling", name: "3D modeling (e.g., AutoCAD, SketchUp)", category_id: "architecture-design" },
+  { id: "design-software", name: "Design software (e.g., Adobe Creative Suite)", category_id: "architecture-design" },
   { id: "site-analysis", name: "Site analysis", category_id: "architecture-design" },
 
   // Law and Political Science
@@ -114,8 +114,8 @@ const customSkills: Skill[] = [
   { id: "maritime-communication", name: "Communication with maritime authorities", category_id: "maritime" },
 
   // Arts and Communication
-  { id: "graphic-design", name: "Graphic design", category_id: "arts-communication" },
-  { id: "video-editing", name: "Video editing", category_id: "arts-communication" },
+  { id: "graphic-design", name: "Graphic design (e.g., Photoshop, Illustrator)", category_id: "arts-communication" },
+  { id: "video-editing", name: "Video editing (e.g., Premiere Pro, After Effects)", category_id: "arts-communication" },
   { id: "public-speaking", name: "Public speaking", category_id: "arts-communication" },
   { id: "writing-storytelling", name: "Writing and storytelling", category_id: "arts-communication" },
   { id: "audio-production", name: "Audio production", category_id: "arts-communication" },
@@ -135,7 +135,7 @@ const customSkills: Skill[] = [
 
   // Social Sciences and Humanities
   { id: "research-methodology", name: "Research methodology", category_id: "social-sciences" },
-  { id: "data-analysis-social", name: "Data analysis (SPSS)", category_id: "social-sciences" },
+  { id: "data-analysis-social", name: "Data analysis (e.g., SPSS)", category_id: "social-sciences" },
   { id: "cultural-analysis", name: "Cultural analysis", category_id: "social-sciences" },
   { id: "statistical-analysis", name: "Statistical analysis", category_id: "social-sciences" },
   { id: "survey-design", name: "Survey design", category_id: "social-sciences" },
