@@ -23,6 +23,11 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
     isSubmitting
   } = useAssessmentForm(onProgressChange);
 
+  console.log("Current step:", currentStep);
+  console.log("Form data:", formData);
+  console.log("Categories loaded:", categories.length);
+  console.log("Skills loaded:", skills.length);
+
   if (isLoading && (currentStep === 3 || currentStep === 4)) {
     return (
       <div className="space-y-6">
@@ -61,7 +66,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       {currentStep === 3 && (
         <CategorySkillsStep
           title="Select your technical skills (min 3, max 5)"
-          selectedSkills={formData.technicalSkills}
+          selectedSkills={formData.technicalSkills || []}
           setSelectedSkills={(skills) =>
             setFormData((prev) => ({ ...prev, technicalSkills: skills }))
           }
@@ -75,7 +80,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
       {currentStep === 4 && (
         <CategorySkillsStep
           title="Select your soft skills (min 3, max 5)"
-          selectedSkills={formData.softSkills}
+          selectedSkills={formData.softSkills || []}
           setSelectedSkills={(skills) =>
             setFormData((prev) => ({ ...prev, softSkills: skills }))
           }

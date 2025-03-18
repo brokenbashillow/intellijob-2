@@ -26,9 +26,30 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
+      console.log("Submitting assessment form data:", formData);
+      
+      // Basic validation before submission
+      if (formData.technicalSkills.length < 3) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: "Please select at least 3 technical skills."
+        });
+        return;
+      }
+      
+      if (formData.softSkills.length < 3) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: "Please select at least 3 soft skills."
+        });
+        return;
+      }
       
       // Save the assessment data, including all skills and location
-      await saveAssessmentData(formData);
+      const assessmentId = await saveAssessmentData(formData);
+      console.log("Assessment saved with ID:", assessmentId);
       
       toast({
         title: "Success!",
@@ -49,7 +70,16 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   };
 
   const handleNext = () => {
-    if (!validateAssessmentStep(currentStep, formData, toast.bind(null))) return;
+    const stepValidation = validateAssessmentStep(currentStep, formData, (title, description) => {
+      toast({
+        variant: "destructive",
+        title,
+        description,
+      });
+      return false;
+    });
+    
+    if (!stepValidation) return;
 
     if (currentStep === 5) {
       handleSubmit();

@@ -14,22 +14,38 @@ export const useSkillsData = () => {
     const fetchSkillsData = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching skills data...");
+        
         // Fetch categories with proper typing
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('skill_categories')
           .select('*');
 
-        if (categoriesError) throw categoriesError;
+        if (categoriesError) {
+          console.error('Error fetching categories:', categoriesError);
+          throw categoriesError;
+        }
 
         // Fetch skills
         const { data: skillsData, error: skillsError } = await supabase
           .from('skills')
           .select('*');
 
-        if (skillsError) throw skillsError;
+        if (skillsError) {
+          console.error('Error fetching skills:', skillsError);
+          throw skillsError;
+        }
 
-        console.log("Fetched categories:", categoriesData);
-        console.log("Fetched skills:", skillsData);
+        console.log("Fetched categories:", categoriesData?.length || 0, "items");
+        console.log("Fetched skills:", skillsData?.length || 0, "items");
+        
+        if (categoriesData?.length === 0) {
+          console.warn("No skill categories found in the database");
+        }
+        
+        if (skillsData?.length === 0) {
+          console.warn("No skills found in the database");
+        }
 
         setCategories(categoriesData || []);
         setSkills(skillsData || []);

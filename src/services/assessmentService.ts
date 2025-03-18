@@ -8,6 +8,8 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
     throw new Error("No authenticated user found");
   }
 
+  console.log("Saving assessment data:", formData);
+
   // Save the assessment data
   const { data: assessmentData, error: assessmentError } = await supabase
     .from('seeker_assessments')
@@ -15,19 +17,28 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       user_id: user.data.user.id,
       education: formData.education,
       experience: formData.experience,
+      technical_skills: formData.technicalSkills,
+      soft_skills: formData.softSkills
     })
     .select()
     .single();
 
-  if (assessmentError) throw assessmentError;
+  if (assessmentError) {
+    console.error("Error saving assessment:", assessmentError);
+    throw assessmentError;
+  }
+  
   if (!assessmentData || !assessmentData.id) {
     throw new Error("Failed to create assessment");
   }
 
+  console.log("Created assessment:", assessmentData);
   const assessmentId = assessmentData.id;
 
   // Save technical skills
   if (formData.technicalSkills && formData.technicalSkills.length > 0) {
+    console.log("Saving technical skills:", formData.technicalSkills);
+    
     const technicalSkillsData = formData.technicalSkills.map(skillId => ({
       user_id: user.data.user.id,
       skill_id: skillId,
@@ -39,11 +50,16 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       .from('user_skills')
       .insert(technicalSkillsData);
       
-    if (techSkillsError) throw techSkillsError;
+    if (techSkillsError) {
+      console.error("Error saving technical skills:", techSkillsError);
+      throw techSkillsError;
+    }
   }
   
   // Save soft skills
   if (formData.softSkills && formData.softSkills.length > 0) {
+    console.log("Saving soft skills:", formData.softSkills);
+    
     const softSkillsData = formData.softSkills.map(skillId => ({
       user_id: user.data.user.id,
       skill_id: skillId,
@@ -55,11 +71,16 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       .from('user_skills')
       .insert(softSkillsData);
       
-    if (softSkillsError) throw softSkillsError;
+    if (softSkillsError) {
+      console.error("Error saving soft skills:", softSkillsError);
+      throw softSkillsError;
+    }
   }
   
   // Save location data to the profile
   if (formData.location) {
+    console.log("Saving location data:", formData.location);
+    
     const { error: locationError } = await supabase
       .from('profiles')
       .update({
@@ -69,7 +90,10 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
       })
       .eq('id', user.data.user.id);
       
-    if (locationError) throw locationError;
+    if (locationError) {
+      console.error("Error saving location:", locationError);
+      throw locationError;
+    }
   }
 
   return assessmentId;
