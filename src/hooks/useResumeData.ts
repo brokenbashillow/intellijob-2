@@ -1,58 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchResumeData, fetchUserProfile, fetchAssessmentData, saveResumeData, uploadProfileImage } from "@/services/resumeService";
-
-export interface PersonalDetails {
-  firstName: string;
-  lastName: string;
-  profilePicture?: string;
-}
-
-export interface EducationItem {
-  degree: string;
-  school: string;
-  startDate: string;
-  endDate: string;
-}
-
-export interface WorkExperienceItem {
-  company: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-export interface CertificateItem {
-  name: string;
-  organization: string;
-  dateObtained: string;
-}
-
-export interface ReferenceItem {
-  name: string;
-  title: string;
-  company: string;
-  email: string;
-  phone: string;
-}
-
-export interface SkillItem {
-  id: string;
-  name: string;
-  type: 'technical' | 'soft';
-}
-
-export interface ResumeData {
-  personalDetails: PersonalDetails;
-  education: EducationItem[];
-  workExperience: WorkExperienceItem[];
-  certificates: CertificateItem[];
-  references: ReferenceItem[];
-  skills: SkillItem[];
-}
+import { 
+  PersonalDetails, 
+  EducationItem, 
+  WorkExperienceItem, 
+  CertificateItem, 
+  ReferenceItem, 
+  SkillItem, 
+  ResumeData 
+} from "@/types/resume";
 
 export const useResumeData = () => {
   const { toast } = useToast();
@@ -70,7 +28,6 @@ export const useResumeData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasResumeData, setHasResumeData] = useState(false);
 
-  // Modified to handle both string arrays and JSON arrays
   const parseJsonArray = <T,>(data: any[] | null): T[] => {
     if (!data) return [];
     try {
@@ -97,7 +54,6 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      // Fetch profile data
       const profileData = await fetchUserProfile();
       if (profileData) {
         setPersonalDetails(prev => ({
@@ -107,7 +63,6 @@ export const useResumeData = () => {
         }));
       }
 
-      // Fetch resume data
       const resumeData = await fetchResumeData();
       if (resumeData) {
         console.log("Found existing resume data:", resumeData);
@@ -117,7 +72,6 @@ export const useResumeData = () => {
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
         setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
         
-        // Parse skills from the skills column
         if (resumeData.skills && resumeData.skills.length > 0) {
           console.log("Found skills in resume data:", resumeData.skills);
           try {
@@ -200,7 +154,6 @@ export const useResumeData = () => {
 
       console.log("Assessment data:", assessmentData);
 
-      // Initialize education from assessment
       const initialEducation: EducationItem = {
         degree: assessmentData.education || "",
         school: "",
@@ -209,7 +162,6 @@ export const useResumeData = () => {
       };
       setEducation([initialEducation]);
 
-      // Initialize work experience from assessment
       const initialWorkExperience: WorkExperienceItem = {
         company: "",
         title: "",
@@ -222,14 +174,12 @@ export const useResumeData = () => {
       console.log("Technical skills from assessment:", assessmentData.technical_skills);
       console.log("Soft skills from assessment:", assessmentData.soft_skills);
 
-      // Initialize skills from assessment
       if (
         (assessmentData.technical_skills && assessmentData.technical_skills.length > 0) ||
         (assessmentData.soft_skills && assessmentData.soft_skills.length > 0)
       ) {
         const skillsList: SkillItem[] = [];
         
-        // Process technical skills
         if (assessmentData.technical_skills && assessmentData.technical_skills.length > 0) {
           try {
             const { data: techSkillsData, error: techSkillsError } = await supabase
@@ -253,7 +203,6 @@ export const useResumeData = () => {
           }
         }
         
-        // Process soft skills
         if (assessmentData.soft_skills && assessmentData.soft_skills.length > 0) {
           try {
             const { data: softSkillsData, error: softSkillsError } = await supabase
@@ -298,7 +247,6 @@ export const useResumeData = () => {
     try {
       console.log("Saving resume data with skills:", skills);
       
-      // Create the resume data object
       const resumeData: ResumeData = {
         personalDetails,
         education,
@@ -308,7 +256,6 @@ export const useResumeData = () => {
         skills
       };
       
-      // Save the data
       await saveResumeData(resumeData);
       
       setHasResumeData(true);

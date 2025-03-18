@@ -2,7 +2,7 @@
 export interface PersonalDetails {
   firstName: string;
   lastName: string;
-  profilePicture: string;
+  profilePicture?: string;  // Changed to optional with the question mark
 }
 
 export interface EducationItem {

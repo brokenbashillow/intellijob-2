@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ResumeData, PersonalDetails, SkillItem } from "@/types/resume";
 import { parseEducationData, parseWorkExperience, parseCertificate, parseReference } from "@/utils/resumeDataParser";

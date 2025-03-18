@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { User } from "lucide-react";
-import { PersonalDetails } from "@/hooks/useResumeData";
+import { PersonalDetails } from "@/types/resume";
 
 interface PersonalDetailsSectionProps {
   personalDetails: PersonalDetails;
@@ -20,7 +20,7 @@ export function PersonalDetailsSection({
       <div className="flex items-center gap-6">
         <div className="relative">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={personalDetails.profilePicture} />
+            <AvatarImage src={personalDetails.profilePicture || ''} />
             <AvatarFallback>
               {personalDetails.firstName?.[0]}{personalDetails.lastName?.[0]}
             </AvatarFallback>
