@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { Check } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -27,11 +26,14 @@ const CategorySkillsStep = ({
 }: CategorySkillsStepProps) => {
   const { toast } = useToast();
   
-  const handleSkillToggle = (skillId: string) => {
-    if (selectedSkills.includes(skillId)) {
-      const updatedSkills = selectedSkills.filter((id) => id !== skillId);
+  const handleSkillToggle = (skill: Skill) => {
+    // Use skill name instead of ID for storing in formData
+    const skillName = skill.name;
+    
+    if (selectedSkills.includes(skillName)) {
+      const updatedSkills = selectedSkills.filter((name) => name !== skillName);
       setSelectedSkills(updatedSkills);
-      console.log(`${type} skill removed: ${skillId}, Updated skills:`, updatedSkills);
+      console.log(`${type} skill removed: ${skillName}, Updated skills:`, updatedSkills);
       toast({
         description: `Skill removed (${selectedSkills.length - 1}/5 selected)`,
         duration: 1500,
@@ -45,9 +47,9 @@ const CategorySkillsStep = ({
         });
         return; // Maximum limit reached
       }
-      const updatedSkills = [...selectedSkills, skillId];
+      const updatedSkills = [...selectedSkills, skillName];
       setSelectedSkills(updatedSkills);
-      console.log(`${type} skill added: ${skillId}, Updated skills:`, updatedSkills);
+      console.log(`${type} skill added: ${skillName}, Updated skills:`, updatedSkills);
       toast({
         description: `Skill added (${selectedSkills.length + 1}/5 selected)`,
         duration: 1500,
@@ -110,11 +112,11 @@ const CategorySkillsStep = ({
                         <div key={skill.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={`skill-${skill.id}`}
-                            checked={selectedSkills.includes(skill.id)}
-                            onCheckedChange={() => handleSkillToggle(skill.id)}
+                            checked={selectedSkills.includes(skill.name)}
+                            onCheckedChange={() => handleSkillToggle(skill)}
                             disabled={
                               selectedSkills.length >= 5 &&
-                              !selectedSkills.includes(skill.id)
+                              !selectedSkills.includes(skill.name)
                             }
                           />
                           <label

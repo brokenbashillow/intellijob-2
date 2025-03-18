@@ -36,41 +36,83 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
   console.log("Technical skills to save:", formData.technicalSkills);
   console.log("Soft skills to save:", formData.softSkills);
 
-  // Save technical skills
+  // Fetch the actual UUIDs for the technical skills
   if (formData.technicalSkills && formData.technicalSkills.length > 0) {
-    const technicalSkillsToInsert = formData.technicalSkills.map(skillId => ({
-      user_id: user.data.user!.id,
-      skill_id: skillId,
-      skill_type: 'technical',
-      assessment_id: assessmentData.id
-    }));
+    try {
+      // Query the skills table to get the real UUIDs for the skills by name
+      const { data: technicalSkillsData, error: skillsError } = await supabase
+        .from('skills')
+        .select('id, name')
+        .in('name', formData.technicalSkills);
+      
+      if (skillsError) {
+        console.error("Error fetching technical skills:", skillsError);
+        throw skillsError;
+      }
+      
+      if (technicalSkillsData && technicalSkillsData.length > 0) {
+        console.log("Found skill UUIDs:", technicalSkillsData);
+        
+        const technicalSkillsToInsert = technicalSkillsData.map(skill => ({
+          user_id: user.data.user!.id,
+          skill_id: skill.id, // Use the actual UUID from the database
+          skill_type: 'technical',
+          assessment_id: assessmentData.id
+        }));
 
-    const { error: technicalSkillsError } = await supabase
-      .from('user_skills')
-      .insert(technicalSkillsToInsert);
+        const { error: technicalSkillsError } = await supabase
+          .from('user_skills')
+          .insert(technicalSkillsToInsert);
 
-    if (technicalSkillsError) {
-      console.error("Error saving technical skills:", technicalSkillsError);
-      // Continue execution even if there's an error with skills
+        if (technicalSkillsError) {
+          console.error("Error saving technical skills:", technicalSkillsError);
+          // Continue execution even if there's an error with skills
+        }
+      } else {
+        console.warn("No matching technical skills found in the database");
+      }
+    } catch (error) {
+      console.error("Error processing technical skills:", error);
     }
   }
 
-  // Save soft skills
+  // Fetch the actual UUIDs for the soft skills
   if (formData.softSkills && formData.softSkills.length > 0) {
-    const softSkillsToInsert = formData.softSkills.map(skillId => ({
-      user_id: user.data.user!.id,
-      skill_id: skillId,
-      skill_type: 'soft',
-      assessment_id: assessmentData.id
-    }));
+    try {
+      // Query the skills table to get the real UUIDs for the skills by name
+      const { data: softSkillsData, error: skillsError } = await supabase
+        .from('skills')
+        .select('id, name')
+        .in('name', formData.softSkills);
+      
+      if (skillsError) {
+        console.error("Error fetching soft skills:", skillsError);
+        throw skillsError;
+      }
+      
+      if (softSkillsData && softSkillsData.length > 0) {
+        console.log("Found soft skill UUIDs:", softSkillsData);
+        
+        const softSkillsToInsert = softSkillsData.map(skill => ({
+          user_id: user.data.user!.id,
+          skill_id: skill.id, // Use the actual UUID from the database
+          skill_type: 'soft',
+          assessment_id: assessmentData.id
+        }));
 
-    const { error: softSkillsError } = await supabase
-      .from('user_skills')
-      .insert(softSkillsToInsert);
+        const { error: softSkillsError } = await supabase
+          .from('user_skills')
+          .insert(softSkillsToInsert);
 
-    if (softSkillsError) {
-      console.error("Error saving soft skills:", softSkillsError);
-      // Continue execution even if there's an error with skills
+        if (softSkillsError) {
+          console.error("Error saving soft skills:", softSkillsError);
+          // Continue execution even if there's an error with skills
+        }
+      } else {
+        console.warn("No matching soft skills found in the database");
+      }
+    } catch (error) {
+      console.error("Error processing soft skills:", error);
     }
   }
 
