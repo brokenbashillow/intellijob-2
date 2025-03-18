@@ -138,6 +138,32 @@ serve(async (req) => {
       assessment.soft_skills = validatedSoftSkills.length > 0 ? validatedSoftSkills : [];
     }
 
+    // Fetch skill names from the database for the analysis
+    let technicalSkillNames: string[] = [];
+    let softSkillNames: string[] = [];
+    
+    if (validatedTechnicalSkills.length > 0) {
+      const { data: techSkillsData } = await supabaseClient
+        .from("skills")
+        .select("name")
+        .in("id", validatedTechnicalSkills);
+        
+      if (techSkillsData && techSkillsData.length > 0) {
+        technicalSkillNames = techSkillsData.map(s => s.name);
+      }
+    }
+    
+    if (validatedSoftSkills.length > 0) {
+      const { data: softSkillsData } = await supabaseClient
+        .from("skills")
+        .select("name")
+        .in("id", validatedSoftSkills);
+        
+      if (softSkillsData && softSkillsData.length > 0) {
+        softSkillNames = softSkillsData.map(s => s.name);
+      }
+    }
+
     // Then get resume data if it exists
     const { data: resumeData, error: resumeError } = await supabaseClient
       .from("resumes")
@@ -147,136 +173,25 @@ serve(async (req) => {
 
     if (resumeError && resumeError.code !== "PGRST116") {
       console.error("Error fetching resume:", resumeError);
-      return new Response(
-        JSON.stringify({ error: resumeError.message }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
     }
-
-    // Extract and process skills from resume if available
-    let skills: SkillData[] = [];
-    if (resumeData && resumeData.skills && resumeData.skills.length > 0) {
-      try {
-        console.log("Processing skills from resume data:", resumeData.skills);
-        
-        // Try to parse JSON strings into objects
-        skills = resumeData.skills.map(skillString => {
-          if (typeof skillString === 'string') {
-            try {
-              const parsed = JSON.parse(skillString);
-              return {
-                id: parsed.id,
-                name: parsed.name,
-                type: parsed.type
-              };
-            } catch (e) {
-              console.error("Error parsing skill JSON:", e, skillString);
-              return null;
-            }
-          }
-          return skillString;
-        }).filter(skill => skill !== null);
-        
-        console.log("Parsed skills from resume:", skills);
-      } catch (e) {
-        console.error("Error processing skills from resume:", e);
-      }
-    } else if (!skills.length) {
-      // If no skills in resume, fetch from user_skills
-      console.log("No skills in resume, fetching from user_skills");
-      
-      const { data: userSkills, error: userSkillsError } = await supabaseClient
-        .from("user_skills")
-        .select(`
-          skill_id,
-          skill_type,
-          skills (
-            id,
-            name
-          )
-        `)
-        .eq("user_id", userId);
-
-      if (userSkillsError) {
-        console.error("Error fetching user skills:", userSkillsError);
-      } else if (userSkills && userSkills.length > 0) {
-        console.log("Found user skills:", userSkills);
-        
-        skills = userSkills.map(skillData => ({
-          id: skillData.skill_id,
-          name: skillData.skills?.name || "Unknown Skill",
-          type: skillData.skill_type as 'technical' | 'soft'
-        }));
-        
-        console.log("Processed user skills:", skills);
-      } else {
-        console.log("No user skills found");
-        
-        // As a fallback, if we have valid skill IDs in the assessment, fetch those skills directly
-        if (assessment.technical_skills && assessment.technical_skills.length > 0) {
-          const { data: techSkills, error: techSkillsError } = await supabaseClient
-            .from("skills")
-            .select("id, name")
-            .in("id", assessment.technical_skills);
-            
-          if (techSkillsError) {
-            console.error("Error fetching technical skills by IDs:", techSkillsError);
-          } else if (techSkills) {
-            const technicalSkillsData = techSkills.map(skill => ({
-              id: skill.id,
-              name: skill.name,
-              type: 'technical' as const
-            }));
-            skills.push(...technicalSkillsData);
-            console.log("Added technical skills from assessment:", technicalSkillsData);
-          }
-        }
-        
-        if (assessment.soft_skills && assessment.soft_skills.length > 0) {
-          const { data: softSkills, error: softSkillsError } = await supabaseClient
-            .from("skills")
-            .select("id, name")
-            .in("id", assessment.soft_skills);
-            
-          if (softSkillsError) {
-            console.error("Error fetching soft skills by IDs:", softSkillsError);
-          } else if (softSkills) {
-            const softSkillsData = softSkills.map(skill => ({
-              id: skill.id,
-              name: skill.name,
-              type: 'soft' as const
-            }));
-            skills.push(...softSkillsData);
-            console.log("Added soft skills from assessment:", softSkillsData);
-          }
-        }
-      }
-    }
-
-    // Gather technical and soft skills separately
-    const technicalSkills = skills.filter(skill => skill.type === 'technical').map(skill => skill.name);
-    const softSkills = skills.filter(skill => skill.type === 'soft').map(skill => skill.name);
-
-    console.log("Technical skills:", technicalSkills);
-    console.log("Soft skills:", softSkills);
 
     // Prepare analysis results
     const analysisResults = {
       timestamp: new Date().toISOString(),
       resume_status: resumeData ? "complete" : "incomplete",
-      technical_skills: technicalSkills,
-      soft_skills: softSkills,
-      skill_count: technicalSkills.length + softSkills.length,
-      job_readiness: technicalSkills.length >= 3 && softSkills.length >= 2 ? "high" : "medium",
+      technical_skills: technicalSkillNames,
+      soft_skills: softSkillNames,
+      skill_count: technicalSkillNames.length + softSkillNames.length,
+      job_readiness: technicalSkillNames.length >= 3 && softSkillNames.length >= 2 ? "high" : "medium",
       recommendations: []
     };
 
     // Add recommendations based on assessment
-    if (technicalSkills.length < 3) {
+    if (technicalSkillNames.length < 3) {
       analysisResults.recommendations.push("Add more technical skills to improve job matches");
     }
     
-    if (softSkills.length < 2) {
+    if (softSkillNames.length < 2) {
       analysisResults.recommendations.push("Add more soft skills to showcase your workplace abilities");
     }
     

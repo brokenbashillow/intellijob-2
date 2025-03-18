@@ -22,6 +22,33 @@ export const saveAssessmentData = async (formData: AssessmentData): Promise<stri
   console.log("Processing technical skills for saving:", technicalSkills);
   console.log("Processing soft skills for saving:", softSkills);
 
+  // Verify that the skills actually exist in the database
+  if (technicalSkills.length > 0) {
+    const { data: techSkillsData, error: techSkillsError } = await supabase
+      .from('skills')
+      .select('id, name')
+      .in('id', technicalSkills);
+      
+    if (techSkillsError) {
+      console.error("Error verifying technical skills:", techSkillsError);
+    } else {
+      console.log("Verified technical skills in database:", techSkillsData);
+    }
+  }
+  
+  if (softSkills.length > 0) {
+    const { data: softSkillsData, error: softSkillsError } = await supabase
+      .from('skills')
+      .select('id, name')
+      .in('id', softSkills);
+      
+    if (softSkillsError) {
+      console.error("Error verifying soft skills:", softSkillsError);
+    } else {
+      console.log("Verified soft skills in database:", softSkillsData);
+    }
+  }
+
   // Save the assessment data - ensure we're passing arrays, not null
   const { data: assessmentData, error: assessmentError } = await supabase
     .from('seeker_assessments')
