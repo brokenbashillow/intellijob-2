@@ -5,7 +5,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { FormData } from "@/types/assessment";
 import { validateAssessmentStep } from "@/utils/assessmentValidation";
 import { saveAssessmentData } from "@/services/assessmentService";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
   const navigate = useNavigate();
@@ -28,58 +27,8 @@ export const useAssessmentForm = (onProgressChange: (step: number) => void) => {
     try {
       setIsSubmitting(true);
       
-      // First save the assessment data
-      const assessmentId = await saveAssessmentData(formData);
-      
-      // Get the user ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-      
-      // Save technical skills
-      if (formData.technicalSkills && formData.technicalSkills.length > 0 && assessmentId) {
-        const technicalSkillsData = formData.technicalSkills.map(skillId => ({
-          user_id: user.id,
-          skill_id: skillId,
-          skill_type: 'technical' as const,
-          assessment_id: assessmentId
-        }));
-        
-        const { error: techSkillsError } = await supabase
-          .from('user_skills')
-          .insert(technicalSkillsData);
-          
-        if (techSkillsError) throw techSkillsError;
-      }
-      
-      // Save soft skills
-      if (formData.softSkills && formData.softSkills.length > 0 && assessmentId) {
-        const softSkillsData = formData.softSkills.map(skillId => ({
-          user_id: user.id,
-          skill_id: skillId,
-          skill_type: 'soft' as const,
-          assessment_id: assessmentId
-        }));
-        
-        const { error: softSkillsError } = await supabase
-          .from('user_skills')
-          .insert(softSkillsData);
-          
-        if (softSkillsError) throw softSkillsError;
-      }
-      
-      // Save location data to the profile
-      if (formData.location) {
-        const { error: locationError } = await supabase
-          .from('profiles')
-          .update({
-            country: formData.location.country,
-            province: formData.location.province,
-            city: formData.location.city
-          })
-          .eq('id', user.id);
-          
-        if (locationError) throw locationError;
-      }
+      // Save the assessment data, including all skills and location
+      await saveAssessmentData(formData);
       
       toast({
         title: "Success!",

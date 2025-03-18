@@ -24,6 +24,53 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
     throw new Error("Failed to create assessment");
   }
 
-  // Return the assessment ID which we'll need for other operations
-  return assessmentData.id;
+  const assessmentId = assessmentData.id;
+
+  // Save technical skills
+  if (formData.technicalSkills && formData.technicalSkills.length > 0) {
+    const technicalSkillsData = formData.technicalSkills.map(skillId => ({
+      user_id: user.data.user.id,
+      skill_id: skillId,
+      skill_type: 'technical',
+      assessment_id: assessmentId
+    }));
+    
+    const { error: techSkillsError } = await supabase
+      .from('user_skills')
+      .insert(technicalSkillsData);
+      
+    if (techSkillsError) throw techSkillsError;
+  }
+  
+  // Save soft skills
+  if (formData.softSkills && formData.softSkills.length > 0) {
+    const softSkillsData = formData.softSkills.map(skillId => ({
+      user_id: user.data.user.id,
+      skill_id: skillId,
+      skill_type: 'soft',
+      assessment_id: assessmentId
+    }));
+    
+    const { error: softSkillsError } = await supabase
+      .from('user_skills')
+      .insert(softSkillsData);
+      
+    if (softSkillsError) throw softSkillsError;
+  }
+  
+  // Save location data to the profile
+  if (formData.location) {
+    const { error: locationError } = await supabase
+      .from('profiles')
+      .update({
+        country: formData.location.country,
+        province: formData.location.province,
+        city: formData.location.city
+      })
+      .eq('id', user.data.user.id);
+      
+    if (locationError) throw locationError;
+  }
+
+  return assessmentId;
 };

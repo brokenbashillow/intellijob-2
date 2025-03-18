@@ -8,24 +8,31 @@ export const useSkillsData = () => {
   const { toast } = useToast();
   const [categories, setCategories] = useState<SkillCategory[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSkillsData = async () => {
       try {
+        setIsLoading(true);
+        // Fetch categories with proper typing
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('skill_categories')
           .select('*');
 
         if (categoriesError) throw categoriesError;
 
+        // Fetch skills
         const { data: skillsData, error: skillsError } = await supabase
           .from('skills')
           .select('*');
 
         if (skillsError) throw skillsError;
 
-        setCategories(categoriesData);
-        setSkills(skillsData);
+        console.log("Fetched categories:", categoriesData);
+        console.log("Fetched skills:", skillsData);
+
+        setCategories(categoriesData || []);
+        setSkills(skillsData || []);
       } catch (error) {
         console.error('Error fetching skills data:', error);
         toast({
@@ -33,11 +40,13 @@ export const useSkillsData = () => {
           title: "Error",
           description: "Failed to load skills data. Please try again.",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchSkillsData();
   }, [toast]);
 
-  return { categories, skills };
+  return { categories, skills, isLoading };
 };

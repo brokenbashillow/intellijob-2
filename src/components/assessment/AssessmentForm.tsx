@@ -6,20 +6,37 @@ import ExperienceStep from "./ExperienceStep";
 import CategorySkillsStep from "./CategorySkillsStep";
 import LocationStep from "./LocationStep";
 import FormNavigation from "./FormNavigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AssessmentFormProps {
   onProgressChange: (step: number) => void;
 }
 
 export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
-  const { categories, skills } = useSkillsData();
+  const { categories, skills, isLoading } = useSkillsData();
   const {
     currentStep,
     formData,
     setFormData,
     handleNext,
     handlePrevious,
+    isSubmitting
   } = useAssessmentForm(onProgressChange);
+
+  if (isLoading && (currentStep === 3 || currentStep === 4)) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+        <div className="flex justify-between mt-8">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -51,6 +68,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
           categories={categories}
           skills={skills}
           type="technical"
+          isLoading={isLoading}
         />
       )}
 
@@ -64,6 +82,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
           categories={categories}
           skills={skills}
           type="soft"
+          isLoading={isLoading}
         />
       )}
 
@@ -80,6 +99,7 @@ export const AssessmentForm = ({ onProgressChange }: AssessmentFormProps) => {
         currentStep={currentStep}
         onNext={handleNext}
         onPrevious={handlePrevious}
+        isSubmitting={isSubmitting}
       />
     </div>
   );
