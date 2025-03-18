@@ -13,6 +13,9 @@ const Assessment = () => {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Skills Assessment</h1>
           <Progress value={(progress / totalSteps) * 100} className="h-2" />
+          <p className="text-sm text-muted-foreground">
+            Step {progress} of {totalSteps}
+          </p>
         </div>
         <AssessmentForm onProgressChange={setProgress} />
       </div>
