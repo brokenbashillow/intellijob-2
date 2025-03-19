@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -79,14 +80,25 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   const fetchJobPostings = async () => {
     try {
       setIsLoading(true)
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        throw new Error("User not authenticated")
+      }
+      
+      // Only fetch job postings created by this employer
       const { data, error } = await supabase
         .from('job_postings')
         .select('*')
+        .eq('employer_id', user.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
       
-      setJobPostings(data || [])
+      // Filter out any potential fallback or example jobs that might have been created incorrectly
+      const filteredData = data?.filter(job => job.platform !== "fallback" && job.platform !== "Example") || []
+      setJobPostings(filteredData)
     } catch (error: any) {
       console.error('Error fetching job postings:', error)
       toast({
@@ -94,6 +106,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         title: "Error",
         description: error.message || "Failed to load job postings.",
       })
+      setJobPostings([])
     } finally {
       setIsLoading(false)
     }

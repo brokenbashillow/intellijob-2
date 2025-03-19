@@ -68,7 +68,7 @@ const JobList = ({
     } else {
       // Filter out fallback jobs for employer accounts
       const filteredJobs = isEmployerDashboard 
-        ? initialJobs.filter(job => job.platform !== "fallback")
+        ? initialJobs.filter(job => job.platform !== "fallback" && job.platform !== "Example")
         : initialJobs
       setJobs(filteredJobs)
     }
@@ -125,9 +125,9 @@ const JobList = ({
   }
 
   // Filter jobs if userFields are provided and not on employer dashboard
-  // Also filter out fallback jobs for employer dashboard
+  // Also filter out both fallback and example jobs for employer dashboard
   const filteredJobs = isEmployerDashboard 
-    ? jobs.filter(job => job.platform !== "fallback") 
+    ? jobs.filter(job => job.platform !== "fallback" && job.platform !== "Example") 
     : (userFields.length > 0
         ? jobs.filter(job => 
             // Include jobs that match user fields or have no field specified

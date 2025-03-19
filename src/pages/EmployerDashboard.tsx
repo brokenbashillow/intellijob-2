@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -37,7 +38,29 @@ const EmployerDashboard = () => {
 
   useEffect(() => {
     fetchEmployerProfile()
+    // Ensure we remove any fallback jobs associated with this employer on initial load
+    cleanupFallbackJobs()
   }, [])
+
+  // Function to clean up any fallback jobs that might have been incorrectly associated with this employer
+  const cleanupFallbackJobs = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) return
+      
+      // Delete any fallback or example jobs associated with this employer
+      const { error } = await supabase
+        .from('job_postings')
+        .delete()
+        .eq('employer_id', user.id)
+        .or('platform.eq.fallback,platform.eq.Example')
+      
+      if (error) throw error
+    } catch (error) {
+      console.error("Error cleaning up fallback jobs:", error)
+    }
+  }
 
   const fetchEmployerProfile = async () => {
     try {
