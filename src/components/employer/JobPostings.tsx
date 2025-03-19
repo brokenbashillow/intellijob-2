@@ -238,7 +238,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   };
 
   const handleSelectTemplate = (template: JobTemplate) => {
-    // Format job description to include company info
     let description = template.description || "";
     if (!description) {
       description = `${template.company} - ${template.location}`;

@@ -18,7 +18,7 @@ export interface Job {
   salary?: string;
 }
 
-export const useJobRecommendations = () => {
+export const useJobRecommendations = (isEmployer = false) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -112,7 +112,7 @@ export const useJobRecommendations = () => {
         allJobsData = [...allJobsData, ...mappedJobTemplates];
       }
       
-      if (allJobsData.length === 0) {
+      if (allJobsData.length === 0 && !isEmployer) {
         console.log("No jobs found, creating fallback jobs");
         setFallbackJobs();
         return;
@@ -235,7 +235,11 @@ export const useJobRecommendations = () => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
-      setFallbackJobs();
+      if (!isEmployer) {
+        setFallbackJobs();
+      } else {
+        setJobs([]);
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -243,6 +247,11 @@ export const useJobRecommendations = () => {
   };
 
   const setFallbackJobs = () => {
+    if (isEmployer) {
+      setJobs([]);
+      return;
+    }
+    
     const hasMedicalEducation = educationFields.some(degree => 
       /nursing|bs nursing|bachelor of science in nursing|bsn|rn|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
     );
@@ -463,7 +472,7 @@ export const useJobRecommendations = () => {
 
   useEffect(() => {
     fetchJobPostings();
-  }, [userFields, educationFields]);
+  }, [userFields, educationFields, isEmployer]);
 
   return {
     jobs,
