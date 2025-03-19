@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,6 +37,7 @@ interface JobPosting {
   responses: number
   status?: string
   accepted_count?: number
+  education?: string
 }
 
 interface JobTemplate {
@@ -49,6 +49,7 @@ interface JobTemplate {
   requirements?: string
   field: string
   description?: string
+  education?: string
 }
 
 interface JobPostingsProps {
@@ -66,7 +67,8 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     title: "",
     description: "",
     requirements: "",
-    field: ""
+    field: "",
+    education: ""
   })
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
   
@@ -131,6 +133,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           description: newJob.description,
           requirements: newJob.requirements,
           field: newJob.field,
+          education: newJob.education,
           responses: 0,
           accepted_count: 0,
           employer_id: user.id
@@ -143,7 +146,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         setJobPostings(prev => [data[0], ...prev])
       }
       
-      setNewJob({ title: "", description: "", requirements: "", field: "" })
+      setNewJob({ title: "", description: "", requirements: "", field: "", education: "" })
       setIsDialogOpen(false)
       
       toast({
@@ -248,7 +251,8 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
       title: template.title,
       description: description,
       requirements: template.requirements || "",
-      field: template.field
+      field: template.field,
+      education: template.education || ""
     });
     
     setIsTemplateDialogOpen(false);
@@ -385,6 +389,17 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
                 name="requirements" 
                 placeholder="List the skills and qualifications required" 
                 value={newJob.requirements || ""}
+                onChange={handleInputChange}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="education">Education</Label>
+              <Textarea 
+                id="education" 
+                name="education" 
+                placeholder="Specify required education levels and qualifications" 
+                value={newJob.education || ""}
                 onChange={handleInputChange}
                 rows={3}
               />

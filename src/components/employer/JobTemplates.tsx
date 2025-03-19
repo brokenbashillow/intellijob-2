@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,7 @@ interface JobTemplate {
   requirements?: string;
   field: string;
   description?: string;
+  education?: string;
 }
 
 interface JobTemplatesProps {
@@ -56,7 +56,6 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
         setTemplates(data);
         setFilteredTemplates(data);
         
-        // Extract unique fields
         const fields = [...new Set(data.map(template => template.field))];
         setUniqueFields(fields);
       }
@@ -75,7 +74,6 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
   const filterTemplates = () => {
     let filtered = [...templates];
     
-    // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(template => 
@@ -85,7 +83,6 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
       );
     }
     
-    // Filter by selected field
     if (selectedField) {
       filtered = filtered.filter(template => template.field === selectedField);
     }
@@ -182,6 +179,14 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
                       <p className="font-medium mb-1">Requirements:</p>
                       <div className="whitespace-pre-line text-muted-foreground text-xs">
                         {template.requirements}
+                      </div>
+                    </div>
+                  )}
+                  {template.education && (
+                    <div className="mb-2">
+                      <p className="font-medium mb-1">Education:</p>
+                      <div className="whitespace-pre-line text-muted-foreground text-xs">
+                        {template.education}
                       </div>
                     </div>
                   )}
