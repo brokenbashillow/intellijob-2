@@ -62,13 +62,13 @@ const JobList = ({
   useEffect(() => {
     if (fetchFromDatabase) {
       fetchJobPostings()
-    } else if (isEmployerDashboard) {
-      // On employer dashboard, only show actual job postings, not recommended jobs
+    } else if (isEmployerDashboard && !title.includes("Template")) {
+      // Only hide recommended jobs in employer dashboard if they're not templates
       setJobs([])
     } else {
       setJobs(initialJobs)
     }
-  }, [fetchFromDatabase, limit, initialJobs, isEmployerDashboard])
+  }, [fetchFromDatabase, limit, initialJobs, isEmployerDashboard, title])
 
   const fetchJobPostings = async () => {
     try {
