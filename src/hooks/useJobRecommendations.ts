@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -93,7 +94,8 @@ export const useJobRecommendations = (isEmployer = false) => {
         allJobsData = mappedJobPostings;
       }
       
-      if ((!jobPostingsData || jobPostingsData.length < 5) && jobTemplatesData && jobTemplatesData.length > 0) {
+      // Only add job templates if we're not in employer mode or if we have few job postings
+      if ((!jobPostingsData || jobPostingsData.length < 5) && jobTemplatesData && jobTemplatesData.length > 0 && !isEmployer) {
         console.log("Adding job templates:", jobTemplatesData.length);
         
         const mappedJobTemplates: Job[] = jobTemplatesData.map(template => ({
@@ -112,6 +114,7 @@ export const useJobRecommendations = (isEmployer = false) => {
         allJobsData = [...allJobsData, ...mappedJobTemplates];
       }
       
+      // Don't add fallback jobs for employers
       if (allJobsData.length === 0 && !isEmployer) {
         console.log("No jobs found, creating fallback jobs");
         setFallbackJobs();
@@ -235,6 +238,7 @@ export const useJobRecommendations = (isEmployer = false) => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
+      // Don't set fallback jobs for employers
       if (!isEmployer) {
         setFallbackJobs();
       } else {
@@ -247,6 +251,7 @@ export const useJobRecommendations = (isEmployer = false) => {
   };
 
   const setFallbackJobs = () => {
+    // Don't show fallback jobs for employers
     if (isEmployer) {
       setJobs([]);
       return;

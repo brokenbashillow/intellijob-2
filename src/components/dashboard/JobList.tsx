@@ -66,7 +66,11 @@ const JobList = ({
       // Only hide recommended jobs in employer dashboard if they're not templates
       setJobs([])
     } else {
-      setJobs(initialJobs)
+      // Filter out fallback jobs for employer accounts
+      const filteredJobs = isEmployerDashboard 
+        ? initialJobs.filter(job => job.platform !== "fallback")
+        : initialJobs
+      setJobs(filteredJobs)
     }
   }, [fetchFromDatabase, limit, initialJobs, isEmployerDashboard, title])
 
@@ -121,16 +125,17 @@ const JobList = ({
   }
 
   // Filter jobs if userFields are provided and not on employer dashboard
+  // Also filter out fallback jobs for employer dashboard
   const filteredJobs = isEmployerDashboard 
-    ? jobs 
+    ? jobs.filter(job => job.platform !== "fallback") 
     : (userFields.length > 0
         ? jobs.filter(job => 
             // Include jobs that match user fields or have no field specified
-            !job.field || 
+            (!job.field || 
             userFields.some(field => 
               job.field?.toLowerCase().includes(field.toLowerCase()) || 
               field.toLowerCase().includes(job.field?.toLowerCase() || '')
-            )
+            ))
           )
         : jobs);
 
