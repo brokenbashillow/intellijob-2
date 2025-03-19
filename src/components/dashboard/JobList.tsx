@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import JobCard from "./JobCard"
 import { supabase } from "@/integrations/supabase/client"
 import { Loader2 } from "lucide-react"
+import { useLocation } from "react-router-dom"
 
 interface JobPosting {
   id: string
@@ -54,15 +55,20 @@ const JobList = ({
 }: JobListProps) => {
   const [jobs, setJobs] = useState<RecommendedJob[]>(initialJobs)
   const [isLoading, setIsLoading] = useState(fetchFromDatabase)
+  const location = useLocation()
+  const isEmployerDashboard = location.pathname.includes('employer-dashboard')
 
   // Fetch jobs from database if fetchFromDatabase is true
   useEffect(() => {
     if (fetchFromDatabase) {
       fetchJobPostings()
+    } else if (isEmployerDashboard) {
+      // On employer dashboard, only show actual job postings, not recommended jobs
+      setJobs([])
     } else {
       setJobs(initialJobs)
     }
-  }, [fetchFromDatabase, limit, initialJobs])
+  }, [fetchFromDatabase, limit, initialJobs, isEmployerDashboard])
 
   const fetchJobPostings = async () => {
     try {
@@ -75,6 +81,14 @@ const JobList = ({
       // Apply limit if specified
       if (limit) {
         query = query.limit(limit)
+      }
+
+      // If on employer dashboard, only fetch jobs that belong to the current user
+      if (isEmployerDashboard) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          query = query.eq('employer_id', user.id)
+        }
       }
 
       const { data, error } = await query
@@ -106,17 +120,19 @@ const JobList = ({
     }
   }
 
-  // Filter jobs if userFields are provided
-  const filteredJobs = userFields.length > 0
-    ? jobs.filter(job => 
-        // Include jobs that match user fields or have no field specified
-        !job.field || 
-        userFields.some(field => 
-          job.field?.toLowerCase().includes(field.toLowerCase()) || 
-          field.toLowerCase().includes(job.field?.toLowerCase() || '')
-        )
-      )
-    : jobs;
+  // Filter jobs if userFields are provided and not on employer dashboard
+  const filteredJobs = isEmployerDashboard 
+    ? jobs 
+    : (userFields.length > 0
+        ? jobs.filter(job => 
+            // Include jobs that match user fields or have no field specified
+            !job.field || 
+            userFields.some(field => 
+              job.field?.toLowerCase().includes(field.toLowerCase()) || 
+              field.toLowerCase().includes(job.field?.toLowerCase() || '')
+            )
+          )
+        : jobs);
 
   if (isLoading) {
     return (
