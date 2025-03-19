@@ -16,6 +16,7 @@ interface JobTemplate {
   salary?: string;
   requirements?: string;
   field: string;
+  description?: string;
 }
 
 interface JobTemplatesProps {
@@ -102,6 +103,7 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
       title: "Template Selected",
       description: `${template.title} template has been applied.`,
     });
+    onClose(); // Close the dialog after selection
   };
 
   return (
@@ -150,7 +152,11 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
             {filteredTemplates.map((template) => (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
+              <Card 
+                key={template.id} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleSelectTemplate(template)}
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex justify-between items-start">
                     <span>{template.title}</span>
@@ -158,7 +164,10 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 rounded-full"
-                      onClick={() => handleSelectTemplate(template)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectTemplate(template);
+                      }}
                     >
                       <Check className="h-4 w-4 text-green-600" />
                       <span className="sr-only">Select template</span>

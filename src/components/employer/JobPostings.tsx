@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -47,6 +48,7 @@ interface JobTemplate {
   salary?: string
   requirements?: string
   field: string
+  description?: string
 }
 
 interface JobPostingsProps {
@@ -233,14 +235,24 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   };
 
   const handleSelectTemplate = (template: JobTemplate) => {
+    // Format job description to include company info
+    let description = template.description || "";
+    if (!description) {
+      description = `${template.company} - ${template.location}`;
+      if (template.salary) {
+        description += `\nSalary: ${template.salary}`;
+      }
+    }
+    
     setNewJob({
       title: template.title,
-      description: `${template.company} - ${template.location}\n${template.salary ? `Salary: ${template.salary}\n` : ''}`,
+      description: description,
       requirements: template.requirements || "",
       field: template.field
-    })
-    setIsTemplateDialogOpen(false)
-    setIsDialogOpen(true)
+    });
+    
+    setIsTemplateDialogOpen(false);
+    setIsDialogOpen(true);
   }
 
   return (
