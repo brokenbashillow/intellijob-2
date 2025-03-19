@@ -52,6 +52,7 @@ export type Database = {
           employer_id: string
           field: string | null
           id: string
+          platform: string | null
           requirements: string | null
           responses: number | null
           status: string | null
@@ -65,6 +66,7 @@ export type Database = {
           employer_id: string
           field?: string | null
           id?: string
+          platform?: string | null
           requirements?: string | null
           responses?: number | null
           status?: string | null
@@ -78,6 +80,7 @@ export type Database = {
           employer_id?: string
           field?: string | null
           id?: string
+          platform?: string | null
           requirements?: string | null
           responses?: number | null
           status?: string | null

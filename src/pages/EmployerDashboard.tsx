@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -50,6 +49,7 @@ const EmployerDashboard = () => {
       if (!user) return
       
       // Delete any fallback or example jobs associated with this employer
+      // Now that we have the platform column, this will work correctly
       const { error } = await supabase
         .from('job_postings')
         .delete()

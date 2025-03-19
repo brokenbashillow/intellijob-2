@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +38,7 @@ interface JobPosting {
   status?: string
   accepted_count?: number
   education?: string
+  platform?: string
 }
 
 interface JobTemplate {
@@ -96,8 +96,11 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
 
       if (error) throw error
       
-      // Filter out any potential fallback or example jobs that might have been created incorrectly
-      const filteredData = data?.filter(job => job.platform !== "fallback" && job.platform !== "Example") || []
+      // Now that we have the platform column, we can safely filter
+      const filteredData = data?.filter(job => 
+        !job.platform || (job.platform !== "fallback" && job.platform !== "Example")
+      ) || []
+      
       setJobPostings(filteredData)
     } catch (error: any) {
       console.error('Error fetching job postings:', error)

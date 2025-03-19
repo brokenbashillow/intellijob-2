@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react"
 import JobCard from "./JobCard"
 import { supabase } from "@/integrations/supabase/client"
@@ -58,15 +57,12 @@ const JobList = ({
   const location = useLocation()
   const isEmployerDashboard = location.pathname.includes('employer-dashboard')
 
-  // Fetch jobs from database if fetchFromDatabase is true
   useEffect(() => {
     if (fetchFromDatabase) {
       fetchJobPostings()
     } else if (isEmployerDashboard && !title.includes("Template")) {
-      // Only hide recommended jobs in employer dashboard if they're not templates
       setJobs([])
     } else {
-      // Filter out fallback jobs for employer accounts
       const filteredJobs = isEmployerDashboard 
         ? initialJobs.filter(job => job.platform !== "fallback" && job.platform !== "Example")
         : initialJobs
@@ -82,12 +78,10 @@ const JobList = ({
         .select('*')
         .order('created_at', { ascending: false })
       
-      // Apply limit if specified
       if (limit) {
         query = query.limit(limit)
       }
 
-      // If on employer dashboard, only fetch jobs that belong to the current user
       if (isEmployerDashboard) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
@@ -100,15 +94,14 @@ const JobList = ({
       if (error) throw error
       
       if (data) {
-        // Map the job_postings data to the RecommendedJob interface
         const mappedJobs: RecommendedJob[] = data.map(post => ({
           id: post.id,
           title: post.title,
-          company: "IntelliJob", // Default company name since we don't have company_name field
-          location: "Remote", // Default location
+          company: "IntelliJob",
+          location: "Remote",
           description: post.description || "",
           postedAt: post.created_at || new Date().toISOString(),
-          platform: "IntelliJob",
+          platform: post.platform || "IntelliJob",
           url: `/job/${post.id}`,
           field: post.field,
           requirements: post.requirements
@@ -118,19 +111,16 @@ const JobList = ({
       }
     } catch (error) {
       console.error("Error fetching job postings:", error)
-      setJobs([]) // Set empty array on error
+      setJobs([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Filter jobs if userFields are provided and not on employer dashboard
-  // Also filter out both fallback and example jobs for employer dashboard
   const filteredJobs = isEmployerDashboard 
     ? jobs.filter(job => job.platform !== "fallback" && job.platform !== "Example") 
     : (userFields.length > 0
         ? jobs.filter(job => 
-            // Include jobs that match user fields or have no field specified
             (!job.field || 
             userFields.some(field => 
               job.field?.toLowerCase().includes(field.toLowerCase()) || 
