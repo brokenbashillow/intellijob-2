@@ -125,7 +125,7 @@ export const useJobRecommendations = () => {
         let matchReason = "";
         
         const hasHealthcareEducation = educationFields.some(degree => 
-          /nursing|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
+          /nursing|bs nursing|bachelor of science in nursing|bsn|rn|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
         );
         
         const hasBusinessEducation = educationFields.some(degree => 
@@ -146,7 +146,7 @@ export const useJobRecommendations = () => {
         
         if (hasHealthcareEducation && 
             /nurse|nursing|healthcare|medical|clinical|patient|health|hospital|doctor|pharma/i.test(`${job.title} ${job.field || ''}`)) {
-          score += 10;
+          score += 15;
           matchReason = "Matches your nursing/healthcare education";
         } else if (hasBusinessEducation && 
             /business|finance|accounting|marketing|management|analyst|consultant/i.test(`${job.title} ${job.field || ''}`)) {
@@ -244,7 +244,7 @@ export const useJobRecommendations = () => {
 
   const setFallbackJobs = () => {
     const hasMedicalEducation = educationFields.some(degree => 
-      /nursing|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
+      /nursing|bs nursing|bachelor of science in nursing|bsn|rn|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
     );
     
     if (hasMedicalEducation) {
@@ -252,77 +252,70 @@ export const useJobRecommendations = () => {
         { 
           id: "fallback-1",
           title: "Registered Nurse", 
-          company: "City General Hospital",
-          location: "Remote", 
+          company: "St. Luke's Medical Center",
+          location: "Quezon City, Philippines", 
           description: "Join our nursing team to provide high-quality patient care. We're seeking licensed RNs with excellent communication skills and a compassionate approach to healthcare.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#",
           field: "Healthcare",
-          reason: "Matches your nursing education"
+          reason: "Matches your nursing education",
+          salary: "PHP 35,000–45,000/month"
         },
         { 
           id: "fallback-2",
-          title: "Nurse Practitioner", 
-          company: "Family Health Clinic",
-          location: "Remote", 
-          description: "Advanced practice position for a certified Nurse Practitioner. Responsibilities include patient assessment, diagnosis, treatment planning, and preventive care education.",
+          title: "Medical Laboratory Technician", 
+          company: "Philippine General Hospital",
+          location: "Manila, Philippines", 
+          description: "Perform laboratory tests and procedures to assist in the diagnosis, treatment, and prevention of disease. Work with sophisticated lab equipment to analyze samples.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#",
           field: "Healthcare",
-          reason: "Relevant to your nursing background"
+          reason: "Related to your healthcare background",
+          salary: "PHP 28,000–35,000/month"
         },
         { 
           id: "fallback-3",
-          title: "Clinical Nurse Specialist", 
-          company: "Memorial Healthcare System",
-          location: "Remote", 
-          description: "Specialized nursing role focused on improving patient outcomes through expert clinical practice, education, and leadership. Advanced degree and certification required.",
+          title: "Physical Therapist", 
+          company: "MediRehab Center",
+          location: "Cebu City, Philippines", 
+          description: "Help patients improve their mobility and manage pain through therapeutic exercises and techniques. Develop personalized rehabilitation programs.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#",
           field: "Healthcare",
-          reason: "Builds on your nursing expertise"
+          reason: "Builds on your healthcare expertise",
+          salary: "PHP 30,000–40,000/month"
         },
         { 
           id: "fallback-4",
-          title: "Healthcare Administrator", 
-          company: "Regional Medical Center",
-          location: "Remote", 
-          description: "Management position overseeing healthcare operations and policies. Ideal for nursing professionals looking to transition into healthcare administration.",
+          title: "Medical Coder", 
+          company: "Health First Solutions",
+          location: "Makati, Philippines", 
+          description: "Translate medical diagnoses and procedures into standardized codes for billing and record-keeping purposes. Ensure accurate documentation for healthcare services.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#",
           field: "Healthcare Administration",
-          reason: "Career advancement opportunity in healthcare"
+          reason: "Leverages your medical knowledge in an administrative role",
+          salary: "PHP 32,000–38,000/month"
         },
         { 
           id: "fallback-5",
-          title: "Public Health Nurse", 
-          company: "County Health Department",
-          location: "Remote", 
-          description: "Community-focused nursing role addressing population health needs through education, outreach, and preventive care programs.",
+          title: "Emergency Medical Technician (EMT)", 
+          company: "LifeCare Ambulance Services",
+          location: "Quezon City, Philippines", 
+          description: "Provide emergency medical assistance to patients in critical situations. Respond to emergency calls and transport patients to medical facilities.",
           postedAt: new Date().toISOString(), 
           platform: "fallback",
           url: "#",
-          field: "Public Health",
-          reason: "Applies your nursing skills in community settings"
+          field: "Emergency Medicine",
+          reason: "Aligns with your healthcare training",
+          salary: "PHP 28,000–33,000/month"
         },
         { 
           id: "fallback-6",
-          title: "Telehealth Nurse", 
-          company: "Virtual Care Solutions",
-          location: "Remote", 
-          description: "Provide nursing care via telemedicine platforms. Position requires strong communication skills and ability to assess patients remotely.",
-          postedAt: new Date().toISOString(), 
-          platform: "fallback",
-          url: "#",
-          field: "Healthcare",
-          reason: "Modern application of nursing in digital health"
-        },
-        { 
-          id: "fallback-7",
           title: "Nursing Educator", 
           company: "Medical Training Institute",
           location: "Remote", 
@@ -331,10 +324,11 @@ export const useJobRecommendations = () => {
           platform: "fallback",
           url: "#",
           field: "Education",
-          reason: "Opportunity to share your nursing knowledge"
+          reason: "Opportunity to share your nursing knowledge",
+          salary: "PHP 40,000–50,000/month"
         },
         { 
-          id: "fallback-8",
+          id: "fallback-7",
           title: "Healthcare Consultant", 
           company: "Medical Advisory Group",
           location: "Remote", 
@@ -343,7 +337,21 @@ export const useJobRecommendations = () => {
           platform: "fallback",
           url: "#",
           field: "Consulting",
-          reason: "Strategic role leveraging your healthcare background"
+          reason: "Strategic role leveraging your healthcare background",
+          salary: "PHP 50,000–65,000/month"
+        },
+        { 
+          id: "fallback-8",
+          title: "Nurse Practitioner", 
+          company: "Family Health Clinic",
+          location: "Remote", 
+          description: "Advanced practice position for a certified Nurse Practitioner. Responsibilities include patient assessment, diagnosis, treatment planning, and preventive care education.",
+          postedAt: new Date().toISOString(), 
+          platform: "fallback",
+          url: "#",
+          field: "Healthcare",
+          reason: "Advanced nursing role for career growth",
+          salary: "PHP 45,000–60,000/month"
         }
       ]);
     } else {

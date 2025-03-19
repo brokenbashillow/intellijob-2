@@ -8,14 +8,21 @@ interface TopRecommendedJobsProps {
 }
 
 const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
-  // Take only the top 3 recommendations
-  const topJobs = jobs.slice(0, 3);
+  // Filter for health-related jobs if available 
+  const healthJobs = jobs.filter(job => 
+    /healthcare|medical|health|nurse|hospital|clinic|patient|therapy|pharma/i.test(
+      `${job.title} ${job.field || ''} ${job.description || ''}`
+    )
+  );
+  
+  // Use health jobs if available, otherwise use top scored jobs
+  const jobsToShow = healthJobs.length >= 3 ? healthJobs.slice(0, 3) : jobs.slice(0, 3);
 
-  if (topJobs.length === 0) return null;
+  if (jobsToShow.length === 0) return null;
 
   return (
     <JobList 
-      jobs={topJobs} 
+      jobs={jobsToShow} 
       title="Top Matches For You" 
       userFields={userFields} 
     />
