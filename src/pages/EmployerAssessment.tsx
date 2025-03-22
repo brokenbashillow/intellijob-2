@@ -82,16 +82,41 @@ const EmployerAssessment = () => {
 
   const handleSubmit = async () => {
     try {
-      const { error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to complete the assessment",
+        });
+        navigate('/');
+        return;
+      }
+      
+      // Save location to profiles table
+      const { error: locationError } = await supabase
         .from('profiles')
         .update({
           country: formData.location.country,
           province: formData.location.province,
           city: formData.location.city,
         })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('id', user.id);
 
-      if (error) throw error;
+      if (locationError) throw locationError;
+
+      // Save company type, description, and employee count to employer_assessments table
+      const { error: assessmentError } = await supabase
+        .from('employer_assessments')
+        .upsert({
+          user_id: user.id,
+          company_type: formData.companyType,
+          description: formData.description,
+          employee_count: formData.employeeCount ? parseInt(formData.employeeCount) : null,
+        });
+
+      if (assessmentError) throw assessmentError;
 
       console.log("Assessment submitted:", formData);
       toast({
@@ -103,7 +128,7 @@ const EmployerAssessment = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to save location information.",
+        description: error.message || "Failed to save assessment information.",
       });
     }
   };
@@ -121,6 +146,7 @@ const EmployerAssessment = () => {
             <div className="space-y-4">
               <Label htmlFor="companyType">What type of company are you?</Label>
               <Select
+                value={formData.companyType}
                 onValueChange={(value) =>
                   setFormData((prev) => ({ ...prev, companyType: value }))
                 }

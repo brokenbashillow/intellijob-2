@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -83,6 +84,7 @@ const EmployerDashboard = () => {
         setCompanyName(profileData.company_name)
       }
 
+      // Fetch company description from employer_assessments table
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('employer_assessments')
         .select('description')
@@ -164,7 +166,7 @@ const EmployerDashboard = () => {
                 </Avatar>
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">{companyName}</h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground mb-4">
                     {companyDescription || 
                       "Sample description of company. This is where you can add information about your organization, its mission, and what you're looking for in potential candidates."}
                   </p>
