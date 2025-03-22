@@ -50,6 +50,7 @@ export type Database = {
           application_deadline: string | null
           created_at: string | null
           description: string | null
+          education: string | null
           employer_id: string
           field: string | null
           id: string
@@ -67,6 +68,7 @@ export type Database = {
           application_deadline?: string | null
           created_at?: string | null
           description?: string | null
+          education?: string | null
           employer_id: string
           field?: string | null
           id?: string
@@ -84,6 +86,7 @@ export type Database = {
           application_deadline?: string | null
           created_at?: string | null
           description?: string | null
+          education?: string | null
           employer_id?: string
           field?: string | null
           id?: string
@@ -111,6 +114,7 @@ export type Database = {
           company: string
           created_at: string
           description: string | null
+          education: string | null
           field: string
           id: string
           location: string
@@ -122,6 +126,7 @@ export type Database = {
           company: string
           created_at?: string
           description?: string | null
+          education?: string | null
           field: string
           id?: string
           location: string
@@ -133,6 +138,7 @@ export type Database = {
           company?: string
           created_at?: string
           description?: string | null
+          education?: string | null
           field?: string
           id?: string
           location?: string
