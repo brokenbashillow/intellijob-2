@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +21,7 @@ interface JobPostings {
   description: string
   requirements: string
   field: string
+  education: string
   responses: number
   status: string
   platform: string
@@ -46,6 +48,7 @@ const JobPostings = () => {
     description: "",
     requirements: "",
     field: "",
+    education: "",
     max_applicants: 5
   })
   
@@ -62,6 +65,16 @@ const JobPostings = () => {
     { value: "Engineering", label: "Engineering" },
     { value: "Design", label: "Design" },
     { value: "Other", label: "Other" }
+  ]
+  
+  const educationOptions = [
+    { value: "High School", label: "High School" },
+    { value: "Associate's Degree", label: "Associate's Degree" },
+    { value: "Bachelor's Degree", label: "Bachelor's Degree" },
+    { value: "Master's Degree", label: "Master's Degree" },
+    { value: "PhD/Doctorate", label: "PhD/Doctorate" },
+    { value: "Certification", label: "Certification" },
+    { value: "No Requirement", label: "No Requirement" }
   ]
   
   useEffect(() => {
@@ -135,6 +148,7 @@ const JobPostings = () => {
           description: formData.description,
           requirements: formData.requirements,
           field: formData.field,
+          education: formData.education,
           responses: 0,
           max_applicants: formData.max_applicants
         })
@@ -147,6 +161,7 @@ const JobPostings = () => {
         description: "",
         requirements: "",
         field: "",
+        education: "",
         max_applicants: 5
       })
       setShowNewJobDialog(false)
@@ -187,6 +202,7 @@ const JobPostings = () => {
           description: editingJob.description,
           requirements: editingJob.requirements,
           field: editingJob.field,
+          education: editingJob.education,
           max_applicants: editingJob.max_applicants
         })
         .eq('id', editingJob.id)
@@ -395,6 +411,17 @@ const JobPostings = () => {
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="education">Education Requirement</Label>
+                <SelectField 
+                  id="education"
+                  options={educationOptions}
+                  value={formData.education}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, education: value }))}
+                  placeholder="Select an education requirement"
+                />
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="description">Job Description</Label>
                 <Textarea
                   id="description"
@@ -473,6 +500,17 @@ const JobPostings = () => {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label htmlFor="edit-education">Education Requirement</Label>
+                  <SelectField 
+                    id="edit-education"
+                    options={educationOptions}
+                    value={editingJob.education || ""}
+                    onValueChange={(value) => setEditingJob(prev => prev ? { ...prev, education: value } : null)}
+                    placeholder="Select an education requirement"
+                  />
+                </div>
+                
+                <div className="space-y-2">
                   <Label htmlFor="edit-description">Job Description</Label>
                   <Textarea
                     id="edit-description"
@@ -534,3 +572,4 @@ const JobPostings = () => {
 }
 
 export default JobPostings
+
