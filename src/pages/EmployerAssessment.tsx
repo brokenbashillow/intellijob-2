@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -123,34 +124,35 @@ const EmployerAssessment = () => {
                 <Label htmlFor="employeeCount" className="text-lg font-medium">
                   How many employees do you have?
                 </Label>
-                <Select
-                  value={formData.employeeCount}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      employeeCount: value as EmployeeCountRange,
-                    }))
-                  }
-                  className="mt-2"
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select employee count range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EMPLOYEE_COUNT_OPTIONS.map((option, index) => (
-                      <React.Fragment key={option.value}>
-                        {option.category && (
-                          <SelectItem value={option.category} disabled className="font-semibold text-primary">
-                            {option.category}
+                <div className="mt-2">
+                  <Select
+                    value={formData.employeeCount}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        employeeCount: value as EmployeeCountRange,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select employee count range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EMPLOYEE_COUNT_OPTIONS.map((option, index) => (
+                        <React.Fragment key={option.value}>
+                          {option.category && (
+                            <SelectItem value={option.category} disabled className="font-semibold text-primary">
+                              {option.category}
+                            </SelectItem>
+                          )}
+                          <SelectItem value={option.value}>
+                            {option.label}
                           </SelectItem>
-                        )}
-                        <SelectItem value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      </React.Fragment>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        </React.Fragment>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
