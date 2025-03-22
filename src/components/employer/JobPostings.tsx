@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -65,16 +64,6 @@ const JobPostings = () => {
     { value: "Engineering", label: "Engineering" },
     { value: "Design", label: "Design" },
     { value: "Other", label: "Other" }
-  ]
-  
-  const educationOptions = [
-    { value: "High School", label: "High School" },
-    { value: "Associate's Degree", label: "Associate's Degree" },
-    { value: "Bachelor's Degree", label: "Bachelor's Degree" },
-    { value: "Master's Degree", label: "Master's Degree" },
-    { value: "PhD/Doctorate", label: "PhD/Doctorate" },
-    { value: "Certification", label: "Certification" },
-    { value: "No Requirement", label: "No Requirement" }
   ]
   
   useEffect(() => {
@@ -412,12 +401,11 @@ const JobPostings = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="education">Education Requirement</Label>
-                <SelectField 
+                <Input
                   id="education"
-                  options={educationOptions}
+                  placeholder="e.g., Bachelor's Degree in Computer Science"
                   value={formData.education}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, education: value }))}
-                  placeholder="Select an education requirement"
+                  onChange={(e) => setFormData(prev => ({ ...prev, education: e.target.value }))}
                 />
               </div>
               
@@ -501,12 +489,11 @@ const JobPostings = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-education">Education Requirement</Label>
-                  <SelectField 
+                  <Input
                     id="edit-education"
-                    options={educationOptions}
+                    placeholder="e.g., Bachelor's Degree in Computer Science"
                     value={editingJob.education || ""}
-                    onValueChange={(value) => setEditingJob(prev => prev ? { ...prev, education: value } : null)}
-                    placeholder="Select an education requirement"
+                    onChange={(e) => setEditingJob(prev => prev ? { ...prev, education: e.target.value } : null)}
                   />
                 </div>
                 
@@ -572,4 +559,3 @@ const JobPostings = () => {
 }
 
 export default JobPostings
-
