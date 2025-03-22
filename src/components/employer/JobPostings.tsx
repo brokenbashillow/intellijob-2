@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
+import { ArrowRight, Check, Plus, Users, MessageCircle, Trash, Edit } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -80,9 +80,22 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedJob, setSelectedJob] = useState<string | null>(null)
   const [jobToDelete, setJobToDelete] = useState<string | null>(null)
+  const [jobToEdit, setJobToEdit] = useState<string | null>(null)
   const [newJob, setNewJob] = useState<Omit<JobPosting, 'id' | 'responses'>>({
+    title: "",
+    description: "",
+    requirements: "",
+    field: "",
+    education: "",
+    location: "",
+    salary: "",
+    application_deadline: ""
+  })
+  const [editJob, setEditJob] = useState<Omit<JobPosting, 'responses'>>({
+    id: "",
     title: "",
     description: "",
     requirements: "",
@@ -136,13 +149,21 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     }
   }
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, isEdit = false) => {
     const { name, value } = e.target
-    setNewJob(prev => ({ ...prev, [name]: value }))
+    if (isEdit) {
+      setEditJob(prev => ({ ...prev, [name]: value }))
+    } else {
+      setNewJob(prev => ({ ...prev, [name]: value }))
+    }
   }
 
-  const handleSelectChange = (field: string, value: string) => {
-    setNewJob(prev => ({ ...prev, [field]: value }))
+  const handleSelectChange = (field: string, value: string, isEdit = false) => {
+    if (isEdit) {
+      setEditJob(prev => ({ ...prev, [field]: value }))
+    } else {
+      setNewJob(prev => ({ ...prev, [field]: value }))
+    }
   }
 
   const handleAddJob = async () => {
@@ -212,6 +233,75 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         variant: "destructive",
         title: "Error",
         description: error.message || "Failed to create job.",
+      })
+    }
+  }
+
+  const handleEditJob = () => {
+    const job = jobPostings.find(j => j.id === jobToEdit);
+    if (job) {
+      setEditJob({
+        id: job.id,
+        title: job.title,
+        description: job.description || "",
+        requirements: job.requirements || "",
+        field: job.field || "",
+        education: job.education || "",
+        location: job.location || "",
+        salary: job.salary || "",
+        application_deadline: job.application_deadline || "",
+        status: job.status,
+        accepted_count: job.accepted_count,
+      });
+      setIsEditDialogOpen(true);
+    }
+  }
+
+  const handleUpdateJob = async () => {
+    try {
+      if (!editJob.title.trim()) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Job title is required."
+        })
+        return
+      }
+
+      const { error } = await supabase
+        .from('job_postings')
+        .update({
+          title: editJob.title,
+          description: editJob.description,
+          requirements: editJob.requirements,
+          field: editJob.field,
+          education: editJob.education,
+          location: editJob.location,
+          salary: editJob.salary,
+          application_deadline: editJob.application_deadline,
+        })
+        .eq('id', editJob.id)
+
+      if (error) throw error
+      
+      // Update the job in the local state
+      setJobPostings(prev => prev.map(job => 
+        job.id === editJob.id ? { ...job, ...editJob, responses: job.responses } : job
+      ))
+      
+      setIsEditDialogOpen(false)
+      setJobToEdit(null)
+      
+      toast({
+        title: "Success",
+        description: "Job has been updated.",
+      })
+    } catch (error: any) {
+      console.error('Error updating job:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update job.",
       })
     }
   }
@@ -346,14 +436,27 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
               <CardHeader className="pb-3">
                 <div className="flex justify-between">
                   <CardTitle className="text-lg">{job.title}</CardTitle>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-destructive hover:text-destructive/80"
-                    onClick={() => setJobToDelete(job.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-blue-500 hover:text-blue-400"
+                      onClick={() => {
+                        setJobToEdit(job.id);
+                        handleEditJob();
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive hover:text-destructive/80"
+                      onClick={() => setJobToDelete(job.id)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 {job.field && (
                   <p className="text-sm text-muted-foreground">Field: {job.field}</p>
@@ -507,6 +610,130 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddJob}>Create Job</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Job</DialogTitle>
+            <DialogDescription>
+              Update this job listing details.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Job Title*</Label>
+              <Input 
+                id="edit-title" 
+                name="title" 
+                placeholder="e.g. Senior React Developer" 
+                value={editJob.title}
+                onChange={(e) => handleInputChange(e, true)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-field">Field</Label>
+                <Input 
+                  id="edit-field" 
+                  name="field" 
+                  placeholder="e.g. Programming, Management, Design" 
+                  value={editJob.field || ""}
+                  onChange={(e) => handleInputChange(e, true)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-location">Work Location</Label>
+                <Select
+                  value={editJob.location || ""}
+                  onValueChange={(value) => handleSelectChange("location", value, true)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select work location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_LOCATION_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-salary">Salary</Label>
+                <Input 
+                  id="edit-salary" 
+                  name="salary" 
+                  placeholder="e.g. $80,000 - $100,000" 
+                  value={editJob.salary || ""}
+                  onChange={(e) => handleInputChange(e, true)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-application_deadline">Application Deadline</Label>
+                <Input 
+                  id="edit-application_deadline" 
+                  name="application_deadline" 
+                  type="date"
+                  value={editJob.application_deadline || ""}
+                  onChange={(e) => handleInputChange(e, true)}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-education">Education</Label>
+              <Textarea 
+                id="edit-education" 
+                name="education" 
+                placeholder="Specify required education levels and qualifications" 
+                value={editJob.education || ""}
+                onChange={(e) => handleInputChange(e, true)}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-requirements">Requirements</Label>
+              <Textarea 
+                id="edit-requirements" 
+                name="requirements" 
+                placeholder="List the skills and qualifications required" 
+                value={editJob.requirements || ""}
+                onChange={(e) => handleInputChange(e, true)}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Job Description</Label>
+              <Textarea 
+                id="edit-description" 
+                name="description" 
+                placeholder="Describe the job role and responsibilities" 
+                value={editJob.description || ""}
+                onChange={(e) => handleInputChange(e, true)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsEditDialogOpen(false);
+              setJobToEdit(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateJob}>Update Job</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
