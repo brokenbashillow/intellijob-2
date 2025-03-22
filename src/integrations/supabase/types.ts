@@ -47,42 +47,51 @@ export type Database = {
       job_postings: {
         Row: {
           accepted_count: number | null
+          application_deadline: string | null
           created_at: string | null
           description: string | null
           employer_id: string
           field: string | null
           id: string
+          location: string | null
           platform: string | null
           requirements: string | null
           responses: number | null
+          salary: string | null
           status: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
           accepted_count?: number | null
+          application_deadline?: string | null
           created_at?: string | null
           description?: string | null
           employer_id: string
           field?: string | null
           id?: string
+          location?: string | null
           platform?: string | null
           requirements?: string | null
           responses?: number | null
+          salary?: string | null
           status?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
           accepted_count?: number | null
+          application_deadline?: string | null
           created_at?: string | null
           description?: string | null
           employer_id?: string
           field?: string | null
           id?: string
+          location?: string | null
           platform?: string | null
           requirements?: string | null
           responses?: number | null
+          salary?: string | null
           status?: string | null
           title?: string
           updated_at?: string | null
@@ -101,6 +110,7 @@ export type Database = {
         Row: {
           company: string
           created_at: string
+          description: string | null
           field: string
           id: string
           location: string
@@ -111,6 +121,7 @@ export type Database = {
         Insert: {
           company: string
           created_at?: string
+          description?: string | null
           field: string
           id?: string
           location: string
@@ -121,6 +132,7 @@ export type Database = {
         Update: {
           company?: string
           created_at?: string
+          description?: string | null
           field?: string
           id?: string
           location?: string

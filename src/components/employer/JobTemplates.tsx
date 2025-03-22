@@ -175,6 +175,16 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
                 </CardHeader>
                 <CardContent className="text-sm">
                   {template.salary && <p className="mb-2 font-medium">{template.salary}</p>}
+                  
+                  {template.description && (
+                    <div className="mb-2">
+                      <p className="font-medium mb-1">Description:</p>
+                      <div className="whitespace-pre-line text-muted-foreground text-xs">
+                        {template.description}
+                      </div>
+                    </div>
+                  )}
+                  
                   {template.requirements && (
                     <div className="mb-2">
                       <p className="font-medium mb-1">Requirements:</p>
@@ -183,6 +193,7 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
                       </div>
                     </div>
                   )}
+                  
                   {template.education && (
                     <div className="mb-2">
                       <p className="font-medium mb-1">Education:</p>
@@ -191,6 +202,7 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
                       </div>
                     </div>
                   )}
+                  
                   <div className="mt-2">
                     <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                       {template.field}
