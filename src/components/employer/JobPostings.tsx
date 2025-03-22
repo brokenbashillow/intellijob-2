@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase, LayoutTemplate } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +22,8 @@ interface Job {
   field: string
   location: string
   salary?: string
+  education?: string
+  requirements?: string
 }
 
 interface JobForm {
@@ -167,6 +170,8 @@ const JobPostings = () => {
           field: formData.field,
           location: formData.location,
           salary: formData.salary,
+          education: formData.education,
+          requirements: formData.requirements,
         })
         .eq("id", selectedJob.id)
         .single()
@@ -225,8 +230,8 @@ const JobPostings = () => {
       field: job.field,
       location: job.location,
       salary: job.salary || "",
-      requirements: "",
-      education: "",
+      requirements: job.requirements || "",
+      education: job.education || "",
     })
     setIsEditOpen(true)
   }
@@ -320,16 +325,30 @@ const JobPostings = () => {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="education" className="text-right">
+                    Education
+                  </Label>
+                  <Input
+                    type="text"
+                    id="education"
+                    name="education"
+                    value={formData.education}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="field" className="text-right">
                     Field
                   </Label>
-                  <SelectField
-                    name="field"
-                    value={formData.field}
-                    onChange={handleSelectChange}
-                    options={fieldOptions}
-                    className="col-span-3"
-                  />
+                  <div className="col-span-3">
+                    <SelectField
+                      id="field"
+                      value={formData.field}
+                      onChange={(value) => handleSelectChange("field", value)}
+                      options={fieldOptions}
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-start gap-4">
                   <Label htmlFor="description" className="text-right mt-2">
@@ -339,6 +358,18 @@ const JobPostings = () => {
                     id="description"
                     name="description"
                     value={formData.description}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="requirements" className="text-right mt-2">
+                    Requirements
+                  </Label>
+                  <Textarea
+                    id="requirements"
+                    name="requirements"
+                    value={formData.requirements}
                     onChange={handleInputChange}
                     className="col-span-3"
                   />
@@ -359,47 +390,53 @@ const JobPostings = () => {
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {jobs.map((job) => (
-          <Card key={job.id}>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-start">
-                <span>{job.title}</span>
-                <div className="flex gap-2">
+          <Card key={job.id} className="flex flex-col h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-start">
+                <span className="truncate">{job.title}</span>
+              </CardTitle>
+              <CardDescription className="flex items-center gap-1">
+                {job.location} • <Clock className="inline-block h-3 w-3" />
+                {new Date(job.created_at).toLocaleDateString()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="py-2 flex-grow">
+              <p className="text-sm line-clamp-3">{job.description}</p>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-2 pt-2 pb-3 border-t">
+              <div className="flex justify-between items-center w-full">
+                <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  {job.field}
+                </span>
+                <div className="flex gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="h-8 px-2"
                     onClick={() => handleOpenEditDialog(job)}
                   >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    <Edit className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteJob(job.id)}
                     disabled={isDeleting}
-                    className="text-red-500 hover:text-red-600"
+                    className="text-red-500 hover:text-red-600 h-8 px-2"
                   >
-                    <Trash className="h-4 w-4 mr-2" />
-                    {isDeleting ? "Deleting..." : "Delete"}
+                    <Trash className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-              </CardTitle>
-              <CardDescription>
-                {job.location} • <Clock className="inline-block h-4 w-4 mr-1" />
-                {new Date(job.created_at).toLocaleDateString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>{job.description.slice(0, 200)}...</p>
-            </CardContent>
-            <CardFooter className="flex justify-between items-center">
-              <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                {job.field}
-              </span>
-              <Button variant="link" onClick={() => navigate(`/job/${job.id}`)}>
-                View Details <FileText className="h-4 w-4 ml-2" />
+              </div>
+              <Button 
+                variant="link" 
+                size="sm" 
+                onClick={() => navigate(`/job/${job.id}`)}
+                className="px-0 h-7 flex justify-start"
+              >
+                View Details <FileText className="h-3.5 w-3.5 ml-1" />
               </Button>
             </CardFooter>
           </Card>
@@ -415,12 +452,12 @@ const JobPostings = () => {
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
+              <Label htmlFor="edit-title" className="text-right">
                 Title
               </Label>
               <Input
                 type="text"
-                id="title"
+                id="edit-title"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
@@ -428,51 +465,77 @@ const JobPostings = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="location" className="text-right">
+              <Label htmlFor="edit-location" className="text-right">
                 Location
               </Label>
               <Input
                 type="text"
-                id="location"
+                id="edit-location"
                 name="location"
                 value={formData.location}
                 onChange={handleInputChange}
                 className="col-span-3"
               />
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="salary" className="text-right">
-                    Salary
-                  </Label>
-                  <Input
-                    type="text"
-                    id="salary"
-                    name="salary"
-                    value={formData.salary}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
-                </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="field" className="text-right">
+              <Label htmlFor="edit-salary" className="text-right">
+                Salary
+              </Label>
+              <Input
+                type="text"
+                id="edit-salary"
+                name="salary"
+                value={formData.salary}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-education" className="text-right">
+                Education
+              </Label>
+              <Input
+                type="text"
+                id="edit-education"
+                name="education"
+                value={formData.education}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-field" className="text-right">
                 Field
               </Label>
-              <SelectField
-                name="field"
-                value={formData.field}
-                onChange={handleSelectChange}
-                options={fieldOptions}
+              <div className="col-span-3">
+                <SelectField
+                  id="edit-field"
+                  value={formData.field}
+                  onChange={(value) => handleSelectChange("field", value)}
+                  options={fieldOptions}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-description" className="text-right mt-2">
+                Description
+              </Label>
+              <Textarea
+                id="edit-description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="description" className="text-right mt-2">
-                Description
+              <Label htmlFor="edit-requirements" className="text-right mt-2">
+                Requirements
               </Label>
               <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
+                id="edit-requirements"
+                name="requirements"
+                value={formData.requirements}
                 onChange={handleInputChange}
                 className="col-span-3"
               />
