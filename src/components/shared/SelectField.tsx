@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SelectOption {
   value: string;
@@ -40,11 +41,13 @@ export const SelectField = ({
         <SelectValue placeholder={placeholder || "Select an option"} />
       </SelectTrigger>
       <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
+        <ScrollArea className="h-[200px]">
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </ScrollArea>
       </SelectContent>
     </Select>
   );

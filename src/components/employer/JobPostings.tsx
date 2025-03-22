@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { SelectField } from "@/components/shared/SelectField"
 import JobResponses from "./JobResponses"
 import { supabase } from "@/integrations/supabase/client"
@@ -41,7 +41,6 @@ const JobPostings = () => {
   const [jobDetail, setJobDetail] = useState<JobPostings | null>(null)
   const { toast } = useToast()
   
-  // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -50,7 +49,6 @@ const JobPostings = () => {
     max_applicants: 5
   })
   
-  // Field options
   const fieldOptions = [
     { value: "Technology", label: "Technology" },
     { value: "Healthcare", label: "Healthcare" },
@@ -109,7 +107,6 @@ const JobPostings = () => {
   
   const handleCreateJob = async () => {
     try {
-      // Validate the form
       if (!formData.title.trim()) {
         toast({
           variant: "destructive",
@@ -130,7 +127,6 @@ const JobPostings = () => {
         return
       }
       
-      // Save to Supabase
       const { data, error } = await supabase
         .from('job_postings')
         .insert({
@@ -146,7 +142,6 @@ const JobPostings = () => {
       
       if (error) throw error
       
-      // Reset form and close dialog
       setFormData({
         title: "",
         description: "",
@@ -156,7 +151,6 @@ const JobPostings = () => {
       })
       setShowNewJobDialog(false)
       
-      // Update jobs list
       await fetchJobs()
       
       toast({
@@ -177,7 +171,6 @@ const JobPostings = () => {
     try {
       if (!editingJob) return
       
-      // Validate the form
       if (!editingJob.title.trim()) {
         toast({
           variant: "destructive",
@@ -187,7 +180,6 @@ const JobPostings = () => {
         return
       }
       
-      // Update in Supabase
       const { error } = await supabase
         .from('job_postings')
         .update({
@@ -201,11 +193,9 @@ const JobPostings = () => {
       
       if (error) throw error
       
-      // Reset form and close dialog
       setEditingJob(null)
       setShowEditJobDialog(false)
       
-      // Update jobs list
       await fetchJobs()
       
       toast({
@@ -236,7 +226,6 @@ const JobPostings = () => {
       
       if (error) throw error
       
-      // Update jobs list
       await fetchJobs()
       
       toast({
@@ -278,7 +267,7 @@ const JobPostings = () => {
       case "closed":
         return "outline"
       case "filled":
-        return "success"
+        return "destructive"
       default:
         return "default"
     }
@@ -373,9 +362,8 @@ const JobPostings = () => {
         </TabsContent>
       </Tabs>
       
-      {/* New Job Dialog */}
       <Dialog open={showNewJobDialog} onOpenChange={setShowNewJobDialog}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Create New Job</DialogTitle>
             <DialogDescription>
@@ -383,75 +371,76 @@ const JobPostings = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Job Title</Label>
-              <Input
-                id="title"
-                placeholder="e.g., Senior Software Engineer"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              />
+          <ScrollArea className="h-[calc(80vh-160px)] pr-4">
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Job Title</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g., Senior Software Engineer"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="field">Field</Label>
+                <SelectField 
+                  id="field"
+                  options={fieldOptions}
+                  value={formData.field}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, field: value }))}
+                  placeholder="Select a field"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Job Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe the job role, responsibilities, etc."
+                  className="min-h-[100px]"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="requirements">Requirements</Label>
+                <Textarea
+                  id="requirements"
+                  placeholder="List the requirements for this job"
+                  className="min-h-[100px]"
+                  value={formData.requirements}
+                  onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="max_applicants">Maximum Accepted Applicants</Label>
+                <Input
+                  id="max_applicants"
+                  type="number"
+                  min="1"
+                  max="100"
+                  placeholder="Maximum accepted applicants"
+                  value={formData.max_applicants}
+                  onChange={(e) => setFormData(prev => ({ ...prev, max_applicants: parseInt(e.target.value) || 5 }))}
+                />
+                <p className="text-xs text-muted-foreground">Maximum number of applicants that can be accepted for this position.</p>
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="field">Field</Label>
-              <SelectField 
-                id="field"
-                options={fieldOptions}
-                value={formData.field}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, field: value }))}
-                placeholder="Select a field"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Job Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe the job role, responsibilities, etc."
-                className="min-h-[100px]"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="requirements">Requirements</Label>
-              <Textarea
-                id="requirements"
-                placeholder="List the requirements for this job"
-                className="min-h-[100px]"
-                value={formData.requirements}
-                onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="max_applicants">Maximum Accepted Applicants</Label>
-              <Input
-                id="max_applicants"
-                type="number"
-                min="1"
-                max="100"
-                placeholder="Maximum accepted applicants"
-                value={formData.max_applicants}
-                onChange={(e) => setFormData(prev => ({ ...prev, max_applicants: parseInt(e.target.value) || 5 }))}
-              />
-              <p className="text-xs text-muted-foreground">Maximum number of applicants that can be accepted for this position.</p>
-            </div>
-          </div>
+          </ScrollArea>
           
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setShowNewJobDialog(false)}>Cancel</Button>
             <Button onClick={handleCreateJob}>Create Job</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      {/* Edit Job Dialog */}
       <Dialog open={showEditJobDialog} onOpenChange={setShowEditJobDialog}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Edit Job</DialogTitle>
             <DialogDescription>
@@ -460,76 +449,77 @@ const JobPostings = () => {
           </DialogHeader>
           
           {editingJob && (
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-title">Job Title</Label>
-                <Input
-                  id="edit-title"
-                  placeholder="e.g., Senior Software Engineer"
-                  value={editingJob.title}
-                  onChange={(e) => setEditingJob(prev => prev ? { ...prev, title: e.target.value } : null)}
-                />
+            <ScrollArea className="h-[calc(80vh-160px)] pr-4">
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-title">Job Title</Label>
+                  <Input
+                    id="edit-title"
+                    placeholder="e.g., Senior Software Engineer"
+                    value={editingJob.title}
+                    onChange={(e) => setEditingJob(prev => prev ? { ...prev, title: e.target.value } : null)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-field">Field</Label>
+                  <SelectField 
+                    id="edit-field"
+                    options={fieldOptions}
+                    value={editingJob.field || ""}
+                    onValueChange={(value) => setEditingJob(prev => prev ? { ...prev, field: value } : null)}
+                    placeholder="Select a field"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Job Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    placeholder="Describe the job role, responsibilities, etc."
+                    className="min-h-[100px]"
+                    value={editingJob.description || ""}
+                    onChange={(e) => setEditingJob(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-requirements">Requirements</Label>
+                  <Textarea
+                    id="edit-requirements"
+                    placeholder="List the requirements for this job"
+                    className="min-h-[100px]"
+                    value={editingJob.requirements || ""}
+                    onChange={(e) => setEditingJob(prev => prev ? { ...prev, requirements: e.target.value } : null)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-max-applicants">Maximum Accepted Applicants</Label>
+                  <Input
+                    id="edit-max-applicants"
+                    type="number"
+                    min="1"
+                    max="100"
+                    placeholder="Maximum accepted applicants"
+                    value={editingJob.max_applicants || 5}
+                    onChange={(e) => setEditingJob(prev => 
+                      prev ? { ...prev, max_applicants: parseInt(e.target.value) || 5 } : null
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">Maximum number of applicants that can be accepted for this position.</p>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-field">Field</Label>
-                <SelectField 
-                  id="edit-field"
-                  options={fieldOptions}
-                  value={editingJob.field || ""}
-                  onValueChange={(value) => setEditingJob(prev => prev ? { ...prev, field: value } : null)}
-                  placeholder="Select a field"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Job Description</Label>
-                <Textarea
-                  id="edit-description"
-                  placeholder="Describe the job role, responsibilities, etc."
-                  className="min-h-[100px]"
-                  value={editingJob.description || ""}
-                  onChange={(e) => setEditingJob(prev => prev ? { ...prev, description: e.target.value } : null)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-requirements">Requirements</Label>
-                <Textarea
-                  id="edit-requirements"
-                  placeholder="List the requirements for this job"
-                  className="min-h-[100px]"
-                  value={editingJob.requirements || ""}
-                  onChange={(e) => setEditingJob(prev => prev ? { ...prev, requirements: e.target.value } : null)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-max-applicants">Maximum Accepted Applicants</Label>
-                <Input
-                  id="edit-max-applicants"
-                  type="number"
-                  min="1"
-                  max="100"
-                  placeholder="Maximum accepted applicants"
-                  value={editingJob.max_applicants || 5}
-                  onChange={(e) => setEditingJob(prev => 
-                    prev ? { ...prev, max_applicants: parseInt(e.target.value) || 5 } : null
-                  )}
-                />
-                <p className="text-xs text-muted-foreground">Maximum number of applicants that can be accepted for this position.</p>
-              </div>
-            </div>
+            </ScrollArea>
           )}
           
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setShowEditJobDialog(false)}>Cancel</Button>
             <Button onClick={handleEditJob}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      {/* Job Responses Dialog */}
       {selectedJob && (
         <JobResponses 
           jobId={selectedJob} 
