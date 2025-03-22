@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import LocationStep from "@/components/assessment/LocationStep";
-import { useEmployerAssessmentForm } from "@/hooks/useEmployerAssessmentForm";
+import { useEmployerAssessmentForm, EmployeeCountRange } from "@/hooks/useEmployerAssessmentForm";
 import {
   Select,
   SelectContent,
@@ -13,6 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  RadioGroup,
+  RadioGroupItem
+} from "@/components/ui/radio-group";
 
 const COMPANY_TYPES = [
   "Technology",
@@ -22,6 +26,20 @@ const COMPANY_TYPES = [
   "Manufacturing",
   "Retail",
   "Other",
+];
+
+const EMPLOYEE_COUNT_OPTIONS: { label: string; value: EmployeeCountRange; category?: string }[] = [
+  { category: "Small Businesses (SMBs)", label: "1 - 10 employees", value: "1-10" },
+  { label: "11 - 50 employees", value: "11-50" },
+  { label: "51 - 100 employees", value: "51-100" },
+  
+  { category: "Medium-Sized Businesses (Mid-Sized Companies)", label: "101 - 250 employees", value: "101-250" },
+  { label: "251 - 500 employees", value: "251-500" },
+  
+  { category: "Large Companies (Corporations)", label: "501 - 1,000 employees", value: "501-1000" },
+  { label: "1,001 - 5,000 employees", value: "1001-5000" },
+  { label: "5,001 - 10,000 employees", value: "5001-10000" },
+  { label: "10,001+ employees", value: "10001+" },
 ];
 
 const EmployerAssessment = () => {
@@ -104,22 +122,44 @@ const EmployerAssessment = () => {
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-4">
-              <Label htmlFor="employeeCount">
-                How many employees do you have? (Optional)
-              </Label>
-              <Input
-                id="employeeCount"
-                type="number"
-                placeholder="Enter number of employees"
-                value={formData.employeeCount}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    employeeCount: e.target.value,
-                  }))
-                }
-              />
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="employeeCount" className="text-lg font-medium">
+                  How many employees do you have?
+                </Label>
+                <RadioGroup
+                  value={formData.employeeCount}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      employeeCount: value as EmployeeCountRange,
+                    }))
+                  }
+                  className="mt-4 space-y-6"
+                >
+                  {EMPLOYEE_COUNT_OPTIONS.map((option, index) => (
+                    <div key={option.value} className="space-y-2">
+                      {option.category && (
+                        <h3 className="text-md font-semibold text-primary mt-4">
+                          {option.category}
+                        </h3>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem 
+                          value={option.value}
+                          id={`employee-count-${option.value}`}
+                        />
+                        <Label 
+                          htmlFor={`employee-count-${option.value}`} 
+                          className="font-normal"
+                        >
+                          {option.label}
+                        </Label>
+                      </div>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
             </div>
           )}
 

@@ -10,11 +10,22 @@ interface LocationData {
   city: string;
 }
 
+export type EmployeeCountRange = 
+  | "1-10" 
+  | "11-50" 
+  | "51-100" 
+  | "101-250" 
+  | "251-500" 
+  | "501-1000" 
+  | "1001-5000" 
+  | "5001-10000" 
+  | "10001+";
+
 interface FormData {
   companyType: string;
   customCompanyType: string;
   description: string;
-  employeeCount: string;
+  employeeCount: EmployeeCountRange;
   location: LocationData;
 }
 
@@ -26,7 +37,7 @@ export const useEmployerAssessmentForm = () => {
     companyType: "",
     customCompanyType: "",
     description: "",
-    employeeCount: "",
+    employeeCount: "" as EmployeeCountRange,
     location: {
       country: "",
       province: "",
@@ -120,7 +131,7 @@ export const useEmployerAssessmentForm = () => {
           user_id: user.id,
           company_type: finalCompanyType,
           description: formData.description,
-          employee_count: formData.employeeCount ? parseInt(formData.employeeCount) : null,
+          employee_count: formData.employeeCount,
         });
 
       if (assessmentError) throw assessmentError;
