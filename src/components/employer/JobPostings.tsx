@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase, LayoutTemplate } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -344,8 +343,9 @@ const JobPostings = () => {
                   <div className="col-span-3">
                     <SelectField
                       id="field"
+                      name="field"
                       value={formData.field}
-                      onChange={(value) => handleSelectChange("field", value)}
+                      onChange={handleSelectChange}
                       options={fieldOptions}
                     />
                   </div>
@@ -510,8 +510,9 @@ const JobPostings = () => {
               <div className="col-span-3">
                 <SelectField
                   id="edit-field"
+                  name="field"
                   value={formData.field}
-                  onChange={(value) => handleSelectChange("field", value)}
+                  onChange={handleSelectChange}
                   options={fieldOptions}
                 />
               </div>

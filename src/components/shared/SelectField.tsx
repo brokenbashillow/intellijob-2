@@ -16,14 +16,14 @@ interface SelectOption {
 
 interface SelectFieldProps {
   id: string;
-  name?: string; // Add name prop to interface
+  name?: string;
   placeholder?: string;
   options: SelectOption[];
   value: string;
-  onValueChange: (value: string) => void;
-  onChange?: (name: string, value: string) => void; // Add onChange as an alternative to onValueChange
+  onValueChange?: (value: string) => void; // Make optional
+  onChange?: (name: string, value: string) => void;
   disabled?: boolean;
-  className?: string; // Add className prop to interface
+  className?: string;
 }
 
 export const SelectField = ({
@@ -41,7 +41,7 @@ export const SelectField = ({
   const handleChange = (newValue: string) => {
     if (onChange && name) {
       onChange(name, newValue);
-    } else {
+    } else if (onValueChange) {
       onValueChange(newValue);
     }
   };
