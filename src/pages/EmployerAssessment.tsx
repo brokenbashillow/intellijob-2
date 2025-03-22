@@ -13,10 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  RadioGroup,
-  RadioGroupItem
-} from "@/components/ui/radio-group";
 
 const COMPANY_TYPES = [
   "Technology",
@@ -127,7 +123,7 @@ const EmployerAssessment = () => {
                 <Label htmlFor="employeeCount" className="text-lg font-medium">
                   How many employees do you have?
                 </Label>
-                <RadioGroup
+                <Select
                   value={formData.employeeCount}
                   onValueChange={(value) =>
                     setFormData((prev) => ({
@@ -135,30 +131,26 @@ const EmployerAssessment = () => {
                       employeeCount: value as EmployeeCountRange,
                     }))
                   }
-                  className="mt-4 space-y-6"
+                  className="mt-2"
                 >
-                  {EMPLOYEE_COUNT_OPTIONS.map((option, index) => (
-                    <div key={option.value} className="space-y-2">
-                      {option.category && (
-                        <h3 className="text-md font-semibold text-primary mt-4">
-                          {option.category}
-                        </h3>
-                      )}
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem 
-                          value={option.value}
-                          id={`employee-count-${option.value}`}
-                        />
-                        <Label 
-                          htmlFor={`employee-count-${option.value}`} 
-                          className="font-normal"
-                        >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select employee count range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMPLOYEE_COUNT_OPTIONS.map((option, index) => (
+                      <React.Fragment key={option.value}>
+                        {option.category && (
+                          <SelectItem value={option.category} disabled className="font-semibold text-primary">
+                            {option.category}
+                          </SelectItem>
+                        )}
+                        <SelectItem value={option.value}>
                           {option.label}
-                        </Label>
-                      </div>
-                    </div>
-                  ))}
-                </RadioGroup>
+                        </SelectItem>
+                      </React.Fragment>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
