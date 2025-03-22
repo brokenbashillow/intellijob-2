@@ -14,7 +14,7 @@ export type Database = {
           company_type: string
           created_at: string
           description: string
-          employee_count: number | null
+          employee_count: string | null
           id: string
           user_id: string
         }
@@ -22,7 +22,7 @@ export type Database = {
           company_type: string
           created_at?: string
           description: string
-          employee_count?: number | null
+          employee_count?: string | null
           id?: string
           user_id: string
         }
@@ -30,7 +30,7 @@ export type Database = {
           company_type?: string
           created_at?: string
           description?: string
-          employee_count?: number | null
+          employee_count?: string | null
           id?: string
           user_id?: string
         }
