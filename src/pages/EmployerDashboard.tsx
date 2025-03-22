@@ -152,7 +152,8 @@ const EmployerDashboard = () => {
       case "chat":
         return <EmployerChat />
       case "job-postings":
-        return <JobPostings onCreateWithAssistant={() => navigateToChat()} />
+        // Remove the onCreateWithAssistant prop
+        return <JobPostings />
       case "resume-viewer":
         return <Resume />
       default:
