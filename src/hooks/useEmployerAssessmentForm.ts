@@ -12,6 +12,7 @@ interface LocationData {
 
 interface FormData {
   companyType: string;
+  customCompanyType: string;
   description: string;
   employeeCount: string;
   location: LocationData;
@@ -23,6 +24,7 @@ export const useEmployerAssessmentForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     companyType: "",
+    customCompanyType: "",
     description: "",
     employeeCount: "",
     location: {
@@ -36,13 +38,24 @@ export const useEmployerAssessmentForm = () => {
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
-    if (currentStep === 1 && !formData.companyType) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please select your company type",
-      });
-      return;
+    if (currentStep === 1) {
+      if (!formData.companyType) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please select your company type",
+        });
+        return;
+      }
+
+      if (formData.companyType === "other" && !formData.customCompanyType) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please specify your company type",
+        });
+        return;
+      }
     }
 
     if (currentStep === 2 && !formData.description) {
@@ -96,12 +109,16 @@ export const useEmployerAssessmentForm = () => {
 
       if (locationError) throw locationError;
 
+      // Determine final company type value
+      const finalCompanyType = 
+        formData.companyType === "other" ? formData.customCompanyType : formData.companyType;
+
       // Save company type, description, and employee count to employer_assessments table
       const { error: assessmentError } = await supabase
         .from('employer_assessments')
         .upsert({
           user_id: user.id,
-          company_type: formData.companyType,
+          company_type: finalCompanyType,
           description: formData.description,
           employee_count: formData.employeeCount ? parseInt(formData.employeeCount) : null,
         });

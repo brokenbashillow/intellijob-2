@@ -1,14 +1,11 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/components/ui/use-toast";
 import LocationStep from "@/components/assessment/LocationStep";
-import { supabase } from "@/integrations/supabase/client";
+import { useEmployerAssessmentForm } from "@/hooks/useEmployerAssessmentForm";
 import {
   Select,
   SelectContent,
@@ -28,110 +25,15 @@ const COMPANY_TYPES = [
 ];
 
 const EmployerAssessment = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({
-    companyType: "",
-    description: "",
-    employeeCount: "",
-    location: {
-      country: "",
-      province: "",
-      city: "",
-    },
-  });
-
-  const totalSteps = 4;
-  const progress = (currentStep / totalSteps) * 100;
-
-  const handleNext = () => {
-    if (currentStep === 1 && !formData.companyType) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please select your company type",
-      });
-      return;
-    }
-
-    if (currentStep === 2 && !formData.description) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please provide a company description",
-      });
-      return;
-    }
-
-    if (currentStep === 4) {
-      if (!formData.location.country || !formData.location.city) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Please enter your country and city",
-        });
-        return;
-      }
-      handleSubmit();
-      return;
-    }
-
-    setCurrentStep((prev) => prev + 1);
-  };
-
-  const handleSubmit = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "You must be logged in to complete the assessment",
-        });
-        navigate('/');
-        return;
-      }
-      
-      // Save location to profiles table
-      const { error: locationError } = await supabase
-        .from('profiles')
-        .update({
-          country: formData.location.country,
-          province: formData.location.province,
-          city: formData.location.city,
-        })
-        .eq('id', user.id);
-
-      if (locationError) throw locationError;
-
-      // Save company type, description, and employee count to employer_assessments table
-      const { error: assessmentError } = await supabase
-        .from('employer_assessments')
-        .upsert({
-          user_id: user.id,
-          company_type: formData.companyType,
-          description: formData.description,
-          employee_count: formData.employeeCount ? parseInt(formData.employeeCount) : null,
-        });
-
-      if (assessmentError) throw assessmentError;
-
-      console.log("Assessment submitted:", formData);
-      toast({
-        title: "Success!",
-        description: "Your company profile has been created successfully.",
-      });
-      navigate("/employer-dashboard");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to save assessment information.",
-      });
-    }
-  };
+  const {
+    currentStep,
+    setCurrentStep,
+    formData,
+    setFormData,
+    progress,
+    totalSteps,
+    handleNext,
+  } = useEmployerAssessmentForm();
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -162,6 +64,23 @@ const EmployerAssessment = () => {
                   ))}
                 </SelectContent>
               </Select>
+
+              {formData.companyType === "other" && (
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="customCompanyType">Specify your company type</Label>
+                  <Input
+                    id="customCompanyType"
+                    placeholder="Enter your company type"
+                    value={formData.customCompanyType}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        customCompanyType: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              )}
             </div>
           )}
 
