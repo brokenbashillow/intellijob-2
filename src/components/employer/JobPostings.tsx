@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus, Users, MessageCircle, Trash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +25,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
 import { supabase } from "@/integrations/supabase/client"
 import JobResponses from "./JobResponses"
 import JobTemplates from "./JobTemplates"
@@ -39,6 +47,9 @@ interface JobPosting {
   accepted_count?: number
   education?: string
   platform?: string
+  location?: string
+  salary?: string
+  application_deadline?: string
 }
 
 interface JobTemplate {
@@ -57,6 +68,13 @@ interface JobPostingsProps {
   onCreateWithAssistant?: () => void;
 }
 
+const WORK_LOCATION_OPTIONS = [
+  "On-site",
+  "Remote",
+  "Hybrid",
+  "Flexible"
+];
+
 const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   const { toast } = useToast()
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
@@ -69,7 +87,10 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     description: "",
     requirements: "",
     field: "",
-    education: ""
+    education: "",
+    location: "",
+    salary: "",
+    application_deadline: ""
   })
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
   
@@ -120,6 +141,10 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     setNewJob(prev => ({ ...prev, [name]: value }))
   }
 
+  const handleSelectChange = (field: string, value: string) => {
+    setNewJob(prev => ({ ...prev, [field]: value }))
+  }
+
   const handleAddJob = async () => {
     try {
       if (!newJob.title.trim()) {
@@ -150,6 +175,9 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           requirements: newJob.requirements,
           field: newJob.field,
           education: newJob.education,
+          location: newJob.location,
+          salary: newJob.salary,
+          application_deadline: newJob.application_deadline,
           responses: 0,
           accepted_count: 0,
           employer_id: user.id
@@ -162,7 +190,16 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         setJobPostings(prev => [data[0], ...prev])
       }
       
-      setNewJob({ title: "", description: "", requirements: "", field: "", education: "" })
+      setNewJob({ 
+        title: "", 
+        description: "", 
+        requirements: "", 
+        field: "", 
+        education: "", 
+        location: "", 
+        salary: "", 
+        application_deadline: "" 
+      })
       setIsDialogOpen(false)
       
       toast({
@@ -254,20 +291,15 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   };
 
   const handleSelectTemplate = (template: JobTemplate) => {
-    let description = template.description || "";
-    if (!description) {
-      description = `${template.company} - ${template.location}`;
-      if (template.salary) {
-        description += `\nSalary: ${template.salary}`;
-      }
-    }
-    
     setNewJob({
       title: template.title,
-      description: description,
+      description: template.description || "",
       requirements: template.requirements || "",
       field: template.field,
-      education: template.education || ""
+      education: template.education || "",
+      location: template.location || "",
+      salary: template.salary || "",
+      application_deadline: ""
     });
     
     setIsTemplateDialogOpen(false);
@@ -326,6 +358,9 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
                 {job.field && (
                   <p className="text-sm text-muted-foreground">Field: {job.field}</p>
                 )}
+                {job.location && (
+                  <p className="text-sm text-muted-foreground">Location: {job.location}</p>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
@@ -358,7 +393,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Job</DialogTitle>
             <DialogDescription>
@@ -367,7 +402,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Job Title</Label>
+              <Label htmlFor="title">Job Title*</Label>
               <Input 
                 id="title" 
                 name="title" 
@@ -376,27 +411,75 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
                 onChange={handleInputChange}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="field">Field</Label>
-              <Input 
-                id="field" 
-                name="field" 
-                placeholder="e.g. Programming, Management, Design" 
-                value={newJob.field || ""}
-                onChange={handleInputChange}
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="field">Field</Label>
+                <Input 
+                  id="field" 
+                  name="field" 
+                  placeholder="e.g. Programming, Management, Design" 
+                  value={newJob.field || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Work Location</Label>
+                <Select
+                  value={newJob.location || ""}
+                  onValueChange={(value) => handleSelectChange("location", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select work location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_LOCATION_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="salary">Salary</Label>
+                <Input 
+                  id="salary" 
+                  name="salary" 
+                  placeholder="e.g. $80,000 - $100,000" 
+                  value={newJob.salary || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="application_deadline">Application Deadline</Label>
+                <Input 
+                  id="application_deadline" 
+                  name="application_deadline" 
+                  type="date"
+                  value={newJob.application_deadline || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="description">Job Description</Label>
+              <Label htmlFor="education">Education</Label>
               <Textarea 
-                id="description" 
-                name="description" 
-                placeholder="Describe the job role and responsibilities" 
-                value={newJob.description || ""}
+                id="education" 
+                name="education" 
+                placeholder="Specify required education levels and qualifications" 
+                value={newJob.education || ""}
                 onChange={handleInputChange}
                 rows={3}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="requirements">Requirements</Label>
               <Textarea 
@@ -408,15 +491,16 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
                 rows={3}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="education">Education</Label>
+              <Label htmlFor="description">Job Description</Label>
               <Textarea 
-                id="education" 
-                name="education" 
-                placeholder="Specify required education levels and qualifications" 
-                value={newJob.education || ""}
+                id="description" 
+                name="description" 
+                placeholder="Describe the job role and responsibilities" 
+                value={newJob.description || ""}
                 onChange={handleInputChange}
-                rows={3}
+                rows={4}
               />
             </div>
           </div>
