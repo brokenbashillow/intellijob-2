@@ -47,36 +47,6 @@ interface Applicant {
   interviewDate?: Date | null
 }
 
-// Sample data for now - in a real app, this would come from the database
-const mockApplicants: Applicant[] = [
-  {
-    id: "1",
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+1234567890",
-    skills: ["React", "TypeScript", "Node.js"],
-    experience: ["3 years at ABC Tech", "2 years at XYZ Solutions"],
-    status: "new",
-    appliedAt: new Date().toISOString(),
-    userId: "sample-user-id-1",
-    interviewDate: null
-  },
-  {
-    id: "2",
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@example.com",
-    phone: "+1987654321",
-    skills: ["Product Management", "UX Research", "Agile"],
-    experience: ["5 years at Product Co", "3 years at Design Inc"],
-    status: "reviewed",
-    appliedAt: new Date(Date.now() - 86400000).toISOString(), // yesterday
-    userId: "sample-user-id-2",
-    interviewDate: null
-  }
-];
-
 const JobResponses = ({ jobId, isOpen, onClose, jobDetails, onInterviewScheduled }: JobResponsesProps) => {
   const { toast } = useToast()
   const [applicants, setApplicants] = useState<Applicant[]>([])
@@ -132,9 +102,9 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails, onInterviewScheduled
       })))
       */
       
-      // Using mock data for now
+      // Using an empty array instead of mock data
       setTimeout(() => {
-        setApplicants(mockApplicants)
+        setApplicants([])
         setIsLoading(false)
       }, 500)
       
