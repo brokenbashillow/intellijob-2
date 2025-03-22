@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { ArrowRight, Check, Plus, Users, MessageCircle, Trash, Edit } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -45,6 +44,7 @@ interface JobPosting {
   responses: number
   status?: string
   accepted_count?: number
+  max_applicants?: number
   education?: string
   platform?: string
   location?: string
@@ -92,6 +92,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     education: "",
     location: "",
     salary: "",
+    max_applicants: 5,
     application_deadline: ""
   })
   const [editJob, setEditJob] = useState<Omit<JobPosting, 'responses'>>({
@@ -103,6 +104,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
     education: "",
     location: "",
     salary: "",
+    max_applicants: 5,
     application_deadline: ""
   })
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
@@ -114,14 +116,12 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   const fetchJobPostings = async () => {
     try {
       setIsLoading(true)
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
         throw new Error("User not authenticated")
       }
       
-      // Only fetch job postings created by this employer
       const { data, error } = await supabase
         .from('job_postings')
         .select('*')
@@ -130,7 +130,6 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
 
       if (error) throw error
       
-      // Now that we have the platform column, we can safely filter
       const filteredData = data?.filter(job => 
         !job.platform || (job.platform !== "fallback" && job.platform !== "Example")
       ) || []
@@ -151,10 +150,22 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, isEdit = false) => {
     const { name, value } = e.target
-    if (isEdit) {
-      setEditJob(prev => ({ ...prev, [name]: value }))
+    
+    if (name === "max_applicants") {
+      const numValue = parseInt(value, 10);
+      const validatedValue = isNaN(numValue) ? 5 : Math.max(1, numValue);
+      
+      if (isEdit) {
+        setEditJob(prev => ({ ...prev, [name]: validatedValue }))
+      } else {
+        setNewJob(prev => ({ ...prev, [name]: validatedValue }))
+      }
     } else {
-      setNewJob(prev => ({ ...prev, [name]: value }))
+      if (isEdit) {
+        setEditJob(prev => ({ ...prev, [name]: value }))
+      } else {
+        setNewJob(prev => ({ ...prev, [name]: value }))
+      }
     }
   }
 
@@ -198,6 +209,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           education: newJob.education,
           location: newJob.location,
           salary: newJob.salary,
+          max_applicants: newJob.max_applicants || 5,
           application_deadline: newJob.application_deadline,
           responses: 0,
           accepted_count: 0,
@@ -219,6 +231,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         education: "", 
         location: "", 
         salary: "", 
+        max_applicants: 5,
         application_deadline: "" 
       })
       setIsDialogOpen(false)
@@ -249,6 +262,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         education: job.education || "",
         location: job.location || "",
         salary: job.salary || "",
+        max_applicants: job.max_applicants || 5,
         application_deadline: job.application_deadline || "",
         status: job.status,
         accepted_count: job.accepted_count,
@@ -278,13 +292,13 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           education: editJob.education,
           location: editJob.location,
           salary: editJob.salary,
+          max_applicants: editJob.max_applicants || 5,
           application_deadline: editJob.application_deadline,
         })
         .eq('id', editJob.id)
 
       if (error) throw error
       
-      // Update the job in the local state
       setJobPostings(prev => prev.map(job => 
         job.id === editJob.id ? { ...job, ...editJob, responses: job.responses } : job
       ))
@@ -343,12 +357,13 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
       if (!job) return;
 
       const newAcceptedCount = (job.accepted_count || 0) + 1;
+      const maxApplicants = job.max_applicants || 5;
       
       const { error } = await supabase
         .from('job_postings')
         .update({ 
           accepted_count: newAcceptedCount,
-          ...(newAcceptedCount >= 5 ? { status: 'done' } : {})
+          ...(newAcceptedCount >= maxApplicants ? { status: 'done' } : {})
         })
         .eq('id', jobId)
 
@@ -359,15 +374,15 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
           ? { 
               ...j, 
               accepted_count: newAcceptedCount,
-              status: newAcceptedCount >= 5 ? 'done' : j.status 
+              status: newAcceptedCount >= maxApplicants ? 'done' : j.status 
             } 
           : j
       ));
 
-      if (newAcceptedCount >= 5) {
+      if (newAcceptedCount >= maxApplicants) {
         toast({
           title: "Job Posting Closed",
-          description: "This job has reached 5 accepted applicants and has been marked as done.",
+          description: `This job has reached the maximum of ${maxApplicants} accepted applicants and has been marked as done.`,
         });
       }
     } catch (error: any) {
@@ -389,6 +404,7 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
       education: template.education || "",
       location: template.location || "",
       salary: template.salary || "",
+      max_applicants: 5,
       application_deadline: ""
     });
     
@@ -571,6 +587,21 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
               </div>
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="max_applicants">Maximum Applicants</Label>
+                <Input 
+                  id="max_applicants" 
+                  name="max_applicants" 
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 5" 
+                  value={newJob.max_applicants || 5}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="education">Education</Label>
               <Textarea 
@@ -685,6 +716,21 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
                   name="application_deadline" 
                   type="date"
                   value={editJob.application_deadline || ""}
+                  onChange={(e) => handleInputChange(e, true)}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-max_applicants">Maximum Applicants</Label>
+                <Input 
+                  id="edit-max_applicants" 
+                  name="max_applicants" 
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 5" 
+                  value={editJob.max_applicants || 5}
                   onChange={(e) => handleInputChange(e, true)}
                 />
               </div>

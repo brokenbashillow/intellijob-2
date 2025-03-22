@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { X, Download, Mail, Phone, UserRound, Briefcase, File, CheckCircle, XCircle, Eye, Trash, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -21,6 +22,7 @@ interface JobDetailsProps {
   description?: string
   requirements?: string
   field?: string
+  max_applicants?: number
 }
 
 interface JobResponsesProps {
@@ -308,7 +310,12 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails, onInterviewScheduled
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center justify-between">
             <span>
-              {jobDetails?.title || "Job"} - Applicants
+              {jobDetails?.title || "Job"} - Applicants 
+              {jobDetails?.max_applicants && (
+                <span className="text-sm font-normal ml-2 text-muted-foreground">
+                  (Maximum: {jobDetails.max_applicants} applicants)
+                </span>
+              )}
             </span>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
