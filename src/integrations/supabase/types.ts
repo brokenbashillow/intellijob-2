@@ -55,6 +55,7 @@ export type Database = {
           field: string | null
           id: string
           location: string | null
+          max_applicants: number | null
           platform: string | null
           requirements: string | null
           responses: number | null
@@ -73,6 +74,7 @@ export type Database = {
           field?: string | null
           id?: string
           location?: string | null
+          max_applicants?: number | null
           platform?: string | null
           requirements?: string | null
           responses?: number | null
@@ -91,6 +93,7 @@ export type Database = {
           field?: string | null
           id?: string
           location?: string | null
+          max_applicants?: number | null
           platform?: string | null
           requirements?: string | null
           responses?: number | null

@@ -1,125 +1,89 @@
+
 import { useState, useEffect } from "react"
-import { ArrowRight, Check, Plus, Users, MessageCircle, Trash, Edit } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase } from "lucide-react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
-import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/components/ui/use-toast"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { SelectField } from "@/components/shared/SelectField"
 import JobResponses from "./JobResponses"
-import JobTemplates from "./JobTemplates"
+import { supabase } from "@/integrations/supabase/client"
 
-interface JobPosting {
+interface JobPostings {
   id: string
   title: string
-  description?: string
-  requirements?: string
-  field?: string
-  responses: number
-  status?: string
-  accepted_count?: number
-  max_applicants?: number
-  education?: string
-  platform?: string
-  location?: string
-  salary?: string
-  application_deadline?: string
-}
-
-interface JobTemplate {
-  id: string
-  title: string
-  company: string
-  location: string
-  salary?: string
-  requirements?: string
+  description: string
+  requirements: string
   field: string
-  description?: string
-  education?: string
+  responses: number
+  status: string
+  platform: string
+  created_at: string
+  updated_at: string
+  accepted_count: number
+  max_applicants: number
 }
 
-interface JobPostingsProps {
-  onCreateWithAssistant?: () => void;
-}
-
-const WORK_LOCATION_OPTIONS = [
-  "On-site",
-  "Remote",
-  "Hybrid",
-  "Flexible"
-];
-
-const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
-  const { toast } = useToast()
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
+const JobPostings = () => {
+  const [jobs, setJobs] = useState<JobPostings[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [showNewJobDialog, setShowNewJobDialog] = useState(false)
+  const [showEditJobDialog, setShowEditJobDialog] = useState(false)
+  const [editingJob, setEditingJob] = useState<JobPostings | null>(null)
+  const [activeTab, setActiveTab] = useState("all")
   const [selectedJob, setSelectedJob] = useState<string | null>(null)
-  const [jobToDelete, setJobToDelete] = useState<string | null>(null)
-  const [jobToEdit, setJobToEdit] = useState<string | null>(null)
-  const [newJob, setNewJob] = useState<Omit<JobPosting, 'id' | 'responses'>>({
+  const [showResponsesDialog, setShowResponsesDialog] = useState(false)
+  const [jobDetail, setJobDetail] = useState<JobPostings | null>(null)
+  const { toast } = useToast()
+  
+  // Form state
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     requirements: "",
     field: "",
-    education: "",
-    location: "",
-    salary: "",
-    max_applicants: 5,
-    application_deadline: ""
+    max_applicants: 5
   })
-  const [editJob, setEditJob] = useState<Omit<JobPosting, 'responses'>>({
-    id: "",
-    title: "",
-    description: "",
-    requirements: "",
-    field: "",
-    education: "",
-    location: "",
-    salary: "",
-    max_applicants: 5,
-    application_deadline: ""
-  })
-  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
+  
+  // Field options
+  const fieldOptions = [
+    { value: "Technology", label: "Technology" },
+    { value: "Healthcare", label: "Healthcare" },
+    { value: "Finance", label: "Finance" },
+    { value: "Education", label: "Education" },
+    { value: "Marketing", label: "Marketing" },
+    { value: "Sales", label: "Sales" },
+    { value: "Customer Service", label: "Customer Service" },
+    { value: "Administration", label: "Administration" },
+    { value: "Human Resources", label: "Human Resources" },
+    { value: "Engineering", label: "Engineering" },
+    { value: "Design", label: "Design" },
+    { value: "Other", label: "Other" }
+  ]
   
   useEffect(() => {
-    fetchJobPostings()
+    fetchJobs()
   }, [])
-
-  const fetchJobPostings = async () => {
+  
+  const fetchJobs = async () => {
     try {
       setIsLoading(true)
+      
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        throw new Error("User not authenticated")
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to view jobs."
+        })
+        setIsLoading(false)
+        return
       }
       
       const { data, error } = await supabase
@@ -127,59 +91,26 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         .select('*')
         .eq('employer_id', user.id)
         .order('created_at', { ascending: false })
-
+      
       if (error) throw error
       
-      const filteredData = data?.filter(job => 
-        !job.platform || (job.platform !== "fallback" && job.platform !== "Example")
-      ) || []
-      
-      setJobPostings(filteredData)
+      setJobs(data || [])
     } catch (error: any) {
-      console.error('Error fetching job postings:', error)
+      console.error('Error fetching jobs:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to load job postings.",
+        description: error.message || "Failed to load job postings."
       })
-      setJobPostings([])
     } finally {
       setIsLoading(false)
     }
   }
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, isEdit = false) => {
-    const { name, value } = e.target
-    
-    if (name === "max_applicants") {
-      const numValue = parseInt(value, 10);
-      const validatedValue = isNaN(numValue) ? 5 : Math.max(1, numValue);
-      
-      if (isEdit) {
-        setEditJob(prev => ({ ...prev, [name]: validatedValue }))
-      } else {
-        setNewJob(prev => ({ ...prev, [name]: validatedValue }))
-      }
-    } else {
-      if (isEdit) {
-        setEditJob(prev => ({ ...prev, [name]: value }))
-      } else {
-        setNewJob(prev => ({ ...prev, [name]: value }))
-      }
-    }
-  }
-
-  const handleSelectChange = (field: string, value: string, isEdit = false) => {
-    if (isEdit) {
-      setEditJob(prev => ({ ...prev, [field]: value }))
-    } else {
-      setNewJob(prev => ({ ...prev, [field]: value }))
-    }
-  }
-
-  const handleAddJob = async () => {
+  const handleCreateJob = async () => {
     try {
-      if (!newJob.title.trim()) {
+      // Validate the form
+      if (!formData.title.trim()) {
         toast({
           variant: "destructive",
           title: "Error",
@@ -187,93 +118,67 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         })
         return
       }
-
+      
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "You must be logged in to create a job posting."
+          description: "You must be logged in to create a job."
         })
         return
       }
-
+      
+      // Save to Supabase
       const { data, error } = await supabase
         .from('job_postings')
         .insert({
-          title: newJob.title,
-          description: newJob.description,
-          requirements: newJob.requirements,
-          field: newJob.field,
-          education: newJob.education,
-          location: newJob.location,
-          salary: newJob.salary,
-          max_applicants: newJob.max_applicants || 5,
-          application_deadline: newJob.application_deadline,
+          employer_id: user.id,
+          title: formData.title,
+          description: formData.description,
+          requirements: formData.requirements,
+          field: formData.field,
           responses: 0,
-          accepted_count: 0,
-          employer_id: user.id
+          max_applicants: formData.max_applicants
         })
         .select()
-
+      
       if (error) throw error
       
-      if (data && data.length > 0) {
-        setJobPostings(prev => [data[0], ...prev])
-      }
-      
-      setNewJob({ 
-        title: "", 
-        description: "", 
-        requirements: "", 
-        field: "", 
-        education: "", 
-        location: "", 
-        salary: "", 
-        max_applicants: 5,
-        application_deadline: "" 
+      // Reset form and close dialog
+      setFormData({
+        title: "",
+        description: "",
+        requirements: "",
+        field: "",
+        max_applicants: 5
       })
-      setIsDialogOpen(false)
+      setShowNewJobDialog(false)
+      
+      // Update jobs list
+      await fetchJobs()
       
       toast({
         title: "Success",
-        description: "New job has been created.",
+        description: "New job has been created."
       })
     } catch (error: any) {
       console.error('Error creating job:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to create job.",
+        description: error.message || "Failed to create job."
       })
     }
   }
-
-  const handleEditJob = () => {
-    const job = jobPostings.find(j => j.id === jobToEdit);
-    if (job) {
-      setEditJob({
-        id: job.id,
-        title: job.title,
-        description: job.description || "",
-        requirements: job.requirements || "",
-        field: job.field || "",
-        education: job.education || "",
-        location: job.location || "",
-        salary: job.salary || "",
-        max_applicants: job.max_applicants || 5,
-        application_deadline: job.application_deadline || "",
-        status: job.status,
-        accepted_count: job.accepted_count,
-      });
-      setIsEditDialogOpen(true);
-    }
-  }
-
-  const handleUpdateJob = async () => {
+  
+  const handleEditJob = async () => {
     try {
-      if (!editJob.title.trim()) {
+      if (!editingJob) return
+      
+      // Validate the form
+      if (!editingJob.title.trim()) {
         toast({
           variant: "destructive",
           title: "Error",
@@ -281,545 +186,357 @@ const JobPostings = ({ onCreateWithAssistant }: JobPostingsProps) => {
         })
         return
       }
-
+      
+      // Update in Supabase
       const { error } = await supabase
         .from('job_postings')
         .update({
-          title: editJob.title,
-          description: editJob.description,
-          requirements: editJob.requirements,
-          field: editJob.field,
-          education: editJob.education,
-          location: editJob.location,
-          salary: editJob.salary,
-          max_applicants: editJob.max_applicants || 5,
-          application_deadline: editJob.application_deadline,
+          title: editingJob.title,
+          description: editingJob.description,
+          requirements: editingJob.requirements,
+          field: editingJob.field,
+          max_applicants: editingJob.max_applicants
         })
-        .eq('id', editJob.id)
-
+        .eq('id', editingJob.id)
+      
       if (error) throw error
       
-      setJobPostings(prev => prev.map(job => 
-        job.id === editJob.id ? { ...job, ...editJob, responses: job.responses } : job
-      ))
+      // Reset form and close dialog
+      setEditingJob(null)
+      setShowEditJobDialog(false)
       
-      setIsEditDialogOpen(false)
-      setJobToEdit(null)
+      // Update jobs list
+      await fetchJobs()
       
       toast({
         title: "Success",
-        description: "Job has been updated.",
+        description: "Job has been updated."
       })
     } catch (error: any) {
       console.error('Error updating job:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to update job.",
+        description: error.message || "Failed to update job."
       })
     }
   }
-
-  const handleViewResponses = (jobId: string) => {
-    setSelectedJob(jobId)
+  
+  const handleOpenEdit = (job: JobPostings) => {
+    setEditingJob(job)
+    setShowEditJobDialog(true)
   }
-
+  
   const handleDeleteJob = async (jobId: string) => {
     try {
       const { error } = await supabase
         .from('job_postings')
         .delete()
         .eq('id', jobId)
-
+      
       if (error) throw error
       
-      setJobPostings(prev => prev.filter(job => job.id !== jobId))
+      // Update jobs list
+      await fetchJobs()
       
       toast({
-        title: "Job Deleted",
-        description: "The job posting has been removed.",
+        title: "Success",
+        description: "Job has been deleted."
       })
     } catch (error: any) {
       console.error('Error deleting job:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to delete job posting.",
+        description: error.message || "Failed to delete job."
       })
-    } finally {
-      setJobToDelete(null)
     }
   }
-
-  const handleInterviewScheduled = async (jobId: string) => {
-    try {
-      const job = jobPostings.find(j => j.id === jobId);
-      if (!job) return;
-
-      const newAcceptedCount = (job.accepted_count || 0) + 1;
-      const maxApplicants = job.max_applicants || 5;
-      
-      const { error } = await supabase
-        .from('job_postings')
-        .update({ 
-          accepted_count: newAcceptedCount,
-          ...(newAcceptedCount >= maxApplicants ? { status: 'done' } : {})
-        })
-        .eq('id', jobId)
-
-      if (error) throw error;
-      
-      setJobPostings(prev => prev.map(j => 
-        j.id === jobId 
-          ? { 
-              ...j, 
-              accepted_count: newAcceptedCount,
-              status: newAcceptedCount >= maxApplicants ? 'done' : j.status 
-            } 
-          : j
-      ));
-
-      if (newAcceptedCount >= maxApplicants) {
-        toast({
-          title: "Job Posting Closed",
-          description: `This job has reached the maximum of ${maxApplicants} accepted applicants and has been marked as done.`,
-        });
-      }
-    } catch (error: any) {
-      console.error('Error updating job accepted count:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to update job status.",
-      });
-    }
-  };
-
-  const handleSelectTemplate = (template: JobTemplate) => {
-    setNewJob({
-      title: template.title,
-      description: template.description || "",
-      requirements: template.requirements || "",
-      field: template.field,
-      education: template.education || "",
-      location: template.location || "",
-      salary: template.salary || "",
-      max_applicants: 5,
-      application_deadline: ""
-    });
-    
-    setIsTemplateDialogOpen(false);
-    setIsDialogOpen(true);
+  
+  const handleViewResponses = (job: JobPostings) => {
+    setSelectedJob(job.id)
+    setJobDetail(job)
+    setShowResponsesDialog(true)
   }
-
+  
+  const handleInterviewScheduled = async () => {
+    await fetchJobs()
+  }
+  
+  const filteredJobs = activeTab === "all" 
+    ? jobs 
+    : activeTab === "active" 
+      ? jobs.filter(job => job.status !== "closed" && job.status !== "filled") 
+      : jobs.filter(job => job.status === activeTab)
+  
+  const getStatusBadgeVariant = (status: string | null) => {
+    switch (status) {
+      case "active":
+        return "default"
+      case "paused":
+        return "secondary"
+      case "closed":
+        return "outline"
+      case "filled":
+        return "success"
+      default:
+        return "default"
+    }
+  }
+  
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+  
+  if (isLoading) {
+    return <div className="p-8">Loading job postings...</div>
+  }
+  
   return (
-    <div className="flex-1 p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="px-8 py-6 w-full">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Job Postings</h2>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => setIsTemplateDialogOpen(true)}
-          >
-            <Check className="h-4 w-4" /> Use Template
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={onCreateWithAssistant}
-          >
-            <MessageCircle className="h-4 w-4" /> Create with Assistant
-          </Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Add New Job
-          </Button>
-        </div>
+        <Button onClick={() => setShowNewJobDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Create New Job
+        </Button>
       </div>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center min-h-[200px]">
-          <p>Loading job postings...</p>
-        </div>
-      ) : jobPostings.length === 0 ? (
-        <div className="text-center py-8 border rounded-lg bg-muted/20">
-          <p className="text-muted-foreground">No job postings yet. Click 'Add New Job' to create one.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {jobPostings.map((job) => (
-            <Card key={job.id} className={`hover:shadow-lg transition-shadow ${job.status === 'done' ? 'opacity-70' : ''}`}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between">
-                  <CardTitle className="text-lg">{job.title}</CardTitle>
-                  <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-blue-500 hover:text-blue-400"
-                      onClick={() => {
-                        setJobToEdit(job.id);
-                        handleEditJob();
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
+      
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="all">All Postings ({jobs.length})</TabsTrigger>
+          <TabsTrigger value="active">Active ({jobs.filter(job => job.status !== "closed" && job.status !== "filled").length})</TabsTrigger>
+          <TabsTrigger value="paused">Paused ({jobs.filter(job => job.status === "paused").length})</TabsTrigger>
+          <TabsTrigger value="closed">Closed ({jobs.filter(job => job.status === "closed" || job.status === "filled").length})</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value={activeTab}>
+          {filteredJobs.length === 0 ? (
+            <div className="text-center py-12 border rounded-lg bg-muted/20">
+              <p className="text-muted-foreground">No job postings found.</p>
+              <Button variant="outline" className="mt-4" onClick={() => setShowNewJobDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Create Your First Job Posting
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredJobs.map((job) => (
+                <Card key={job.id} className="overflow-hidden">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="mr-2">{job.title}</CardTitle>
+                      <Badge variant={getStatusBadgeVariant(job.status)}>
+                        {job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : "Active"}
+                      </Badge>
+                    </div>
+                    <CardDescription>{job.field || "General"}</CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Clock className="mr-2 h-4 w-4" />
+                        Posted {formatDate(job.created_at)}
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        {job.platform || "Internal"}
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Users className="mr-2 h-4 w-4" />
+                        {job.responses} application{job.responses !== 1 ? 's' : ''} 
+                        ({job.accepted_count || 0}/{job.max_applicants || 5} accepted)
+                      </div>
+                    </div>
+                  </CardContent>
+                  
+                  <CardFooter className="flex justify-between border-t pt-4">
+                    <Button variant="outline" size="sm" onClick={() => handleViewResponses(job)}>
+                      <FileText className="mr-2 h-4 w-4" /> View Responses
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-destructive hover:text-destructive/80"
-                      onClick={() => setJobToDelete(job.id)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                {job.field && (
-                  <p className="text-sm text-muted-foreground">Field: {job.field}</p>
-                )}
-                {job.location && (
-                  <p className="text-sm text-muted-foreground">Location: {job.location}</p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {job.status === "done" ? (
-                      <span className="flex items-center gap-1 text-green-600">
-                        <Check className="h-4 w-4" /> Done
-                      </span>
-                    ) : (
-                      <span 
-                        className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => handleViewResponses(job.id)}
-                      >
-                        <Users className="h-4 w-4" /> {job.responses} {job.responses === 1 ? 'Response' : 'Responses'}
-                      </span>
-                    )}
-                  </span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => handleViewResponses(job.id)}
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto">
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(job)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteJob(job.id)}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+      
+      {/* New Job Dialog */}
+      <Dialog open={showNewJobDialog} onOpenChange={setShowNewJobDialog}>
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
-            <DialogTitle>Add New Job</DialogTitle>
+            <DialogTitle>Create New Job</DialogTitle>
             <DialogDescription>
-              Create a new job listing for potential candidates.
+              Add details for your new job posting
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          
+          <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Job Title*</Label>
-              <Input 
-                id="title" 
-                name="title" 
-                placeholder="e.g. Senior React Developer" 
-                value={newJob.title}
-                onChange={handleInputChange}
+              <Label htmlFor="title">Job Title</Label>
+              <Input
+                id="title"
+                placeholder="e.g., Senior Software Engineer"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="field">Field</Label>
-                <Input 
-                  id="field" 
-                  name="field" 
-                  placeholder="e.g. Programming, Management, Design" 
-                  value={newJob.field || ""}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Work Location</Label>
-                <Select
-                  value={newJob.location || ""}
-                  onValueChange={(value) => handleSelectChange("location", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select work location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORK_LOCATION_OPTIONS.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="salary">Salary</Label>
-                <Input 
-                  id="salary" 
-                  name="salary" 
-                  placeholder="e.g. $80,000 - $100,000" 
-                  value={newJob.salary || ""}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="application_deadline">Application Deadline</Label>
-                <Input 
-                  id="application_deadline" 
-                  name="application_deadline" 
-                  type="date"
-                  value={newJob.application_deadline || ""}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="max_applicants">Maximum Applicants</Label>
-                <Input 
-                  id="max_applicants" 
-                  name="max_applicants" 
-                  type="number"
-                  min="1"
-                  placeholder="e.g. 5" 
-                  value={newJob.max_applicants || 5}
-                  onChange={handleInputChange}
-                />
-              </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="education">Education</Label>
-              <Textarea 
-                id="education" 
-                name="education" 
-                placeholder="Specify required education levels and qualifications" 
-                value={newJob.education || ""}
-                onChange={handleInputChange}
-                rows={3}
+              <Label htmlFor="field">Field</Label>
+              <SelectField 
+                id="field"
+                options={fieldOptions}
+                value={formData.field}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, field: value }))}
+                placeholder="Select a field"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="requirements">Requirements</Label>
-              <Textarea 
-                id="requirements" 
-                name="requirements" 
-                placeholder="List the skills and qualifications required" 
-                value={newJob.requirements || ""}
-                onChange={handleInputChange}
-                rows={3}
-              />
-            </div>
-
+            
             <div className="space-y-2">
               <Label htmlFor="description">Job Description</Label>
-              <Textarea 
-                id="description" 
-                name="description" 
-                placeholder="Describe the job role and responsibilities" 
-                value={newJob.description || ""}
-                onChange={handleInputChange}
-                rows={4}
+              <Textarea
+                id="description"
+                placeholder="Describe the job role, responsibilities, etc."
+                className="min-h-[100px]"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="requirements">Requirements</Label>
+              <Textarea
+                id="requirements"
+                placeholder="List the requirements for this job"
+                className="min-h-[100px]"
+                value={formData.requirements}
+                onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="max_applicants">Maximum Accepted Applicants</Label>
+              <Input
+                id="max_applicants"
+                type="number"
+                min="1"
+                max="100"
+                placeholder="Maximum accepted applicants"
+                value={formData.max_applicants}
+                onChange={(e) => setFormData(prev => ({ ...prev, max_applicants: parseInt(e.target.value) || 5 }))}
+              />
+              <p className="text-xs text-muted-foreground">Maximum number of applicants that can be accepted for this position.</p>
+            </div>
           </div>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddJob}>Create Job</Button>
+            <Button variant="outline" onClick={() => setShowNewJobDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateJob}>Create Job</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto">
+      
+      {/* Edit Job Dialog */}
+      <Dialog open={showEditJobDialog} onOpenChange={setShowEditJobDialog}>
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Edit Job</DialogTitle>
             <DialogDescription>
-              Update this job listing details.
+              Update details for your job posting
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Job Title*</Label>
-              <Input 
-                id="edit-title" 
-                name="title" 
-                placeholder="e.g. Senior React Developer" 
-                value={editJob.title}
-                onChange={(e) => handleInputChange(e, true)}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {editingJob && (
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Job Title</Label>
+                <Input
+                  id="edit-title"
+                  placeholder="e.g., Senior Software Engineer"
+                  value={editingJob.title}
+                  onChange={(e) => setEditingJob(prev => prev ? { ...prev, title: e.target.value } : null)}
+                />
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="edit-field">Field</Label>
-                <Input 
-                  id="edit-field" 
-                  name="field" 
-                  placeholder="e.g. Programming, Management, Design" 
-                  value={editJob.field || ""}
-                  onChange={(e) => handleInputChange(e, true)}
+                <SelectField 
+                  id="edit-field"
+                  options={fieldOptions}
+                  value={editingJob.field || ""}
+                  onValueChange={(value) => setEditingJob(prev => prev ? { ...prev, field: value } : null)}
+                  placeholder="Select a field"
                 />
               </div>
-
+              
               <div className="space-y-2">
-                <Label htmlFor="edit-location">Work Location</Label>
-                <Select
-                  value={editJob.location || ""}
-                  onValueChange={(value) => handleSelectChange("location", value, true)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select work location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORK_LOCATION_OPTIONS.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-salary">Salary</Label>
-                <Input 
-                  id="edit-salary" 
-                  name="salary" 
-                  placeholder="e.g. $80,000 - $100,000" 
-                  value={editJob.salary || ""}
-                  onChange={(e) => handleInputChange(e, true)}
+                <Label htmlFor="edit-description">Job Description</Label>
+                <Textarea
+                  id="edit-description"
+                  placeholder="Describe the job role, responsibilities, etc."
+                  className="min-h-[100px]"
+                  value={editingJob.description || ""}
+                  onChange={(e) => setEditingJob(prev => prev ? { ...prev, description: e.target.value } : null)}
                 />
               </div>
-
+              
               <div className="space-y-2">
-                <Label htmlFor="edit-application_deadline">Application Deadline</Label>
-                <Input 
-                  id="edit-application_deadline" 
-                  name="application_deadline" 
-                  type="date"
-                  value={editJob.application_deadline || ""}
-                  onChange={(e) => handleInputChange(e, true)}
+                <Label htmlFor="edit-requirements">Requirements</Label>
+                <Textarea
+                  id="edit-requirements"
+                  placeholder="List the requirements for this job"
+                  className="min-h-[100px]"
+                  value={editingJob.requirements || ""}
+                  onChange={(e) => setEditingJob(prev => prev ? { ...prev, requirements: e.target.value } : null)}
                 />
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
               <div className="space-y-2">
-                <Label htmlFor="edit-max_applicants">Maximum Applicants</Label>
-                <Input 
-                  id="edit-max_applicants" 
-                  name="max_applicants" 
+                <Label htmlFor="edit-max-applicants">Maximum Accepted Applicants</Label>
+                <Input
+                  id="edit-max-applicants"
                   type="number"
                   min="1"
-                  placeholder="e.g. 5" 
-                  value={editJob.max_applicants || 5}
-                  onChange={(e) => handleInputChange(e, true)}
+                  max="100"
+                  placeholder="Maximum accepted applicants"
+                  value={editingJob.max_applicants || 5}
+                  onChange={(e) => setEditingJob(prev => 
+                    prev ? { ...prev, max_applicants: parseInt(e.target.value) || 5 } : null
+                  )}
                 />
+                <p className="text-xs text-muted-foreground">Maximum number of applicants that can be accepted for this position.</p>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-education">Education</Label>
-              <Textarea 
-                id="edit-education" 
-                name="education" 
-                placeholder="Specify required education levels and qualifications" 
-                value={editJob.education || ""}
-                onChange={(e) => handleInputChange(e, true)}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-requirements">Requirements</Label>
-              <Textarea 
-                id="edit-requirements" 
-                name="requirements" 
-                placeholder="List the skills and qualifications required" 
-                value={editJob.requirements || ""}
-                onChange={(e) => handleInputChange(e, true)}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Job Description</Label>
-              <Textarea 
-                id="edit-description" 
-                name="description" 
-                placeholder="Describe the job role and responsibilities" 
-                value={editJob.description || ""}
-                onChange={(e) => handleInputChange(e, true)}
-                rows={4}
-              />
-            </div>
-          </div>
+          )}
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsEditDialogOpen(false);
-              setJobToEdit(null);
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateJob}>Update Job</Button>
+            <Button variant="outline" onClick={() => setShowEditJobDialog(false)}>Cancel</Button>
+            <Button onClick={handleEditJob}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-          <JobTemplates 
-            onSelectTemplate={handleSelectTemplate} 
-            onClose={() => setIsTemplateDialogOpen(false)} 
-          />
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the job posting and all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-destructive text-destructive-foreground" 
-              onClick={() => jobToDelete && handleDeleteJob(jobToDelete)}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
+      
+      {/* Job Responses Dialog */}
       {selectedJob && (
         <JobResponses 
           jobId={selectedJob} 
-          isOpen={!!selectedJob} 
-          onClose={() => setSelectedJob(null)} 
-          jobDetails={jobPostings.find(job => job.id === selectedJob)}
-          onInterviewScheduled={() => handleInterviewScheduled(selectedJob)}
+          isOpen={showResponsesDialog}
+          onClose={() => setShowResponsesDialog(false)}
+          jobDetails={jobDetail || undefined}
+          onInterviewScheduled={handleInterviewScheduled}
         />
       )}
     </div>
