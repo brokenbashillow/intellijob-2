@@ -1,7 +1,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { User } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { PersonalDetails } from "@/hooks/useResumeData";
 import { getAvatarColors } from "@/lib/avatarUtils";
 
@@ -54,6 +54,37 @@ export function PersonalDetailsSection({
               setPersonalDetails({
                 ...personalDetails,
                 lastName: e.target.value,
+              })
+            }
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="educationField">Education Field</Label>
+          <Input
+            id="educationField"
+            placeholder="e.g., Computer Science, Business"
+            value={personalDetails.educationField || ""}
+            onChange={(e) =>
+              setPersonalDetails({
+                ...personalDetails,
+                educationField: e.target.value,
+              })
+            }
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="industry">Industry</Label>
+          <Input
+            id="industry"
+            placeholder="e.g., Technology, Finance"
+            value={personalDetails.industry || ""}
+            onChange={(e) =>
+              setPersonalDetails({
+                ...personalDetails,
+                industry: e.target.value,
               })
             }
           />

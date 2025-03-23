@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -7,6 +6,8 @@ export interface PersonalDetails {
   firstName: string;
   lastName: string;
   profilePicture?: string;
+  educationField?: string;
+  industry?: string;
 }
 
 export interface EducationItem {
@@ -59,6 +60,8 @@ export const useResumeData = () => {
     firstName: "",
     lastName: "",
     profilePicture: "",
+    educationField: "",
+    industry: "",
   });
 
   const [education, setEducation] = useState<EducationItem[]>([]);
@@ -69,7 +72,6 @@ export const useResumeData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasResumeData, setHasResumeData] = useState(false);
 
-  // Modified to handle both string arrays and JSON arrays
   const parseJsonArray = <T,>(data: any[] | null): T[] => {
     if (!data) return [];
     try {
@@ -107,7 +109,6 @@ export const useResumeData = () => {
         }));
       }
 
-      // First, check if the user has a resume already
       const { data: resumeData, error: resumeError } = await supabase
         .from('resumes')
         .select('*')
@@ -115,7 +116,6 @@ export const useResumeData = () => {
         .maybeSingle();
 
       if (resumeData) {
-        // User has a resume, use that data
         if (resumeError) throw resumeError;
         
         setEducation(parseJsonArray<EducationItem>(resumeData.education));
@@ -123,16 +123,13 @@ export const useResumeData = () => {
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
         setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
         
-        // Parse skills from the skills column with our updated parseJsonArray function
         if (resumeData.skills) {
           setSkills(parseJsonArray<SkillItem>(resumeData.skills));
         } else {
-          // If no skills in resume data, try to fetch from user_skills
           await fetchUserSkills(user.id);
         }
         setHasResumeData(true);
       } else {
-        // User doesn't have a resume yet, initialize with assessment data
         await initializeFromAssessment(user.id);
         setHasResumeData(false);
       }
@@ -187,7 +184,6 @@ export const useResumeData = () => {
       if (assessmentError) throw assessmentError;
 
       if (assessmentData) {
-        // Initialize education from assessment
         const initialEducation: EducationItem = {
           degree: assessmentData.education || "",
           school: "",
@@ -196,7 +192,6 @@ export const useResumeData = () => {
         };
         setEducation([initialEducation]);
 
-        // Initialize work experience from assessment
         const initialWorkExperience: WorkExperienceItem = {
           company: "",
           title: "",
@@ -206,7 +201,6 @@ export const useResumeData = () => {
         };
         setWorkExperience([initialWorkExperience]);
 
-        // Fetch skills from user_skills table
         await fetchUserSkills(userId);
       }
     } catch (error) {
@@ -224,7 +218,6 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      // Only convert to JSON strings if we're not using null values
       const educationStrings = education.length > 0 ? education.map(item => JSON.stringify(item)) : null;
       const workExperienceStrings = workExperience.length > 0 ? workExperience.map(item => JSON.stringify(item)) : null;
       const certificatesStrings = certificates.length > 0 ? certificates.map(item => JSON.stringify(item)) : null;
@@ -282,14 +275,12 @@ export const useResumeData = () => {
 
       setHasResumeData(true);
 
-      // Trigger a re-evaluation of the assessment results
       try {
         await supabase.functions.invoke('analyze-application', {
           body: { userId: user.id }
         });
       } catch (analyzeError) {
         console.error("Error triggering assessment re-evaluation:", analyzeError);
-        // We don't want to fail the whole save operation if the analysis fails
       }
 
       toast({
