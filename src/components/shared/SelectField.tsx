@@ -85,10 +85,10 @@ export const SelectField = ({
         onValueChange={handleChange}
         disabled={disabled}
       >
-        <SelectTrigger id={id} className={`w-full ${className || ""}`}>
+        <SelectTrigger id={id} className={cn("w-full bg-background", className)}>
           <SelectValue placeholder={placeholder || "Select an option"} />
         </SelectTrigger>
-        <SelectContent position="popper" className="max-h-[200px]">
+        <SelectContent position="popper" className="max-h-[200px] w-[var(--radix-select-trigger-width)] bg-background">
           <ScrollArea className="h-[200px]">
             {options.map((option) => (
               <SelectItem key={option.value} value={option.value}>
@@ -110,3 +110,6 @@ export const SelectField = ({
     </div>
   );
 };
+
+// Add cn utility if it's not imported
+import { cn } from "@/lib/utils";

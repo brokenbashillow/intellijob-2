@@ -495,8 +495,11 @@ const JobPostings = () => {
               <Button 
                 variant="link" 
                 size="sm" 
-                onClick={() => navigate(`/job/${job.id}`)}
-                className="px-0 h-7 flex justify-start"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`/job/${job.id}`);
+                }}
+                className="px-0 h-7 flex justify-start text-blue-600 hover:text-blue-800"
               >
                 View Details <FileText className="h-3.5 w-3.5 ml-1" />
               </Button>
@@ -505,8 +508,139 @@ const JobPostings = () => {
         ))}
       </div>
 
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Job Posting</DialogTitle>
+            <DialogDescription>
+              Create a new job posting to attract candidates.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="location_type" className="text-right">
+                Location Type
+              </Label>
+              <div className="col-span-3">
+                <SelectField
+                  id="location_type"
+                  name="location_type"
+                  value={formData.location_type}
+                  onChange={handleSelectChange}
+                  options={locationTypeOptions}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="location" className="text-right">
+                Address
+              </Label>
+              <Input
+                type="text"
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="salary" className="text-right">
+                Salary
+              </Label>
+              <Input
+                type="text"
+                id="salary"
+                name="salary"
+                value={formData.salary}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="education" className="text-right mt-2">
+                Education
+              </Label>
+              <Textarea
+                id="education"
+                name="education"
+                value={formData.education}
+                onChange={handleInputChange}
+                className="col-span-3 min-h-[100px]"
+                rows={4}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="field" className="text-right">
+                Field
+              </Label>
+              <div className="col-span-3">
+                <SelectField
+                  id="field"
+                  name="field"
+                  value={formData.field}
+                  onChange={handleSelectChange}
+                  options={fieldOptions}
+                  allowCustomValue={true}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="description" className="text-right mt-2">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="col-span-3 min-h-[120px]"
+                rows={5}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="requirements" className="text-right mt-2">
+                Requirements
+              </Label>
+              <Textarea
+                id="requirements"
+                name="requirements"
+                value={formData.requirements}
+                onChange={handleInputChange}
+                className="col-span-3 min-h-[120px]"
+                rows={5}
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleCreateJob} 
+              disabled={isSubmitting || !formData.title || !formData.description}
+            >
+              {isSubmitting ? "Creating..." : "Create Job"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Job Posting</DialogTitle>
             <DialogDescription>Edit your job posting details.</DialogDescription>
@@ -575,7 +709,8 @@ const JobPostings = () => {
                 name="education"
                 value={formData.education}
                 onChange={handleInputChange}
-                className="col-span-3"
+                className="col-span-3 min-h-[100px]"
+                rows={4}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -602,7 +737,8 @@ const JobPostings = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                className="col-span-3"
+                className="col-span-3 min-h-[120px]"
+                rows={5}
               />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
@@ -614,7 +750,8 @@ const JobPostings = () => {
                 name="requirements"
                 value={formData.requirements}
                 onChange={handleInputChange}
-                className="col-span-3"
+                className="col-span-3 min-h-[120px]"
+                rows={5}
               />
             </div>
           </div>

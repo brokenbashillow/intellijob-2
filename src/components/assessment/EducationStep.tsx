@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { educationOptions } from "@/data/education-options";
+import { Textarea } from "@/components/ui/textarea";
 
 interface EducationStepProps {
   education: string;
@@ -90,15 +91,18 @@ const EducationStep = ({ education, setEducation }: EducationStepProps) => {
         </PopoverContent>
       </Popover>
       
-      <Input
+      <Textarea
         id="education"
-        placeholder="Or type your degree manually"
+        placeholder="Or describe your education in detail"
         value={education}
         onChange={(e) => setEducation(e.target.value)}
-        className="mt-2"
+        className="mt-2 min-h-[100px]"
+        rows={4}
       />
     </div>
   );
 };
+
+import { useState } from "react";
 
 export default EducationStep;
