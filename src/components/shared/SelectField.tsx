@@ -88,7 +88,7 @@ export const SelectField = ({
         <SelectTrigger id={id} className={`w-full ${className || ""}`}>
           <SelectValue placeholder={placeholder || "Select an option"} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent position="popper" className="max-h-[200px]">
           <ScrollArea className="h-[200px]">
             {options.map((option) => (
               <SelectItem key={option.value} value={option.value}>
