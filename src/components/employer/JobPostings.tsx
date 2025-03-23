@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase, LayoutTemplate } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +11,7 @@ import { SelectField } from "@/components/shared/SelectField"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import JobTemplates from "./JobTemplates"
+import JobResponses from "./JobResponses"
 
 interface Job {
   id: string
@@ -57,6 +57,8 @@ const JobPostings = () => {
   const [formData, setFormData] = useState<JobForm>(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [viewingJobResponses, setViewingJobResponses] = useState<string | null>(null)
+  const [selectedJobDetails, setSelectedJobDetails] = useState<Job | null>(null)
   const navigate = useNavigate()
   const { toast } = useToast()
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false)
@@ -135,7 +137,6 @@ const JobPostings = () => {
         return
       }
 
-      // Combine location type and address
       const combinedLocation = formData.location 
         ? `${formData.location_type} - ${formData.location}`
         : formData.location_type
@@ -184,7 +185,6 @@ const JobPostings = () => {
     try {
       setIsSubmitting(true)
 
-      // Combine location type and address
       const combinedLocation = formData.location 
         ? `${formData.location_type} - ${formData.location}`
         : formData.location_type
@@ -251,7 +251,6 @@ const JobPostings = () => {
   }
 
   const handleOpenEditDialog = (job: Job) => {
-    // Parse location field to separate location type and address
     let locationType = "On-Site";
     let locationAddress = "";
     
@@ -295,6 +294,20 @@ const JobPostings = () => {
       education: template.education || "",
     })
     setIsTemplatesDialogOpen(false)
+  }
+
+  const handleViewJobDetails = (job: Job) => {
+    setSelectedJobDetails(job)
+    setViewingJobResponses(job.id)
+  }
+  
+  const handleJobResponsesClosed = () => {
+    setViewingJobResponses(null)
+    setSelectedJobDetails(null)
+  }
+  
+  const handleInterviewScheduled = () => {
+    fetchJobs()
   }
 
   return (
@@ -495,10 +508,7 @@ const JobPostings = () => {
               <Button 
                 variant="link" 
                 size="sm" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(`/job/${job.id}`);
-                }}
+                onClick={() => handleViewJobDetails(job)}
                 className="px-0 h-7 flex justify-start text-blue-600 hover:text-blue-800"
               >
                 View Details <FileText className="h-3.5 w-3.5 ml-1" />
@@ -766,6 +776,22 @@ const JobPostings = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {viewingJobResponses && selectedJobDetails && (
+        <JobResponses 
+          jobId={viewingJobResponses}
+          isOpen={!!viewingJobResponses}
+          onClose={handleJobResponsesClosed}
+          jobDetails={{
+            id: selectedJobDetails.id,
+            title: selectedJobDetails.title,
+            description: selectedJobDetails.description,
+            requirements: selectedJobDetails.requirements,
+            field: selectedJobDetails.field
+          }}
+          onInterviewScheduled={handleInterviewScheduled}
+        />
+      )}
     </div>
   )
 }

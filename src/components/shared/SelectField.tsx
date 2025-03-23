@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface SelectOption {
   value: string;
@@ -110,6 +111,3 @@ export const SelectField = ({
     </div>
   );
 };
-
-// Add cn utility if it's not imported
-import { cn } from "@/lib/utils";
