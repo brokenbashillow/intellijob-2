@@ -88,6 +88,7 @@ const JobPostings = () => {
   }
 
   const handleSelectTemplate = (template: any) => {
+    // Populate form with template data
     setFormData({
       ...formData,
       title: template.title || "",
@@ -98,7 +99,10 @@ const JobPostings = () => {
       field: template.field || "",
       education: template.education || "",
     })
+    
+    // Close the templates dialog and open the create job dialog
     setIsTemplatesDialogOpen(false)
+    setIsDialogOpen(true)
   }
 
   const handleViewJobDetails = (job: Job) => {

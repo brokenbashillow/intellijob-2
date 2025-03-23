@@ -99,9 +99,8 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
     onSelectTemplate(template);
     toast({
       title: "Template Selected",
-      description: `${template.title} template has been applied.`,
+      description: `${template.title} template has been applied to new job posting.`,
     });
-    onClose(); // Close the dialog after selection
   };
 
   return (
@@ -168,7 +167,7 @@ const JobTemplates = ({ onSelectTemplate, onClose }: JobTemplatesProps) => {
                       }}
                     >
                       <Check className="h-4 w-4 text-green-600" />
-                      <span className="sr-only">Select template</span>
+                      <span className="sr-only">Use this template</span>
                     </Button>
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">{template.company} • {template.location}</p>
