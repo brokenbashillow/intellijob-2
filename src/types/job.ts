@@ -11,6 +11,7 @@ export interface Job {
   salary?: string
   education?: string
   requirements?: string
+  max_applicants?: number
 }
 
 export interface JobForm {
@@ -22,6 +23,7 @@ export interface JobForm {
   salary?: string
   requirements?: string
   education?: string
+  max_applicants?: string
 }
 
 export const initialJobFormData: JobForm = {
@@ -33,6 +35,7 @@ export const initialJobFormData: JobForm = {
   salary: "",
   requirements: "",
   education: "",
+  max_applicants: "5"
 }
 
 export const fieldOptions = [

@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { Plus, LayoutTemplate } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -83,12 +82,12 @@ const JobPostings = () => {
       salary: job.salary || "",
       requirements: job.requirements || "",
       education: job.education || "",
+      max_applicants: job.max_applicants?.toString() || "5"
     })
     setIsEditOpen(true)
   }
 
   const handleSelectTemplate = (template: any) => {
-    // Populate form with template data
     setFormData({
       ...formData,
       title: template.title || "",
@@ -98,9 +97,9 @@ const JobPostings = () => {
       requirements: template.requirements || "",
       field: template.field || "",
       education: template.education || "",
+      max_applicants: "5"
     })
     
-    // Close the templates dialog and open the create job dialog
     setIsTemplatesDialogOpen(false)
     setIsDialogOpen(true)
   }
@@ -151,7 +150,6 @@ const JobPostings = () => {
         ))}
       </div>
 
-      {/* Templates Dialog */}
       <Dialog open={isTemplatesDialogOpen} onOpenChange={setIsTemplatesDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <JobTemplates 
@@ -161,7 +159,6 @@ const JobPostings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Job Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -182,7 +179,6 @@ const JobPostings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Job Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -202,30 +198,23 @@ const JobPostings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Job Responses Dialog */}
       {viewingJobResponses && selectedJobDetails && (
-        <Dialog open={!!viewingJobResponses} onOpenChange={(open) => !open && handleJobResponsesClosed()}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Responses for {selectedJobDetails.title}</DialogTitle>
-            </DialogHeader>
-            <JobResponses 
-              jobId={viewingJobResponses}
-              isOpen={!!viewingJobResponses}
-              onClose={handleJobResponsesClosed}
-              jobDetails={{
-                id: selectedJobDetails.id,
-                title: selectedJobDetails.title,
-                description: selectedJobDetails.description,
-                requirements: selectedJobDetails.requirements,
-                field: selectedJobDetails.field
-              }}
-              onInterviewScheduled={() => {
-                // This will refresh the jobs list after an interview is scheduled
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <JobResponses 
+          jobId={viewingJobResponses}
+          isOpen={!!viewingJobResponses}
+          onClose={handleJobResponsesClosed}
+          jobDetails={{
+            id: selectedJobDetails.id,
+            title: selectedJobDetails.title,
+            description: selectedJobDetails.description,
+            requirements: selectedJobDetails.requirements,
+            field: selectedJobDetails.field,
+            max_applicants: selectedJobDetails.max_applicants
+          }}
+          onInterviewScheduled={() => {
+            // This will refresh the jobs list after an interview is scheduled
+          }}
+        />
       )}
     </div>
   )

@@ -102,6 +102,20 @@ const JobFormComponent: React.FC<JobFormProps> = ({
             className="col-span-3"
           />
         </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor={`${idPrefix}max_applicants`} className="text-right">
+            Max Applicants
+          </Label>
+          <Input
+            type="number"
+            id={`${idPrefix}max_applicants`}
+            name="max_applicants"
+            value={formData.max_applicants}
+            min="1"
+            onChange={onChange}
+            className="col-span-3"
+          />
+        </div>
         <div className="grid grid-cols-4 items-start gap-4">
           <Label htmlFor={`${idPrefix}education`} className="text-right mt-2">
             Education

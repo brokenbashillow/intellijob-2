@@ -70,6 +70,7 @@ export function useJobPostings() {
         education: formData.education,
         requirements: formData.requirements,
         employer_id: user.id,
+        max_applicants: formData.max_applicants ? parseInt(formData.max_applicants) : 5
       }
 
       // Remove location_type to avoid schema conflicts
@@ -116,6 +117,7 @@ export function useJobPostings() {
         salary: formData.salary,
         education: formData.education,
         requirements: formData.requirements,
+        max_applicants: formData.max_applicants ? parseInt(formData.max_applicants) : 5
       }
 
       // Remove location_type to avoid schema conflicts
