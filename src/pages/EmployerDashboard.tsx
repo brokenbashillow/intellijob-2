@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -26,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client"
 import EmployerChat from "@/components/employer/EmployerChat"
 import JobPostings from "@/components/employer/JobPostings"
 import Resume from "@/components/resume/Resume"
+import { getAvatarColors } from "@/lib/avatarUtils"
 
 type View = "dashboard" | "chat" | "job-postings" | "resume-viewer"
 
@@ -33,6 +33,7 @@ const EmployerDashboard = () => {
   const [currentView, setCurrentView] = useState<View>("dashboard")
   const [companyName, setCompanyName] = useState("Company Name")
   const [companyDescription, setCompanyDescription] = useState("")
+  const [companyType, setCompanyType] = useState("")
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -84,10 +85,10 @@ const EmployerDashboard = () => {
         setCompanyName(profileData.company_name)
       }
 
-      // Fetch company description from employer_assessments table
+      // Fetch company description and type from employer_assessments table
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('employer_assessments')
-        .select('description')
+        .select('description, company_type')
         .eq('user_id', user.id)
         .single()
 
@@ -97,6 +98,10 @@ const EmployerDashboard = () => {
       
       if (assessmentData?.description) {
         setCompanyDescription(assessmentData.description)
+      }
+      
+      if (assessmentData?.company_type) {
+        setCompanyType(assessmentData.company_type)
       }
     } catch (error: any) {
       console.error("Error fetching profile:", error)
@@ -147,6 +152,9 @@ const EmployerDashboard = () => {
     // We'll pass the prompt in future enhancements
   }
 
+  // Get avatar color based on company type/industry
+  const avatarColorClass = getAvatarColors(companyType);
+
   const renderContent = () => {
     switch (currentView) {
       case "chat":
@@ -163,7 +171,7 @@ const EmployerDashboard = () => {
               <div className="flex gap-8 items-start">
                 <Avatar className="w-32 h-32">
                   <AvatarImage src="" />
-                  <AvatarFallback className="text-2xl">{companyName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback className={avatarColorClass}>{companyName.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">{companyName}</h2>
@@ -289,7 +297,7 @@ const EmployerDashboard = () => {
             <span className="font-medium">{companyName}</span>
             <Avatar>
               <AvatarImage src="" />
-              <AvatarFallback>{companyName.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback className={avatarColorClass}>{companyName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { User } from "lucide-react";
 import { PersonalDetails } from "@/hooks/useResumeData";
+import { getAvatarColors } from "@/lib/avatarUtils";
 
 interface PersonalDetailsSectionProps {
   personalDetails: PersonalDetails;
@@ -15,13 +16,16 @@ export function PersonalDetailsSection({
   setPersonalDetails,
   handleImageUpload,
 }: PersonalDetailsSectionProps) {
+  // Determine education field for avatar color
+  const avatarColorClass = getAvatarColors(personalDetails.educationField || personalDetails.industry);
+
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center gap-6">
         <div className="relative">
           <Avatar className="h-24 w-24">
             <AvatarImage src={personalDetails.profilePicture} />
-            <AvatarFallback>
+            <AvatarFallback className={avatarColorClass}>
               {personalDetails.firstName?.[0]}{personalDetails.lastName?.[0]}
             </AvatarFallback>
           </Avatar>

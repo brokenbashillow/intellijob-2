@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { getAvatarColors } from "@/lib/avatarUtils"
 
 interface DashboardHeaderProps {
   userData: any;
@@ -16,6 +17,10 @@ interface DashboardHeaderProps {
 }
 
 const DashboardHeader = ({ userData, onMenuClick, showMenuButton = false }: DashboardHeaderProps) => {
+  // Determine industry for avatar color
+  const industry = userData?.company_type || userData?.education || "other";
+  const avatarColorClass = getAvatarColors(industry);
+
   return (
     <div className="flex justify-between items-center p-4 border-b">
       {/* Mobile menu button */}
@@ -56,7 +61,9 @@ const DashboardHeader = ({ userData, onMenuClick, showMenuButton = false }: Dash
         <span className="font-medium hidden sm:inline">{userData?.full_name}</span>
         <Avatar>
           <AvatarImage src={userData?.avatar_url} />
-          <AvatarFallback>{userData?.full_name?.charAt(0)}</AvatarFallback>
+          <AvatarFallback className={avatarColorClass}>
+            {userData?.full_name?.charAt(0)}
+          </AvatarFallback>
         </Avatar>
       </div>
     </div>
