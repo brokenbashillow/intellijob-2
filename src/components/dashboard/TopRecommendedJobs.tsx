@@ -8,33 +8,43 @@ interface TopRecommendedJobsProps {
 }
 
 const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
-  // Filter for health-related jobs if available 
-  const healthJobs = jobs.filter(job => 
-    /healthcare|medical|health|nurse|hospital|clinic|patient|therapy|pharma/i.test(
-      `${job.title} ${job.field || ''} ${job.description || ''}`
-    )
-  );
+  if (!jobs || jobs.length === 0) return null;
   
-  // Filter jobs that have a reason indicating education match
+  // Get top scored jobs (those with highest match scores)
+  const topScoredJobs = [...jobs]
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .slice(0, 3);
+
+  // Filter for education matches (highest priority)
   const educationMatchedJobs = jobs.filter(job => 
-    job.reason && /match.*education|match.*degree|match.*nursing|match.*healthcare|match.*medical/i.test(job.reason)
-  );
+    job.reason && /degree|education|background|nursing|healthcare|field/i.test(job.reason)
+  ).slice(0, 3);
   
-  // Prioritize: 1. Education matched jobs, 2. Health jobs, 3. Top scored jobs
+  // Filter for location matches (good for convenience)
+  const locationMatchedJobs = jobs.filter(job => 
+    job.reason && /near you|located|proximity|remote/i.test(job.reason)
+  ).slice(0, 3);
+  
+  // Filter for skills matches (good for capability match)
+  const skillsMatchedJobs = jobs.filter(job => 
+    job.reason && /skills|experience|relevant/i.test(job.reason)
+  ).slice(0, 3);
+
+  // Determine which set of jobs to display
+  // Prioritize: 1. Education matches, 2. High-scoring jobs, 3. Skills matches, 4. Location matches
   let jobsToShow = [];
   
-  if (educationMatchedJobs.length > 0) {
-    jobsToShow = educationMatchedJobs.slice(0, 3);
-  } else if (healthJobs.length >= 3) {
-    jobsToShow = healthJobs.slice(0, 3);
+  if (educationMatchedJobs.length >= 2) {
+    jobsToShow = educationMatchedJobs;
+  } else if (topScoredJobs.length > 0) {
+    jobsToShow = topScoredJobs;
+  } else if (skillsMatchedJobs.length > 0) {
+    jobsToShow = skillsMatchedJobs;
+  } else if (locationMatchedJobs.length > 0) {
+    jobsToShow = locationMatchedJobs;
   } else {
-    // Only use top scored jobs if they have education matches in their reason
-    jobsToShow = jobs
-      .filter(job => job.reason && /education|degree|background|field/i.test(job.reason))
-      .slice(0, 3);
+    jobsToShow = jobs.slice(0, 3);
   }
-
-  if (jobsToShow.length === 0) return null;
 
   return (
     <JobList 

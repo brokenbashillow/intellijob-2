@@ -17,6 +17,8 @@ export interface Job {
   reason?: string;
   field?: string;
   salary?: string;
+  requirements?: string;
+  education?: string;
 }
 
 export const useJobRecommendations = (isEmployer = false) => {
@@ -25,9 +27,10 @@ export const useJobRecommendations = (isEmployer = false) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
-  const { skills, workExperience, education } = useResumeData();
+  const { skills, workExperience, education, personalDetails, certificates, references } = useResumeData();
   const [userFields, setUserFields] = useState<string[]>([]);
   const [educationFields, setEducationFields] = useState<string[]>([]);
+  const [userLocation, setUserLocation] = useState<string>("");
 
   useEffect(() => {
     if (skills && skills.length > 0) {
@@ -47,6 +50,31 @@ export const useJobRecommendations = (isEmployer = false) => {
       
       setEducationFields(degrees);
     }
+
+    // Extract user location from the profile data for location matching
+    const getUserLocation = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('country, province, city')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (data) {
+          const locationParts = [data.city, data.province, data.country].filter(Boolean);
+          setUserLocation(locationParts.join(', ').toLowerCase());
+        }
+      } catch (error) {
+        console.error("Error fetching user location:", error);
+      }
+    };
+
+    getUserLocation();
   }, [skills, education]);
 
   const fetchJobPostings = async () => {
@@ -56,9 +84,15 @@ export const useJobRecommendations = (isEmployer = false) => {
       
       console.log("Fetching job postings...");
       
+      // Fetch job postings including employer profile information
       const { data: jobPostingsData, error: jobPostingsError } = await supabase
         .from('job_postings')
-        .select('*')
+        .select(`
+          *,
+          profiles:employer_id (
+            company_name
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (jobPostingsError) {
@@ -82,13 +116,16 @@ export const useJobRecommendations = (isEmployer = false) => {
         const mappedJobPostings: Job[] = jobPostingsData.map(job => ({
           id: job.id,
           title: job.title || "Untitled Position",
-          company: job.employer_id || "IntelliJob",
-          location: "Remote",
+          company: job.profiles?.company_name || "IntelliJob",
+          location: job.location || "Remote",
           description: job.description || "No description provided",
           postedAt: job.created_at || new Date().toISOString(),
           platform: "IntelliJob",
           url: `/job/${job.id}`,
-          field: job.field
+          field: job.field,
+          requirements: job.requirements,
+          education: job.education,
+          salary: job.salary
         }));
         
         allJobsData = mappedJobPostings;
@@ -108,7 +145,8 @@ export const useJobRecommendations = (isEmployer = false) => {
           platform: "Template",
           url: "#",
           field: template.field,
-          salary: template.salary
+          salary: template.salary,
+          education: template.education
         }));
         
         allJobsData = [...allJobsData, ...mappedJobTemplates];
@@ -125,106 +163,69 @@ export const useJobRecommendations = (isEmployer = false) => {
       
       const scoredJobs = allJobsData.map(job => {
         let score = 0;
-        let matchReason = "";
-        
-        const hasHealthcareEducation = educationFields.some(degree => 
-          /nursing|bs nursing|bachelor of science in nursing|bsn|rn|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
-        );
-        
-        const hasBusinessEducation = educationFields.some(degree => 
-          /business|finance|accounting|marketing|management|mba|economics/i.test(degree)
-        );
-        
-        const hasEngineeringEducation = educationFields.some(degree => 
-          /engineering|computer science|information technology|software|it|programming|development/i.test(degree)
-        );
-        
-        const hasEducationEducation = educationFields.some(degree => 
-          /education|teaching|pedagogy|instructional/i.test(degree)
-        );
-        
-        const hasArtsEducation = educationFields.some(degree => 
-          /arts|design|creative|music|film|theater|media/i.test(degree)
-        );
-        
-        if (hasHealthcareEducation && 
-            /nurse|nursing|healthcare|medical|clinical|patient|health|hospital|doctor|pharma/i.test(`${job.title} ${job.field || ''}`)) {
-          score += 15;
-          matchReason = "Matches your nursing/healthcare education";
-        } else if (hasBusinessEducation && 
-            /business|finance|accounting|marketing|management|analyst|consultant/i.test(`${job.title} ${job.field || ''}`)) {
-          score += 10;
-          matchReason = "Matches your business education";
-        } else if (hasEngineeringEducation && 
-            /engineer|developer|software|IT|programming|technical|technology/i.test(`${job.title} ${job.field || ''}`)) {
-          score += 10;
-          matchReason = "Matches your technical education";
-        } else if (hasEducationEducation && 
-            /teacher|professor|instructor|educator|tutor|school|education/i.test(`${job.title} ${job.field || ''}`)) {
-          score += 10;
-          matchReason = "Matches your education background";
-        } else if (hasArtsEducation && 
-            /design|creative|artist|writer|content|media|art/i.test(`${job.title} ${job.field || ''}`)) {
-          score += 10;
-          matchReason = "Matches your creative education";
+        let matchReasons: string[] = [];
+
+        // 1. Education match - highest weight
+        const hasEducationMatch = checkEducationMatch(job);
+        if (hasEducationMatch.match) {
+          score += hasEducationMatch.score;
+          matchReasons.push(hasEducationMatch.reason);
         }
         
-        if (job.field && userFields.some(field => 
-          job.field?.toLowerCase().includes(field.toLowerCase()) ||
-          field.toLowerCase().includes(job.field?.toLowerCase() || '')
-        )) {
-          score += 5;
-          const matchedField = userFields.find(field => 
-            job.field?.toLowerCase().includes(field.toLowerCase()) ||
-            field.toLowerCase().includes(job.field?.toLowerCase() || '')
-          );
-          if (!matchReason) {
-            matchReason = `Matched to your experience in ${matchedField}`;
+        // 2. Field/industry match
+        const hasFieldMatch = checkFieldMatch(job);
+        if (hasFieldMatch.match) {
+          score += hasFieldMatch.score;
+          if (!matchReasons.includes(hasFieldMatch.reason)) {
+            matchReasons.push(hasFieldMatch.reason);
           }
         }
         
-        if (workExperience && workExperience.length > 0) {
-          const jobTitles = workExperience.map(exp => exp.title || '').filter(Boolean);
-          
-          if (jobTitles.some(title => 
-            job.title.toLowerCase().includes(title.toLowerCase()) ||
-            title.toLowerCase().includes(job.title.toLowerCase())
-          )) {
-            score += 3;
-            if (!matchReason) {
-              const matchedTitle = jobTitles.find(title => 
-                job.title.toLowerCase().includes(title.toLowerCase()) ||
-                title.toLowerCase().includes(job.title.toLowerCase())
-              );
-              matchReason = `Relevant to your experience as ${matchedTitle}`;
-            }
-          }
+        // 3. Skills match
+        const hasSkillsMatch = checkSkillsMatch(job);
+        if (hasSkillsMatch.match) {
+          score += hasSkillsMatch.score;
+          matchReasons.push(hasSkillsMatch.reason);
         }
         
-        if (skills && skills.length > 0) {
-          const skillNames = skills.map((skill) => skill.name.toLowerCase());
-          const jobText = `${job.title} ${job.description} ${job.field || ''}`.toLowerCase();
-          
-          const matchedSkills: string[] = [];
-          skillNames.forEach(skill => {
-            if (jobText.includes(skill)) {
-              score += 1;
-              matchedSkills.push(skill);
-            }
-          });
-          
-          if (matchedSkills.length > 0 && !matchReason) {
-            matchReason = `Uses your skills: ${matchedSkills.slice(0, 2).join(', ')}${matchedSkills.length > 2 ? '...' : ''}`;
-          }
+        // 4. Experience match based on job titles
+        const hasExperienceMatch = checkExperienceMatch(job);
+        if (hasExperienceMatch.match) {
+          score += hasExperienceMatch.score;
+          matchReasons.push(hasExperienceMatch.reason);
         }
         
+        // 5. Location match
+        const hasLocationMatch = checkLocationMatch(job);
+        if (hasLocationMatch.match) {
+          score += hasLocationMatch.score;
+          matchReasons.push(hasLocationMatch.reason);
+        }
+        
+        // 6. Certifications bonus
+        if (certificates && certificates.length > 0) {
+          score += Math.min(certificates.length * 2, 10); // Max 10 points for certifications
+          matchReasons.push(`You have ${certificates.length} relevant certification(s)`);
+        }
+        
+        // 7. References bonus
+        if (references && references.length > 0) {
+          score += Math.min(references.length, 5); // Max 5 points for references
+        }
+        
+        // Final match reason (take top 2 reasons for clarity)
+        const primaryReason = matchReasons.length > 0 
+          ? matchReasons[0] 
+          : "Potential match based on your profile";
+          
         return { 
           ...job, 
           score,
-          reason: matchReason || "Potential match based on your profile"
+          reason: primaryReason
         };
       });
       
+      // Sort jobs by score (highest first)
       scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
       console.log("Scored and sorted jobs:", scoredJobs.length);
       
@@ -248,6 +249,181 @@ export const useJobRecommendations = (isEmployer = false) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
+  };
+
+  // Helper function to check education match
+  const checkEducationMatch = (job: Job) => {
+    const result = { match: false, score: 0, reason: "" };
+    
+    if (!job.education || !educationFields.length) return result;
+    
+    const jobEducation = job.education.toLowerCase();
+    
+    // Check if user's education matches job's required education
+    const matchedDegree = educationFields.find(degree => 
+      jobEducation.includes(degree) || degree.includes(jobEducation)
+    );
+    
+    if (matchedDegree) {
+      result.match = true;
+      result.score = 20; // Highest weight for education match
+      result.reason = `Your ${matchedDegree} degree matches the job requirements`;
+    } else if (personalDetails?.educationField && 
+               jobEducation.includes(personalDetails.educationField.toLowerCase())) {
+      result.match = true;
+      result.score = 15;
+      result.reason = `Your education field (${personalDetails.educationField}) matches the job`;
+    }
+    
+    return result;
+  };
+  
+  // Helper function to check field/industry match
+  const checkFieldMatch = (job: Job) => {
+    const result = { match: false, score: 0, reason: "" };
+    
+    if (!job.field) return result;
+    
+    const hasHealthcareEducation = educationFields.some(degree => 
+      /nursing|bs nursing|bachelor of science in nursing|bsn|rn|healthcare|medical|health|medicine|pharma|dental/i.test(degree)
+    );
+    
+    const hasBusinessEducation = educationFields.some(degree => 
+      /business|finance|accounting|marketing|management|mba|economics/i.test(degree)
+    );
+    
+    const hasEngineeringEducation = educationFields.some(degree => 
+      /engineering|computer science|information technology|software|it|programming|development/i.test(degree)
+    );
+    
+    const hasEducationEducation = educationFields.some(degree => 
+      /education|teaching|pedagogy|instructional/i.test(degree)
+    );
+    
+    const hasArtsEducation = educationFields.some(degree => 
+      /arts|design|creative|music|film|theater|media/i.test(degree)
+    );
+    
+    if (hasHealthcareEducation && 
+        /nurse|nursing|healthcare|medical|clinical|patient|health|hospital|doctor|pharma/i.test(`${job.title} ${job.field}`)) {
+      result.match = true;
+      result.score = 15;
+      result.reason = "Matches your nursing/healthcare education";
+    } else if (hasBusinessEducation && 
+        /business|finance|accounting|marketing|management|analyst|consultant/i.test(`${job.title} ${job.field}`)) {
+      result.match = true;
+      result.score = 10;
+      result.reason = "Matches your business education";
+    } else if (hasEngineeringEducation && 
+        /engineer|developer|software|IT|programming|technical|technology/i.test(`${job.title} ${job.field}`)) {
+      result.match = true;
+      result.score = 10;
+      result.reason = "Matches your technical education";
+    } else if (hasEducationEducation && 
+        /teacher|professor|instructor|educator|tutor|school|education/i.test(`${job.title} ${job.field}`)) {
+      result.match = true;
+      result.score = 10;
+      result.reason = "Matches your education background";
+    } else if (hasArtsEducation && 
+        /design|creative|artist|writer|content|media|art/i.test(`${job.title} ${job.field}`)) {
+      result.match = true;
+      result.score = 10;
+      result.reason = "Matches your creative education";
+    }
+    
+    // Check industry field match from personal details
+    if (!result.match && personalDetails?.industry) {
+      const jobFieldLower = job.field.toLowerCase();
+      const userIndustryLower = personalDetails.industry.toLowerCase();
+      
+      if (jobFieldLower.includes(userIndustryLower) || 
+          userIndustryLower.includes(jobFieldLower)) {
+        result.match = true;
+        result.score = 10;
+        result.reason = `Matches your industry: ${personalDetails.industry}`;
+      }
+    }
+    
+    return result;
+  };
+  
+  // Helper function to check skills match
+  const checkSkillsMatch = (job: Job) => {
+    const result = { match: false, score: 0, reason: "" };
+    
+    if (!skills || skills.length === 0) return result;
+    
+    const jobText = `${job.title} ${job.description || ''} ${job.requirements || ''} ${job.field || ''}`.toLowerCase();
+    const skillNames = skills.map(skill => skill.name.toLowerCase());
+    
+    const matchedSkills = skillNames.filter(skill => jobText.includes(skill));
+    
+    if (matchedSkills.length > 0) {
+      result.match = true;
+      result.score = Math.min(matchedSkills.length * 2, 15); // Max 15 points for skills
+      
+      const topSkills = matchedSkills.slice(0, 2).join(', ');
+      result.reason = `Uses your skills: ${topSkills}${matchedSkills.length > 2 ? '...' : ''}`;
+    }
+    
+    return result;
+  };
+  
+  // Helper function to check experience match
+  const checkExperienceMatch = (job: Job) => {
+    const result = { match: false, score: 0, reason: "" };
+    
+    if (!workExperience || workExperience.length === 0) return result;
+    
+    const jobTitle = job.title.toLowerCase();
+    const jobExp = workExperience.find(exp => {
+      const expTitle = (exp.title || '').toLowerCase();
+      return jobTitle.includes(expTitle) || expTitle.includes(jobTitle);
+    });
+    
+    if (jobExp) {
+      result.match = true;
+      result.score = 10;
+      result.reason = `Relevant to your experience as ${jobExp.title}`;
+    }
+    
+    return result;
+  };
+  
+  // Helper function to check location match
+  const checkLocationMatch = (job: Job) => {
+    const result = { match: false, score: 0, reason: "" };
+    
+    if (!userLocation || !job.location) return result;
+    
+    // Location is set to "Remote" - gives a small bonus
+    if (job.location === "Remote") {
+      result.match = true;
+      result.score = 5;
+      result.reason = "Remote work opportunity";
+      return result;
+    }
+    
+    const jobLocation = job.location.toLowerCase();
+    
+    // Check if locations contain similar parts (city, region, country)
+    const userLocationParts = userLocation.split(',').map(part => part.trim());
+    const jobLocationParts = jobLocation.split(',').map(part => part.trim());
+    
+    // Check for location overlap (same city, region or country)
+    const locationOverlap = userLocationParts.some(userPart => 
+      jobLocationParts.some(jobPart => 
+        userPart === jobPart || userPart.includes(jobPart) || jobPart.includes(userPart)
+      )
+    );
+    
+    if (locationOverlap) {
+      result.match = true;
+      result.score = 10;
+      result.reason = "Located near you";
+    }
+    
+    return result;
   };
 
   const setFallbackJobs = () => {
@@ -477,7 +653,7 @@ export const useJobRecommendations = (isEmployer = false) => {
 
   useEffect(() => {
     fetchJobPostings();
-  }, [userFields, educationFields, isEmployer]);
+  }, [userFields, educationFields, userLocation, isEmployer]);
 
   return {
     jobs,

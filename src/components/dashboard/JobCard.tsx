@@ -16,6 +16,8 @@ interface Job {
   reason?: string
   requirements?: string
   field?: string
+  education?: string
+  salary?: string
 }
 
 const formatDate = (dateString: string) => {
@@ -43,11 +45,23 @@ const JobCard = ({ job }: { job: Job }) => {
               {job.company}
             </Badge>
           </div>
-          {job.field && (
-            <Badge variant="secondary" className="bg-secondary/30 text-xs">
-              {job.field}
-            </Badge>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {job.field && (
+              <Badge variant="secondary" className="bg-secondary/30 text-xs">
+                {job.field}
+              </Badge>
+            )}
+            {job.education && (
+              <Badge variant="outline" className="text-xs border-amber-300">
+                {job.education}
+              </Badge>
+            )}
+            {job.salary && (
+              <Badge variant="outline" className="text-xs border-green-300">
+                {job.salary}
+              </Badge>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground line-clamp-3">
             {job.description}
           </p>
@@ -56,7 +70,7 @@ const JobCard = ({ job }: { job: Job }) => {
               {job.reason}
             </p>
           )}
-          {job.score && job.score > 5 && (
+          {job.score && job.score > 15 && (
             <div className="mt-2 flex items-center gap-1">
               <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
                 Strong match
