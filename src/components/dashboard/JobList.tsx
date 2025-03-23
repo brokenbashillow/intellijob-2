@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react"
 import JobCard from "./JobCard"
+import JobDetailsDialog from "./JobDetailsDialog"
 import { supabase } from "@/integrations/supabase/client"
 import { Loader2, Sparkles } from "lucide-react"
 import { useLocation } from "react-router-dom"
@@ -37,6 +38,9 @@ interface RecommendedJob {
   aiAnalyzed?: boolean
   aiMatchScore?: number
   aiRecommendation?: string
+  requirements?: string
+  education?: string
+  salary?: string
 }
 
 interface JobListProps {
@@ -58,6 +62,7 @@ const JobList = ({
 }: JobListProps) => {
   const [jobs, setJobs] = useState<RecommendedJob[]>(initialJobs)
   const [isLoading, setIsLoading] = useState(fetchFromDatabase)
+  const [selectedJob, setSelectedJob] = useState<RecommendedJob | null>(null)
   const location = useLocation()
   const isEmployerDashboard = location.pathname.includes('employer-dashboard')
 
@@ -109,7 +114,9 @@ const JobList = ({
           platform: post.platform || "IntelliJob",
           url: `/job/${post.id}`,
           field: post.field,
-          requirements: post.requirements
+          requirements: post.requirements,
+          education: post.education,
+          salary: post.salary
         }))
         
         setJobs(mappedJobs)
@@ -126,6 +133,14 @@ const JobList = ({
   const filteredJobs = isEmployerDashboard 
     ? jobs.filter(job => job.platform !== "fallback" && job.platform !== "Example") 
     : jobs;
+
+  const handleViewJobDetails = (job: RecommendedJob) => {
+    setSelectedJob(job);
+  };
+
+  const handleCloseJobDetails = () => {
+    setSelectedJob(null);
+  };
 
   if (isLoading) {
     return (
@@ -163,10 +178,18 @@ const JobList = ({
                 <Sparkles className="h-5 w-5 text-amber-500" />
               </div>
             )}
-            <JobCard job={job} />
+            <JobCard job={job} onViewDetails={handleViewJobDetails} />
           </div>
         ))}
       </div>
+      
+      {selectedJob && (
+        <JobDetailsDialog 
+          job={selectedJob} 
+          isOpen={!!selectedJob} 
+          onClose={handleCloseJobDetails} 
+        />
+      )}
     </>
   );
 };

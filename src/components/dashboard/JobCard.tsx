@@ -18,6 +18,7 @@ interface Job {
   field?: string
   education?: string
   salary?: string
+  aiMatchScore?: number
 }
 
 const formatDate = (dateString: string) => {
@@ -25,13 +26,18 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', options);
 }
 
-const JobCard = ({ job }: { job: Job }) => {
+interface JobCardProps {
+  job: Job;
+  onViewDetails: (job: Job) => void;
+}
+
+const JobCard = ({ job, onViewDetails }: JobCardProps) => {
   // Clean location to remove any hash-like IDs
   const cleanLocation = job.location === "Remote" ? "Remote" : 
     job.location?.replace(/^[a-f0-9-]+\s*/i, "").trim() || "Remote";
 
   return (
-    <Card className="hover:shadow-lg transition-shadow flex flex-col">
+    <Card className="hover:shadow-lg transition-shadow flex flex-col cursor-pointer" onClick={() => onViewDetails(job)}>
       <CardHeader className="pb-2 border-b">
         <CardTitle className="text-lg md:text-xl font-semibold">{job.title}</CardTitle>
       </CardHeader>
@@ -86,14 +92,9 @@ const JobCard = ({ job }: { job: Job }) => {
       </CardContent>
       <CardFooter className="pt-2 pb-3 border-t flex justify-between items-center text-xs text-muted-foreground">
         <span>Posted {formatDate(job.postedAt)}</span>
-        <a 
-          href={job.url} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center hover:text-primary transition-colors"
-        >
+        <span className="flex items-center hover:text-primary transition-colors">
           {job.platform} <ExternalLink className="ml-1 h-3 w-3" />
-        </a>
+        </span>
       </CardFooter>
     </Card>
   );
