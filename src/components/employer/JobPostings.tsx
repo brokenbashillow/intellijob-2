@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase, LayoutTemplate } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +21,7 @@ interface Job {
   created_at: string
   field: string
   location: string
+  location_type?: string
   salary?: string
   education?: string
   requirements?: string
@@ -30,6 +32,7 @@ interface JobForm {
   description: string
   field: string
   location: string
+  location_type: string
   salary?: string
   requirements?: string
   education?: string
@@ -40,6 +43,7 @@ const initialFormData: JobForm = {
   description: "",
   field: "",
   location: "",
+  location_type: "On-Site",
   salary: "",
   requirements: "",
   education: "",
@@ -69,6 +73,13 @@ const JobPostings = () => {
     { label: "Human Resources", value: "Human Resources" },
     { label: "Customer Service", value: "Customer Service" },
     { label: "Other", value: "Other" },
+  ]
+
+  const locationTypeOptions = [
+    { label: "Remote", value: "Remote" },
+    { label: "Hybrid", value: "Hybrid" },
+    { label: "On-Site", value: "On-Site" },
+    { label: "Flexible", value: "Flexible" },
   ]
 
   useEffect(() => {
@@ -124,11 +135,23 @@ const JobPostings = () => {
         return
       }
 
+      // Combine location type and address
+      const combinedLocation = formData.location 
+        ? `${formData.location_type} - ${formData.location}`
+        : formData.location_type
+
       const { error } = await supabase
         .from("job_postings")
         .insert([
           {
-            ...formData,
+            title: formData.title,
+            description: formData.description,
+            field: formData.field,
+            location: combinedLocation,
+            location_type: formData.location_type,
+            salary: formData.salary,
+            education: formData.education,
+            requirements: formData.requirements,
             employer_id: user.id,
           },
         ])
@@ -161,13 +184,19 @@ const JobPostings = () => {
     try {
       setIsSubmitting(true)
 
+      // Combine location type and address
+      const combinedLocation = formData.location 
+        ? `${formData.location_type} - ${formData.location}`
+        : formData.location_type
+
       const { error } = await supabase
         .from("job_postings")
         .update({
           title: formData.title,
           description: formData.description,
           field: formData.field,
-          location: formData.location,
+          location: combinedLocation,
+          location_type: formData.location_type,
           salary: formData.salary,
           education: formData.education,
           requirements: formData.requirements,
@@ -222,12 +251,31 @@ const JobPostings = () => {
   }
 
   const handleOpenEditDialog = (job: Job) => {
+    // Parse location field to separate location type and address
+    let locationType = "On-Site";
+    let locationAddress = "";
+    
+    if (job.location_type) {
+      locationType = job.location_type;
+    } else if (job.location && job.location.includes(" - ")) {
+      const parts = job.location.split(" - ");
+      if (parts.length >= 2) {
+        locationType = parts[0];
+        locationAddress = parts.slice(1).join(" - ");
+      } else {
+        locationAddress = job.location;
+      }
+    } else {
+      locationAddress = job.location;
+    }
+
     setSelectedJob(job)
     setFormData({
       title: job.title,
       description: job.description,
       field: job.field,
-      location: job.location,
+      location_type: locationType,
+      location: locationAddress,
       salary: job.salary || "",
       requirements: job.requirements || "",
       education: job.education || "",
@@ -298,8 +346,22 @@ const JobPostings = () => {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="location_type" className="text-right">
+                    Location Type
+                  </Label>
+                  <div className="col-span-3">
+                    <SelectField
+                      id="location_type"
+                      name="location_type"
+                      value={formData.location_type}
+                      onChange={handleSelectChange}
+                      options={locationTypeOptions}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="location" className="text-right">
-                    Location
+                    Address
                   </Label>
                   <Input
                     type="text"
@@ -323,12 +385,11 @@ const JobPostings = () => {
                     className="col-span-3"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="education" className="text-right">
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="education" className="text-right mt-2">
                     Education
                   </Label>
-                  <Input
-                    type="text"
+                  <Textarea
                     id="education"
                     name="education"
                     value={formData.education}
@@ -347,6 +408,7 @@ const JobPostings = () => {
                       value={formData.field}
                       onChange={handleSelectChange}
                       options={fieldOptions}
+                      allowCustomValue={true}
                     />
                   </div>
                 </div>
@@ -465,8 +527,22 @@ const JobPostings = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-location-type" className="text-right">
+                Location Type
+              </Label>
+              <div className="col-span-3">
+                <SelectField
+                  id="edit-location-type"
+                  name="location_type"
+                  value={formData.location_type}
+                  onChange={handleSelectChange}
+                  options={locationTypeOptions}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-location" className="text-right">
-                Location
+                Address
               </Label>
               <Input
                 type="text"
@@ -490,12 +566,11 @@ const JobPostings = () => {
                 className="col-span-3"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-education" className="text-right">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-education" className="text-right mt-2">
                 Education
               </Label>
-              <Input
-                type="text"
+              <Textarea
                 id="edit-education"
                 name="education"
                 value={formData.education}
@@ -514,6 +589,7 @@ const JobPostings = () => {
                   value={formData.field}
                   onChange={handleSelectChange}
                   options={fieldOptions}
+                  allowCustomValue={true}
                 />
               </div>
             </div>
