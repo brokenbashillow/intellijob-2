@@ -68,7 +68,12 @@ export const SelectField = ({
   const handleChange = (newValue: string) => {
     if (newValue === "Other" && allowCustomValue) {
       setShowCustomInput(true);
-      // Don't update the actual value yet until custom input is provided
+      // Also update the actual value to "Other" so the UI reflects the change
+      if (onChange && name) {
+        onChange(name, newValue);
+      } else if (onValueChange) {
+        onValueChange(newValue);
+      }
     } else {
       if (onChange && name) {
         onChange(name, newValue);
@@ -80,16 +85,16 @@ export const SelectField = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 w-full">
       <Select
-        value={showCustomInput ? "Other" : value}
+        value={value}
         onValueChange={handleChange}
         disabled={disabled}
       >
         <SelectTrigger id={id} className={cn("w-full bg-background", className)}>
           <SelectValue placeholder={placeholder || "Select an option"} />
         </SelectTrigger>
-        <SelectContent position="popper" className="max-h-[200px] w-[var(--radix-select-trigger-width)] bg-background">
+        <SelectContent position="popper" className="max-h-[200px] w-[var(--radix-select-trigger-width)] bg-background z-[100]">
           <ScrollArea className="h-[200px]">
             {options.map((option) => (
               <SelectItem key={option.value} value={option.value}>

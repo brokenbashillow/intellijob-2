@@ -46,6 +46,22 @@ const JobFormComponent: React.FC<JobFormProps> = ({
           />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor={`${idPrefix}field`} className="text-right">
+            Field/Industry
+          </Label>
+          <div className="col-span-3">
+            <SelectField
+              id={`${idPrefix}field`}
+              name="field"
+              value={formData.field}
+              onChange={onSelectChange}
+              options={fieldOptions}
+              allowCustomValue={true}
+              className="w-full"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor={`${idPrefix}location_type`} className="text-right">
             Location Type
           </Label>
@@ -56,6 +72,7 @@ const JobFormComponent: React.FC<JobFormProps> = ({
               value={formData.location_type}
               onChange={onSelectChange}
               options={locationTypeOptions}
+              className="w-full"
             />
           </div>
         </div>
@@ -97,21 +114,6 @@ const JobFormComponent: React.FC<JobFormProps> = ({
             className="col-span-3 min-h-[100px]"
             rows={4}
           />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor={`${idPrefix}field`} className="text-right">
-            Field
-          </Label>
-          <div className="col-span-3">
-            <SelectField
-              id={`${idPrefix}field`}
-              name="field"
-              value={formData.field}
-              onChange={onSelectChange}
-              options={fieldOptions}
-              allowCustomValue={true}
-            />
-          </div>
         </div>
         <div className="grid grid-cols-4 items-start gap-4">
           <Label htmlFor={`${idPrefix}description`} className="text-right mt-2">
