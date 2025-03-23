@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Edit, Clock, FileText, Trash, LayoutTemplate } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -141,22 +142,22 @@ const JobPostings = () => {
         ? `${formData.location_type} - ${formData.location}`
         : formData.location_type
 
+      // Create the job posting data object
+      const jobData = {
+        title: formData.title,
+        description: formData.description,
+        field: formData.field,
+        location: combinedLocation,
+        salary: formData.salary,
+        education: formData.education,
+        requirements: formData.requirements,
+        employer_id: user.id,
+      }
+
+      // Remove location_type to avoid schema conflicts
       const { error } = await supabase
         .from("job_postings")
-        .insert([
-          {
-            title: formData.title,
-            description: formData.description,
-            field: formData.field,
-            location: combinedLocation,
-            location_type: formData.location_type,
-            salary: formData.salary,
-            education: formData.education,
-            requirements: formData.requirements,
-            employer_id: user.id,
-          },
-        ])
-        .single()
+        .insert([jobData])
 
       if (error) throw error
 
@@ -189,20 +190,22 @@ const JobPostings = () => {
         ? `${formData.location_type} - ${formData.location}`
         : formData.location_type
 
+      // Create the job update data object
+      const jobData = {
+        title: formData.title,
+        description: formData.description,
+        field: formData.field,
+        location: combinedLocation,
+        salary: formData.salary,
+        education: formData.education,
+        requirements: formData.requirements,
+      }
+
+      // Remove location_type to avoid schema conflicts
       const { error } = await supabase
         .from("job_postings")
-        .update({
-          title: formData.title,
-          description: formData.description,
-          field: formData.field,
-          location: combinedLocation,
-          location_type: formData.location_type,
-          salary: formData.salary,
-          education: formData.education,
-          requirements: formData.requirements,
-        })
+        .update(jobData)
         .eq("id", selectedJob.id)
-        .single()
 
       if (error) throw error
 
@@ -315,156 +318,21 @@ const JobPostings = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Job Postings</h2>
         <div className="flex gap-2">
-          <Dialog open={isTemplatesDialogOpen} onOpenChange={setIsTemplatesDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <LayoutTemplate className="h-4 w-4" />
-                Job Templates
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <JobTemplates 
-                onSelectTemplate={handleSelectTemplate} 
-                onClose={() => setIsTemplatesDialogOpen(false)} 
-              />
-            </DialogContent>
-          </Dialog>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Create Job Posting
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create Job Posting</DialogTitle>
-                <DialogDescription>
-                  Create a new job posting to attract candidates.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="title" className="text-right">
-                    Title
-                  </Label>
-                  <Input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="location_type" className="text-right">
-                    Location Type
-                  </Label>
-                  <div className="col-span-3">
-                    <SelectField
-                      id="location_type"
-                      name="location_type"
-                      value={formData.location_type}
-                      onChange={handleSelectChange}
-                      options={locationTypeOptions}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="location" className="text-right">
-                    Address
-                  </Label>
-                  <Input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="salary" className="text-right">
-                    Salary
-                  </Label>
-                  <Input
-                    type="text"
-                    id="salary"
-                    name="salary"
-                    value={formData.salary}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="education" className="text-right mt-2">
-                    Education
-                  </Label>
-                  <Textarea
-                    id="education"
-                    name="education"
-                    value={formData.education}
-                    onChange={handleInputChange}
-                    className="col-span-3 min-h-[100px]"
-                    rows={4}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="field" className="text-right">
-                    Field
-                  </Label>
-                  <div className="col-span-3">
-                    <SelectField
-                      id="field"
-                      name="field"
-                      value={formData.field}
-                      onChange={handleSelectChange}
-                      options={fieldOptions}
-                      allowCustomValue={true}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="description" className="text-right mt-2">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className="col-span-3 min-h-[120px]"
-                    rows={5}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="requirements" className="text-right mt-2">
-                    Requirements
-                  </Label>
-                  <Textarea
-                    id="requirements"
-                    name="requirements"
-                    value={formData.requirements}
-                    onChange={handleInputChange}
-                    className="col-span-3 min-h-[120px]"
-                    rows={5}
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button 
-                  onClick={handleCreateJob} 
-                  disabled={isSubmitting || !formData.title || !formData.description}
-                >
-                  {isSubmitting ? "Creating..." : "Create Job"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setIsTemplatesDialogOpen(true)}
+          >
+            <LayoutTemplate className="h-4 w-4" />
+            Job Templates
+          </Button>
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Create Job Posting
+          </Button>
         </div>
       </div>
 
@@ -521,6 +389,149 @@ const JobPostings = () => {
         ))}
       </div>
 
+      {/* Templates Dialog */}
+      <Dialog open={isTemplatesDialogOpen} onOpenChange={setIsTemplatesDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <JobTemplates 
+            onSelectTemplate={handleSelectTemplate} 
+            onClose={() => setIsTemplatesDialogOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Job Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Job Posting</DialogTitle>
+            <DialogDescription>
+              Create a new job posting to attract candidates.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="location_type" className="text-right">
+                Location Type
+              </Label>
+              <div className="col-span-3">
+                <SelectField
+                  id="location_type"
+                  name="location_type"
+                  value={formData.location_type}
+                  onChange={handleSelectChange}
+                  options={locationTypeOptions}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="location" className="text-right">
+                Address
+              </Label>
+              <Input
+                type="text"
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="salary" className="text-right">
+                Salary
+              </Label>
+              <Input
+                type="text"
+                id="salary"
+                name="salary"
+                value={formData.salary}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="education" className="text-right mt-2">
+                Education
+              </Label>
+              <Textarea
+                id="education"
+                name="education"
+                value={formData.education}
+                onChange={handleInputChange}
+                className="col-span-3 min-h-[100px]"
+                rows={4}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="field" className="text-right">
+                Field
+              </Label>
+              <div className="col-span-3">
+                <SelectField
+                  id="field"
+                  name="field"
+                  value={formData.field}
+                  onChange={handleSelectChange}
+                  options={fieldOptions}
+                  allowCustomValue={true}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="description" className="text-right mt-2">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="col-span-3 min-h-[120px]"
+                rows={5}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="requirements" className="text-right mt-2">
+                Requirements
+              </Label>
+              <Textarea
+                id="requirements"
+                name="requirements"
+                value={formData.requirements}
+                onChange={handleInputChange}
+                className="col-span-3 min-h-[120px]"
+                rows={5}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleCreateJob} 
+              disabled={isSubmitting || !formData.title || !formData.description}
+            >
+              {isSubmitting ? "Creating..." : "Create Job"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Job Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -649,6 +660,7 @@ const JobPostings = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Job Responses Dialog */}
       {viewingJobResponses && selectedJobDetails && (
         <Dialog open={!!viewingJobResponses} onOpenChange={(open) => !open && handleJobResponsesClosed()}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
