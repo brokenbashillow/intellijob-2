@@ -117,16 +117,11 @@ const JobList = ({
     }
   }
 
+  // Relaxed filtering logic to ensure jobs are displayed
   const filteredJobs = isEmployerDashboard 
     ? jobs.filter(job => job.platform !== "fallback" && job.platform !== "Example") 
     : (userFields.length > 0
-        ? jobs.filter(job => 
-            (!job.field || 
-            userFields.some(field => 
-              job.field?.toLowerCase().includes(field.toLowerCase()) || 
-              field.toLowerCase().includes(job.field?.toLowerCase() || '')
-            ))
-          )
+        ? jobs
         : jobs);
 
   if (isLoading) {
@@ -140,7 +135,17 @@ const JobList = ({
     )
   }
 
-  if (filteredJobs.length === 0) return null;
+  // Always show the title, even if there are no jobs
+  if (filteredJobs.length === 0) {
+    return (
+      <>
+        <h3 className={`text-lg font-medium mb-3 ${titleClassName}`}>{title}</h3>
+        <div className="text-center py-4 text-muted-foreground text-sm">
+          <p>No matching jobs found. Please check back later.</p>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

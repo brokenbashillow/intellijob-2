@@ -8,7 +8,10 @@ interface TopRecommendedJobsProps {
 }
 
 const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
-  if (!jobs || jobs.length === 0) return null;
+  if (!jobs || jobs.length === 0) {
+    console.log("No jobs available to display");
+    return null;
+  }
   
   // Get top scored jobs (those with highest match scores)
   const topScoredJobs = [...jobs]
@@ -44,6 +47,12 @@ const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
     jobsToShow = locationMatchedJobs;
   } else {
     // Always show at least the top 3 jobs regardless of filter criteria
+    jobsToShow = jobs.slice(0, 3);
+  }
+
+  // Make sure we always show some jobs if available
+  if (jobsToShow.length === 0 && jobs.length > 0) {
+    console.log("No filtered jobs matched criteria, showing all available jobs");
     jobsToShow = jobs.slice(0, 3);
   }
 
