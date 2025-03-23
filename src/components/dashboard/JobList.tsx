@@ -63,6 +63,7 @@ const JobList = ({
     } else if (isEmployerDashboard && !title.includes("Template")) {
       setJobs([])
     } else {
+      // Only apply filtering on non-employer view and if we're showing recommendations
       const filteredJobs = isEmployerDashboard 
         ? initialJobs.filter(job => job.platform !== "fallback" && job.platform !== "Example")
         : initialJobs
@@ -117,12 +118,10 @@ const JobList = ({
     }
   }
 
-  // Relaxed filtering logic to ensure jobs are displayed
+  // Apply the final display filtering (simplified since we've already done strict filtering)
   const filteredJobs = isEmployerDashboard 
     ? jobs.filter(job => job.platform !== "fallback" && job.platform !== "Example") 
-    : (userFields.length > 0
-        ? jobs
-        : jobs);
+    : jobs;
 
   if (isLoading) {
     return (
@@ -141,7 +140,7 @@ const JobList = ({
       <>
         <h3 className={`text-lg font-medium mb-3 ${titleClassName}`}>{title}</h3>
         <div className="text-center py-4 text-muted-foreground text-sm">
-          <p>No matching jobs found. Please check back later.</p>
+          <p>No matching jobs found based on your profile. Please complete your profile or check back later.</p>
         </div>
       </>
     );

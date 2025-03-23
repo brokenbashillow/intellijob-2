@@ -13,54 +13,108 @@ const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
     return null;
   }
   
-  // Get top scored jobs (those with highest match scores)
-  const topScoredJobs = [...jobs]
+  // Filter jobs based on strict education and job title alignment
+  const strictlyFilteredJobs = jobs.filter(job => {
+    // If the job has a reason that mentions education/degree match, it's appropriate
+    if (job.reason && /degree|education|background|matches your|psychology|relevant to your/i.test(job.reason)) {
+      return true;
+    }
+    
+    // For jobs without an explicit education match reason:
+    // Check if it's completely misaligned with the user's background
+    
+    // Prevent matching agricultural jobs with non-agricultural backgrounds
+    const isAgricultureJob = /agriculture|farming|crop|biotech|soil|plant/i.test(job.title || '');
+    const userHasAgricultureBackground = userFields.some(field => 
+      /agriculture|farming|crop|biotech|soil|plant/i.test(field)
+    );
+    
+    if (isAgricultureJob && !userHasAgricultureBackground) {
+      return false;
+    }
+    
+    // Prevent matching engineering jobs with non-engineering backgrounds
+    const isEngineeringJob = /engineer|engineering|developer|technical|software/i.test(job.title || '');
+    const userHasEngineeringBackground = userFields.some(field => 
+      /engineer|engineering|developer|technical|software|computer|IT/i.test(field)
+    );
+    
+    if (isEngineeringJob && !userHasEngineeringBackground) {
+      return false;
+    }
+    
+    // Prevent matching healthcare jobs with non-healthcare backgrounds
+    const isHealthcareJob = /nurse|nursing|doctor|medical|healthcare|clinical|patient/i.test(job.title || '');
+    const userHasHealthcareBackground = userFields.some(field => 
+      /nurse|nursing|doctor|medical|healthcare|clinical|patient/i.test(field)
+    );
+    
+    if (isHealthcareJob && !userHasHealthcareBackground) {
+      return false;
+    }
+    
+    // Psychology/counseling specific matching
+    const isPsychologyJob = /counselor|psychologist|therapist|mental health|psychology|behavioral/i.test(job.title || '');
+    const userHasPsychologyBackground = userFields.some(field => 
+      /psychology|counseling|therapy|mental health|behavioral/i.test(field)
+    );
+    
+    // If it's a psychology job, only show if user has psychology background
+    if (isPsychologyJob) {
+      return userHasPsychologyBackground;
+    }
+    
+    // For jobs with high scores that don't fall into the above categories
+    if (job.score && job.score > 15) {
+      return true;
+    }
+    
+    // Default to showing the job if it passed the other filters and has some match criteria
+    return !!job.reason;
+  });
+
+  console.log("Strictly filtered jobs:", strictlyFilteredJobs.length);
+  
+  // If no jobs match after strict filtering, try to show some jobs with decent scores
+  if (strictlyFilteredJobs.length === 0) {
+    const jobsWithScores = jobs.filter(job => job.score && job.score > 10)
+      .slice(0, 3);
+    
+    if (jobsWithScores.length > 0) {
+      console.log("No strictly matched jobs, showing jobs with scores:", jobsWithScores.length);
+      return (
+        <JobList 
+          jobs={jobsWithScores} 
+          title="Potential Opportunities" 
+          userFields={userFields} 
+        />
+      );
+    }
+    
+    // If still no jobs, show fallback with a different title
+    const fallbackJobs = jobs.slice(0, 3);
+    if (fallbackJobs.length > 0) {
+      console.log("Showing fallback jobs:", fallbackJobs.length);
+      return (
+        <JobList 
+          jobs={fallbackJobs} 
+          title="Available Opportunities" 
+          userFields={userFields} 
+        />
+      );
+    }
+    
+    return null;
+  }
+  
+  // Sort the filtered jobs by score
+  const sortedStrictJobs = [...strictlyFilteredJobs]
     .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 3);
 
-  // Filter for education matches (highest priority)
-  const educationMatchedJobs = jobs.filter(job => 
-    job.reason && /degree|education|background|nursing|healthcare|field/i.test(job.reason)
-  ).slice(0, 3);
-  
-  // Filter for location matches (good for convenience)
-  const locationMatchedJobs = jobs.filter(job => 
-    job.reason && /near you|located|proximity|remote/i.test(job.reason)
-  ).slice(0, 3);
-  
-  // Filter for skills matches (good for capability match)
-  const skillsMatchedJobs = jobs.filter(job => 
-    job.reason && /skills|experience|relevant/i.test(job.reason)
-  ).slice(0, 3);
-
-  // Determine which set of jobs to display
-  // Prioritize: 1. Education matches, 2. High-scoring jobs, 3. Skills matches, 4. Location matches, 5. Any jobs
-  let jobsToShow = [];
-  
-  if (educationMatchedJobs.length >= 2) {
-    jobsToShow = educationMatchedJobs;
-  } else if (topScoredJobs.length > 0) {
-    jobsToShow = topScoredJobs;
-  } else if (skillsMatchedJobs.length > 0) {
-    jobsToShow = skillsMatchedJobs;
-  } else if (locationMatchedJobs.length > 0) {
-    jobsToShow = locationMatchedJobs;
-  } else {
-    // Always show at least the top 3 jobs regardless of filter criteria
-    jobsToShow = jobs.slice(0, 3);
-  }
-
-  // Make sure we always show some jobs if available
-  if (jobsToShow.length === 0 && jobs.length > 0) {
-    console.log("No filtered jobs matched criteria, showing all available jobs");
-    jobsToShow = jobs.slice(0, 3);
-  }
-
-  console.log("Jobs to show:", jobsToShow.length, jobsToShow);
-
   return (
     <JobList 
-      jobs={jobsToShow} 
+      jobs={sortedStrictJobs} 
       title="Top Matches For You" 
       userFields={userFields} 
     />
