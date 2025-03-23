@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react"
 import JobCard from "./JobCard"
 import { supabase } from "@/integrations/supabase/client"
@@ -134,13 +135,15 @@ const JobList = ({
     )
   }
 
-  // Always show the title, even if there are no jobs
+  // Show title and a more informative message when no jobs are found
   if (filteredJobs.length === 0) {
     return (
       <>
         <h3 className={`text-lg font-medium mb-3 ${titleClassName}`}>{title}</h3>
-        <div className="text-center py-4 text-muted-foreground text-sm">
-          <p>No matching jobs found based on your profile. Please complete your profile or check back later.</p>
+        <div className="text-center py-6 text-muted-foreground text-sm bg-muted/50 rounded-lg p-4">
+          <p className="font-medium mb-1">No matching jobs found</p>
+          <p>We prioritize showing you only relevant positions that match your education and experience.</p>
+          <p className="mt-2">Complete your profile to see more personalized recommendations.</p>
         </div>
       </>
     );
