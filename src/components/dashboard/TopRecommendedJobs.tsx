@@ -31,7 +31,7 @@ const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
   ).slice(0, 3);
 
   // Determine which set of jobs to display
-  // Prioritize: 1. Education matches, 2. High-scoring jobs, 3. Skills matches, 4. Location matches
+  // Prioritize: 1. Education matches, 2. High-scoring jobs, 3. Skills matches, 4. Location matches, 5. Any jobs
   let jobsToShow = [];
   
   if (educationMatchedJobs.length >= 2) {
@@ -43,8 +43,11 @@ const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
   } else if (locationMatchedJobs.length > 0) {
     jobsToShow = locationMatchedJobs;
   } else {
+    // Always show at least the top 3 jobs regardless of filter criteria
     jobsToShow = jobs.slice(0, 3);
   }
+
+  console.log("Jobs to show:", jobsToShow.length, jobsToShow);
 
   return (
     <JobList 
