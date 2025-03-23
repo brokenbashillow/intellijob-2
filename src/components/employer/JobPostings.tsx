@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
-import { Plus, Edit, Clock, FileText, Trash, Users, Briefcase, LayoutTemplate } from "lucide-react"
+import { Plus, Edit, Clock, FileText, Trash, LayoutTemplate } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -336,7 +336,7 @@ const JobPostings = () => {
                 Create Job Posting
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Job Posting</DialogTitle>
                 <DialogDescription>
@@ -407,7 +407,8 @@ const JobPostings = () => {
                     name="education"
                     value={formData.education}
                     onChange={handleInputChange}
-                    className="col-span-3"
+                    className="col-span-3 min-h-[100px]"
+                    rows={4}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -434,7 +435,8 @@ const JobPostings = () => {
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    className="col-span-3"
+                    className="col-span-3 min-h-[120px]"
+                    rows={5}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-start gap-4">
@@ -446,12 +448,13 @@ const JobPostings = () => {
                     name="requirements"
                     value={formData.requirements}
                     onChange={handleInputChange}
-                    className="col-span-3"
+                    className="col-span-3 min-h-[120px]"
+                    rows={5}
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end gap-2 mt-4">
+              <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                 <Button 
                   onClick={handleCreateJob} 
@@ -459,7 +462,7 @@ const JobPostings = () => {
                 >
                   {isSubmitting ? "Creating..." : "Create Job"}
                 </Button>
-              </div>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -517,137 +520,6 @@ const JobPostings = () => {
           </Card>
         ))}
       </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Job Posting</DialogTitle>
-            <DialogDescription>
-              Create a new job posting to attract candidates.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
-              <Input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="location_type" className="text-right">
-                Location Type
-              </Label>
-              <div className="col-span-3">
-                <SelectField
-                  id="location_type"
-                  name="location_type"
-                  value={formData.location_type}
-                  onChange={handleSelectChange}
-                  options={locationTypeOptions}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="location" className="text-right">
-                Address
-              </Label>
-              <Input
-                type="text"
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="salary" className="text-right">
-                Salary
-              </Label>
-              <Input
-                type="text"
-                id="salary"
-                name="salary"
-                value={formData.salary}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="education" className="text-right mt-2">
-                Education
-              </Label>
-              <Textarea
-                id="education"
-                name="education"
-                value={formData.education}
-                onChange={handleInputChange}
-                className="col-span-3 min-h-[100px]"
-                rows={4}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="field" className="text-right">
-                Field
-              </Label>
-              <div className="col-span-3">
-                <SelectField
-                  id="field"
-                  name="field"
-                  value={formData.field}
-                  onChange={handleSelectChange}
-                  options={fieldOptions}
-                  allowCustomValue={true}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="description" className="text-right mt-2">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="col-span-3 min-h-[120px]"
-                rows={5}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="requirements" className="text-right mt-2">
-                Requirements
-              </Label>
-              <Textarea
-                id="requirements"
-                name="requirements"
-                value={formData.requirements}
-                onChange={handleInputChange}
-                className="col-span-3 min-h-[120px]"
-                rows={5}
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleCreateJob} 
-              disabled={isSubmitting || !formData.title || !formData.description}
-            >
-              {isSubmitting ? "Creating..." : "Create Job"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
@@ -766,31 +638,38 @@ const JobPostings = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 mt-4">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleEditJob} disabled={isSubmitting}>
               {isSubmitting ? "Updating..." : "Update Job"}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {viewingJobResponses && selectedJobDetails && (
-        <JobResponses 
-          jobId={viewingJobResponses}
-          isOpen={!!viewingJobResponses}
-          onClose={handleJobResponsesClosed}
-          jobDetails={{
-            id: selectedJobDetails.id,
-            title: selectedJobDetails.title,
-            description: selectedJobDetails.description,
-            requirements: selectedJobDetails.requirements,
-            field: selectedJobDetails.field
-          }}
-          onInterviewScheduled={handleInterviewScheduled}
-        />
+        <Dialog open={!!viewingJobResponses} onOpenChange={(open) => !open && handleJobResponsesClosed()}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Responses for {selectedJobDetails.title}</DialogTitle>
+            </DialogHeader>
+            <JobResponses 
+              jobId={viewingJobResponses}
+              isOpen={!!viewingJobResponses}
+              onClose={handleJobResponsesClosed}
+              jobDetails={{
+                id: selectedJobDetails.id,
+                title: selectedJobDetails.title,
+                description: selectedJobDetails.description,
+                requirements: selectedJobDetails.requirements,
+                field: selectedJobDetails.field
+              }}
+              onInterviewScheduled={handleInterviewScheduled}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   )
