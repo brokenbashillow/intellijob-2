@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import JobCard from "./JobCard"
 import { supabase } from "@/integrations/supabase/client"
-import { Loader2 } from "lucide-react"
+import { Loader2, Sparkles } from "lucide-react"
 import { useLocation } from "react-router-dom"
 
 interface JobPosting {
@@ -34,6 +34,9 @@ interface RecommendedJob {
   field?: string
   score?: number
   reason?: string
+  aiAnalyzed?: boolean
+  aiMatchScore?: number
+  aiRecommendation?: string
 }
 
 interface JobListProps {
@@ -154,7 +157,14 @@ const JobList = ({
       <h3 className={`text-lg font-medium mb-3 ${titleClassName}`}>{title}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         {filteredJobs.map((job, index) => (
-          <JobCard key={`${job.id || `${title.toLowerCase()}-${index}`}`} job={job} />
+          <div key={`${job.id || `${title.toLowerCase()}-${index}`}`} className="relative">
+            {job.aiAnalyzed && job.aiMatchScore && job.aiMatchScore > 70 && (
+              <div className="absolute -top-2 -right-2 z-10">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+              </div>
+            )}
+            <JobCard job={job} />
+          </div>
         ))}
       </div>
     </>

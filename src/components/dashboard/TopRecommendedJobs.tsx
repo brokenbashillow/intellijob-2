@@ -104,6 +104,21 @@ const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
       return true;
     }
     
+    // Use AI insights if available
+    if (job.aiAnalyzed) {
+      // If AI says title is not aligned with background, filter it out
+      if (job.aiMatchScore && job.aiMatchScore < 40) {
+        console.log(`AI filtered out job: ${job.title} with score ${job.aiMatchScore}`);
+        return false;
+      }
+      
+      // If AI gives high confidence, include it
+      if (job.aiMatchScore && job.aiMatchScore > 70) {
+        console.log(`AI approved job: ${job.title} with score ${job.aiMatchScore}`);
+        return true;
+      }
+    }
+    
     // For high quality matches with explicit reasoning
     if (job.reason && /matches your|align|relevant to your/i.test(job.reason) && job.score && job.score > 15) {
       return true;
@@ -128,7 +143,8 @@ const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
   if (strictlyFilteredJobs.length === 0) {
     // Check if we have any jobs that at least mention matching the user's background
     const jobsWithMatchReason = jobs.filter(job => 
-      job.reason && /matches your|align|relevant to your/i.test(job.reason) && job.score && job.score > 10
+      (job.reason && /matches your|align|relevant to your/i.test(job.reason) && job.score && job.score > 10) ||
+      (job.aiAnalyzed && job.aiMatchScore && job.aiMatchScore > 60)
     ).slice(0, 2);
     
     if (jobsWithMatchReason.length > 0) {
@@ -154,9 +170,22 @@ const TopRecommendedJobs = ({ jobs, userFields }: TopRecommendedJobsProps) => {
     );
   }
   
-  // Sort the filtered jobs by score
+  // Sort the filtered jobs by combined scores (human + AI logic)
   const sortedStrictJobs = [...strictlyFilteredJobs]
-    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .sort((a, b) => {
+      // Prioritize AI analyzed jobs
+      if (a.aiAnalyzed && b.aiAnalyzed) {
+        // If both have AI scores, use that as primary sort
+        return (b.aiMatchScore || 0) - (a.aiMatchScore || 0);
+      } else if (a.aiAnalyzed) {
+        return -1; // a comes first
+      } else if (b.aiAnalyzed) {
+        return 1;  // b comes first
+      }
+      
+      // Fall back to original score
+      return (b.score || 0) - (a.score || 0);
+    })
     .slice(0, Math.min(2, strictlyFilteredJobs.length)); // Show max 2 jobs if they're properly aligned
 
   return (

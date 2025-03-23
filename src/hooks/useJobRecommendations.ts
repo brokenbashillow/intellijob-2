@@ -19,6 +19,9 @@ export interface Job {
   salary?: string;
   requirements?: string;
   education?: string;
+  aiAnalyzed?: boolean;
+  aiRecommendation?: string;
+  aiMatchScore?: number;
 }
 
 export const useJobRecommendations = (isEmployer = false) => {
@@ -31,6 +34,7 @@ export const useJobRecommendations = (isEmployer = false) => {
   const [userFields, setUserFields] = useState<string[]>([]);
   const [educationFields, setEducationFields] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<string>("");
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
 
   useEffect(() => {
     if (skills && skills.length > 0) {
@@ -230,6 +234,12 @@ export const useJobRecommendations = (isEmployer = false) => {
       console.log("Scored and sorted jobs:", scoredJobs.length);
       
       setJobs(scoredJobs);
+      
+      // Analyze top jobs with AI if we have resume data
+      if (educationFields.length > 0 || userFields.length > 0) {
+        enhanceJobsWithAI(scoredJobs);
+      }
+      
     } catch (error: any) {
       console.error("Error fetching recommended jobs:", error);
       setErrorMessage("Failed to load job recommendations. Using default suggestions instead.");
@@ -248,6 +258,116 @@ export const useJobRecommendations = (isEmployer = false) => {
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+    }
+  };
+  
+  const enhanceJobsWithAI = async (scoredJobs: Job[]) => {
+    try {
+      setIsAiAnalyzing(true);
+      
+      // Only analyze top jobs to save API calls
+      const topJobsToAnalyze = scoredJobs.slice(0, Math.min(5, scoredJobs.length));
+      
+      // Create a rich profile for AI analysis
+      const userProfile = {
+        education: educationFields,
+        skills: userFields,
+        experience: workExperience?.map(exp => exp.title) || [],
+        industry: personalDetails?.industry || "",
+      };
+      
+      console.log("Analyzing jobs with AI:", topJobsToAnalyze.length);
+      
+      // Process each job individually for more accurate analysis
+      for (const job of topJobsToAnalyze) {
+        const jobDetails = {
+          title: job.title,
+          description: job.description || "",
+          requirements: job.requirements || "",
+          field: job.field || "",
+          education: job.education || "",
+        };
+        
+        const promptContent = `
+        You are an expert job compatibility analyst.
+        
+        USER PROFILE:
+        - Education: ${userProfile.education.join(', ')}
+        - Skills: ${userProfile.skills.join(', ')}
+        - Experience: ${userProfile.experience.join(', ')}
+        - Industry: ${userProfile.industry}
+        
+        JOB DETAILS:
+        - Title: ${jobDetails.title}
+        - Field: ${jobDetails.field}
+        - Required Education: ${jobDetails.education}
+        - Description: ${jobDetails.description}
+        - Requirements: ${jobDetails.requirements}
+        
+        Task: Analyze if this job is a good match for the user's profile.
+        1. Give a match score from 0-100
+        2. Provide a specific reason for the score
+        3. Is the job title aligned with user's education and skills? (Yes/No)
+        4. Is the user qualified for this position? (Yes/No/Partially)
+        
+        Format your response exactly like this:
+        Score: [number]
+        Reason: [brief reason]
+        Title Alignment: [Yes/No]
+        Qualified: [Yes/No/Partially]
+        `;
+        
+        try {
+          const response = await supabase.functions.invoke('gemini', {
+            body: { prompt: promptContent }
+          });
+          
+          if (response.error) {
+            console.error("AI analysis error:", response.error);
+            continue;
+          }
+          
+          const aiResponse = response.data.choices[0].message.content;
+          console.log("AI Job Analysis:", aiResponse);
+          
+          // Parse the AI response
+          const scoreMatch = aiResponse.match(/Score:\s*(\d+)/i);
+          const reasonMatch = aiResponse.match(/Reason:\s*(.+?)(?=\n|$)/i);
+          const alignmentMatch = aiResponse.match(/Title Alignment:\s*(Yes|No)/i);
+          const qualifiedMatch = aiResponse.match(/Qualified:\s*(Yes|No|Partially)/i);
+          
+          const aiScore = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+          const aiReason = reasonMatch ? reasonMatch[1].trim() : "";
+          const titleAligned = alignmentMatch ? alignmentMatch[1].toLowerCase() === 'yes' : false;
+          const isQualified = qualifiedMatch ? qualifiedMatch[1] : "No";
+          
+          // Update the job with AI insights
+          setJobs(prevJobs => {
+            return prevJobs.map(prevJob => {
+              if (prevJob.id === job.id) {
+                return {
+                  ...prevJob,
+                  aiAnalyzed: true,
+                  aiMatchScore: aiScore,
+                  aiRecommendation: aiReason,
+                  score: titleAligned ? (prevJob.score || 0) + Math.floor(aiScore / 5) : prevJob.score,
+                  // Only override the original reason if AI strongly recommends or advises against
+                  reason: (aiScore > 80 || aiScore < 30) ? aiReason : prevJob.reason
+                };
+              }
+              return prevJob;
+            });
+          });
+        } catch (error) {
+          console.error(`Error analyzing job ${job.title}:`, error);
+          // Continue with other jobs if one fails
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error("Error in AI job enhancement:", error);
+    } finally {
+      setIsAiAnalyzing(false);
     }
   };
 
@@ -659,6 +779,7 @@ export const useJobRecommendations = (isEmployer = false) => {
     jobs,
     isLoading,
     isRefreshing,
+    isAiAnalyzing,
     errorMessage,
     userFields,
     handleRefresh
