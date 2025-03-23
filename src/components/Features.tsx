@@ -1,3 +1,4 @@
+
 import { Brain, Target, Clock } from "lucide-react";
 
 const features = [
@@ -22,7 +23,7 @@ const Features = () => {
   return (
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 animate-fade-up">
+        <div className="animation-hidden text-center mb-16 transition-all duration-700 opacity-0 translate-y-10">
           <h2 className="text-3xl font-bold text-charcoal mb-4">
             Why Choose IntelliJob?
           </h2>
@@ -34,8 +35,8 @@ const Features = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="p-6 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-up"
-              style={{ animationDelay: `${index * 100}ms` }}
+              className="animation-hidden p-6 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-700 opacity-0 translate-y-10"
+              style={{ transitionDelay: `${(index + 1) * 150}ms` }}
             >
               <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center mb-4">
                 <feature.icon className="h-6 w-6 text-primary" />
