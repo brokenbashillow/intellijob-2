@@ -1,5 +1,5 @@
 
-import { BriefcaseIcon, MessageCircle, FileText, LogOut, Trash2, Lock } from "lucide-react"
+import { BriefcaseIcon, MessageCircle, FileText, LogOut, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
@@ -20,15 +20,13 @@ interface DashboardSidebarProps {
   onViewChange: (view: "dashboard" | "chat" | "resume") => void
   onLogout: () => void
   onDeleteAccount: () => void
-  onChangePassword: () => void
 }
 
 const DashboardSidebar = ({ 
   currentView, 
   onViewChange, 
   onLogout, 
-  onDeleteAccount,
-  onChangePassword
+  onDeleteAccount
 }: DashboardSidebarProps) => {
   const { toast } = useToast()
 
@@ -88,15 +86,6 @@ const DashboardSidebar = ({
       </nav>
       
       <div className="mt-auto space-y-2">
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-          onClick={onChangePassword}
-        >
-          <Lock className="h-4 w-4" />
-          Change Password
-        </Button>
-        
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
