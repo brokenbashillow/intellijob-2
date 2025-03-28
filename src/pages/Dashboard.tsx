@@ -11,6 +11,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar"
 import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import AssessmentResults from "@/components/dashboard/AssessmentResults"
 import RecommendedJobs from "@/components/dashboard/RecommendedJobs"
+import ChangePasswordDialog from "@/components/auth/ChangePasswordDialog"
 
 type View = "dashboard" | "chat" | "resume"
 
@@ -20,6 +21,7 @@ const Dashboard = () => {
   const [assessmentData, setAssessmentData] = useState<any>(null)
   const [resumeUpdated, setResumeUpdated] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -127,6 +129,10 @@ const Dashboard = () => {
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+  
+  const openChangePasswordDialog = () => {
+    setIsChangePasswordOpen(true);
+  };
 
   const renderContent = () => {
     switch (currentView) {
@@ -165,6 +171,7 @@ const Dashboard = () => {
           onViewChange={setCurrentView}
           onLogout={handleLogout}
           onDeleteAccount={handleDeleteAccount}
+          onChangePassword={openChangePasswordDialog}
         />
       </div>
       
@@ -179,6 +186,12 @@ const Dashboard = () => {
           {renderContent()}
         </div>
       </div>
+      
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog 
+        isOpen={isChangePasswordOpen} 
+        onClose={() => setIsChangePasswordOpen(false)} 
+      />
     </div>
   )
 }
