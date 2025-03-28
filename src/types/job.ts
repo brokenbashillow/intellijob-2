@@ -52,6 +52,7 @@ export const fieldOptions = [
   { label: "Tourism", value: "Tourism" },
   { label: "Hospitality", value: "Hospitality" },
   { label: "BPO", value: "BPO" },
+  { label: "Construction", value: "Construction" },
   { label: "Other", value: "Other" },
 ]
 
