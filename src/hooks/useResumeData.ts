@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { createAssessmentNotification } from "@/services/notificationService";
-import { fetchAssessmentData, fetchResumeData, fetchUserProfile } from "@/services/resumeService";
+import { fetchAssessmentData, fetchResumeData, fetchUserProfile, saveResumeData } from "@/services/resumeService";
 
 export interface PersonalDetails {
   firstName: string;
@@ -213,7 +213,7 @@ export const useResumeData = () => {
       if (!user) throw new Error("No authenticated user");
 
       // Prepare data for saving
-      const resumeData: ResumeData = {
+      const resumeData = {
         personalDetails,
         education,
         workExperience,
