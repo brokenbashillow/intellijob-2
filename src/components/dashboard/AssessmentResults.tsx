@@ -1,9 +1,9 @@
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { createAssessmentNotification } from "@/services/notificationService";
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart3 } from "lucide-react"
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
@@ -39,18 +39,34 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previousAssessmentId, setPreviousAssessmentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (assessmentData) {
-      // If there's already analysis results, use them
       if (assessmentData.analysis_results) {
         setAnalysisResult(assessmentData.analysis_results);
       } else {
-        // Otherwise trigger a new analysis
         analyzeApplication();
       }
     }
   }, [assessmentData]);
+
+  useEffect(() => {
+    if (assessmentData?.id && assessmentData.id !== previousAssessmentId) {
+      if (previousAssessmentId !== null) {
+        const notifyUser = async () => {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData.user) {
+            await createAssessmentNotification(userData.user.id);
+          }
+        };
+        
+        notifyUser();
+      }
+      
+      setPreviousAssessmentId(assessmentData.id);
+    }
+  }, [assessmentData, previousAssessmentId]);
 
   const analyzeApplication = async () => {
     try {
@@ -96,7 +112,6 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
     }
   };
 
-  // Calculate overall score based on analysis results
   const calculateOverallScore = () => {
     if (analysisResult) {
       return analysisResult.overall.score;
@@ -104,7 +119,6 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
     
     if (!assessmentData) return 0;
     
-    // Fallback calculation if no analysis results
     const educationScore = assessmentData.education ? 90 : 0;
     const experienceScore = assessmentData.experience ? 85 : 0;
     const skillsScore = Math.min(assessmentData.user_skills?.length * 20 || 0, 100);
@@ -135,7 +149,6 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
           </div>
         ) : assessmentData ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left column - Progress bars */}
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -208,7 +221,6 @@ const AssessmentResults = ({ assessmentData }: AssessmentResultsProps) => {
               )}
             </div>
             
-            {/* Right column - Score and Analysis */}
             <div className="flex flex-col items-center space-y-6">
               <div className="relative">
                 <div className="w-36 h-36 rounded-full border-8 border-black border-opacity-80 flex items-center justify-center">
