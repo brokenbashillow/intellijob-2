@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format } from "date-fns"
-import { createApplicantNotification } from "@/services/notificationService"
 
 interface JobDetailsProps {
   id?: string
@@ -109,21 +108,6 @@ const JobResponses = ({ jobId, isOpen, onClose, jobDetails, onInterviewScheduled
         setApplicants([])
         setIsLoading(false)
       }, 500)
-      
-      // In a real implementation, you would check if there are new applicants and notify
-      /*
-      const prevCount = applicants.length;
-      if (data && data.length > prevCount) {
-        // There are new applicants, create a notification
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await createApplicantNotification(
-            user.id, 
-            jobDetails?.title || 'Job Position'
-          );
-        }
-      }
-      */
       
     } catch (error: any) {
       console.error('Error fetching applicants:', error)

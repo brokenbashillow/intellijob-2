@@ -34,17 +34,10 @@ export interface ReferenceItem {
   phone: string;
 }
 
-export interface SkillItem {
-  id: string;
-  name: string;
-  type: 'technical' | 'soft';
-}
-
 export interface ResumeData {
   personalDetails: PersonalDetails;
   education: EducationItem[];
   workExperience: WorkExperienceItem[];
   certificates: CertificateItem[];
   references: ReferenceItem[];
-  skills: SkillItem[];
 }

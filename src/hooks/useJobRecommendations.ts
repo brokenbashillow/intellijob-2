@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { useToast } from "@/components/ui/use-toast";
+
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { createJobRecommendationNotification } from "@/services/notificationService";
+import { useToast } from "@/components/ui/use-toast";
 import { useResumeData } from "@/hooks/useResumeData";
 
 export interface Job {
@@ -55,6 +55,7 @@ export const useJobRecommendations = (isEmployer = false) => {
       setEducationFields(degrees);
     }
 
+    // Extract user location from the profile data for location matching
     const getUserLocation = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -80,13 +81,14 @@ export const useJobRecommendations = (isEmployer = false) => {
     getUserLocation();
   }, [skills, education]);
 
-  const fetchJobs = useCallback(async (isRefresh = false) => {
+  const fetchJobPostings = async () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
       
       console.log("Fetching job postings...");
       
+      // Fetch job postings including employer profile information
       const { data: jobPostingsData, error: jobPostingsError } = await supabase
         .from('job_postings')
         .select(`
@@ -133,6 +135,7 @@ export const useJobRecommendations = (isEmployer = false) => {
         allJobsData = mappedJobPostings;
       }
       
+      // Only add job templates if we're not in employer mode or if we have few job postings
       if ((!jobPostingsData || jobPostingsData.length < 5) && jobTemplatesData && jobTemplatesData.length > 0 && !isEmployer) {
         console.log("Adding job templates:", jobTemplatesData.length);
         
@@ -153,6 +156,7 @@ export const useJobRecommendations = (isEmployer = false) => {
         allJobsData = [...allJobsData, ...mappedJobTemplates];
       }
       
+      // Don't add fallback jobs for employers
       if (allJobsData.length === 0 && !isEmployer) {
         console.log("No jobs found, creating fallback jobs");
         setFallbackJobs();
@@ -165,12 +169,14 @@ export const useJobRecommendations = (isEmployer = false) => {
         let score = 0;
         let matchReasons: string[] = [];
 
+        // 1. Education match - highest weight
         const hasEducationMatch = checkEducationMatch(job);
         if (hasEducationMatch.match) {
           score += hasEducationMatch.score;
           matchReasons.push(hasEducationMatch.reason);
         }
         
+        // 2. Field/industry match
         const hasFieldMatch = checkFieldMatch(job);
         if (hasFieldMatch.match) {
           score += hasFieldMatch.score;
@@ -179,33 +185,39 @@ export const useJobRecommendations = (isEmployer = false) => {
           }
         }
         
+        // 3. Skills match
         const hasSkillsMatch = checkSkillsMatch(job);
         if (hasSkillsMatch.match) {
           score += hasSkillsMatch.score;
           matchReasons.push(hasSkillsMatch.reason);
         }
         
+        // 4. Experience match based on job titles
         const hasExperienceMatch = checkExperienceMatch(job);
         if (hasExperienceMatch.match) {
           score += hasExperienceMatch.score;
           matchReasons.push(hasExperienceMatch.reason);
         }
         
+        // 5. Location match
         const hasLocationMatch = checkLocationMatch(job);
         if (hasLocationMatch.match) {
           score += hasLocationMatch.score;
           matchReasons.push(hasLocationMatch.reason);
         }
         
+        // 6. Certifications bonus
         if (certificates && certificates.length > 0) {
-          score += Math.min(certificates.length * 2, 10);
+          score += Math.min(certificates.length * 2, 10); // Max 10 points for certifications
           matchReasons.push(`You have ${certificates.length} relevant certification(s)`);
         }
         
+        // 7. References bonus
         if (references && references.length > 0) {
-          score += Math.min(references.length, 5);
+          score += Math.min(references.length, 5); // Max 5 points for references
         }
         
+        // Final match reason (take top 2 reasons for clarity)
         const primaryReason = matchReasons.length > 0 
           ? matchReasons[0] 
           : "Potential match based on your profile";
@@ -217,20 +229,15 @@ export const useJobRecommendations = (isEmployer = false) => {
         };
       });
       
+      // Sort jobs by score (highest first)
       scoredJobs.sort((a, b) => (b.score || 0) - (a.score || 0));
       console.log("Scored and sorted jobs:", scoredJobs.length);
       
       setJobs(scoredJobs);
       
+      // Analyze top jobs with AI if we have resume data
       if (educationFields.length > 0 || userFields.length > 0) {
         enhanceJobsWithAI(scoredJobs);
-      }
-      
-      if (isRefresh && jobPostingsData && jobPostingsData.length > 0) {
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData.user) {
-          await createJobRecommendationNotification(userData.user.id);
-        }
       }
       
     } catch (error: any) {
@@ -242,6 +249,7 @@ export const useJobRecommendations = (isEmployer = false) => {
         description: "Failed to load job recommendations. Please try again later.",
       });
       
+      // Don't set fallback jobs for employers
       if (!isEmployer) {
         setFallbackJobs();
       } else {
@@ -251,14 +259,16 @@ export const useJobRecommendations = (isEmployer = false) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [skills, education, userFields, educationFields, userLocation, isEmployer]);
-
+  };
+  
   const enhanceJobsWithAI = async (scoredJobs: Job[]) => {
     try {
       setIsAiAnalyzing(true);
       
+      // Only analyze top jobs to save API calls
       const topJobsToAnalyze = scoredJobs.slice(0, Math.min(5, scoredJobs.length));
       
+      // Create a rich profile for AI analysis
       const userProfile = {
         education: educationFields,
         skills: userFields,
@@ -268,6 +278,7 @@ export const useJobRecommendations = (isEmployer = false) => {
       
       console.log("Analyzing jobs with AI:", topJobsToAnalyze.length);
       
+      // Process each job individually for more accurate analysis
       for (const job of topJobsToAnalyze) {
         const jobDetails = {
           title: job.title,
@@ -319,6 +330,7 @@ export const useJobRecommendations = (isEmployer = false) => {
           const aiResponse = response.data.choices[0].message.content;
           console.log("AI Job Analysis:", aiResponse);
           
+          // Parse the AI response
           const scoreMatch = aiResponse.match(/Score:\s*(\d+)/i);
           const reasonMatch = aiResponse.match(/Reason:\s*(.+?)(?=\n|$)/i);
           const alignmentMatch = aiResponse.match(/Title Alignment:\s*(Yes|No)/i);
@@ -329,6 +341,7 @@ export const useJobRecommendations = (isEmployer = false) => {
           const titleAligned = alignmentMatch ? alignmentMatch[1].toLowerCase() === 'yes' : false;
           const isQualified = qualifiedMatch ? qualifiedMatch[1] : "No";
           
+          // Update the job with AI insights
           setJobs(prevJobs => {
             return prevJobs.map(prevJob => {
               if (prevJob.id === job.id) {
@@ -338,6 +351,7 @@ export const useJobRecommendations = (isEmployer = false) => {
                   aiMatchScore: aiScore,
                   aiRecommendation: aiReason,
                   score: titleAligned ? (prevJob.score || 0) + Math.floor(aiScore / 5) : prevJob.score,
+                  // Only override the original reason if AI strongly recommends or advises against
                   reason: (aiScore > 80 || aiScore < 30) ? aiReason : prevJob.reason
                 };
               }
@@ -346,6 +360,7 @@ export const useJobRecommendations = (isEmployer = false) => {
           });
         } catch (error) {
           console.error(`Error analyzing job ${job.title}:`, error);
+          // Continue with other jobs if one fails
           continue;
         }
       }
@@ -356,6 +371,7 @@ export const useJobRecommendations = (isEmployer = false) => {
     }
   };
 
+  // Helper function to check education match
   const checkEducationMatch = (job: Job) => {
     const result = { match: false, score: 0, reason: "" };
     
@@ -363,13 +379,14 @@ export const useJobRecommendations = (isEmployer = false) => {
     
     const jobEducation = job.education.toLowerCase();
     
+    // Check if user's education matches job's required education
     const matchedDegree = educationFields.find(degree => 
       jobEducation.includes(degree) || degree.includes(jobEducation)
     );
     
     if (matchedDegree) {
       result.match = true;
-      result.score = 20;
+      result.score = 20; // Highest weight for education match
       result.reason = `Your ${matchedDegree} degree matches the job requirements`;
     } else if (personalDetails?.educationField && 
                jobEducation.includes(personalDetails.educationField.toLowerCase())) {
@@ -381,6 +398,7 @@ export const useJobRecommendations = (isEmployer = false) => {
     return result;
   };
   
+  // Helper function to check field/industry match
   const checkFieldMatch = (job: Job) => {
     const result = { match: false, score: 0, reason: "" };
     
@@ -433,6 +451,7 @@ export const useJobRecommendations = (isEmployer = false) => {
       result.reason = "Matches your creative education";
     }
     
+    // Check industry field match from personal details
     if (!result.match && personalDetails?.industry) {
       const jobFieldLower = job.field.toLowerCase();
       const userIndustryLower = personalDetails.industry.toLowerCase();
@@ -448,6 +467,7 @@ export const useJobRecommendations = (isEmployer = false) => {
     return result;
   };
   
+  // Helper function to check skills match
   const checkSkillsMatch = (job: Job) => {
     const result = { match: false, score: 0, reason: "" };
     
@@ -460,7 +480,7 @@ export const useJobRecommendations = (isEmployer = false) => {
     
     if (matchedSkills.length > 0) {
       result.match = true;
-      result.score = Math.min(matchedSkills.length * 2, 15);
+      result.score = Math.min(matchedSkills.length * 2, 15); // Max 15 points for skills
       
       const topSkills = matchedSkills.slice(0, 2).join(', ');
       result.reason = `Uses your skills: ${topSkills}${matchedSkills.length > 2 ? '...' : ''}`;
@@ -469,6 +489,7 @@ export const useJobRecommendations = (isEmployer = false) => {
     return result;
   };
   
+  // Helper function to check experience match
   const checkExperienceMatch = (job: Job) => {
     const result = { match: false, score: 0, reason: "" };
     
@@ -489,11 +510,13 @@ export const useJobRecommendations = (isEmployer = false) => {
     return result;
   };
   
+  // Helper function to check location match
   const checkLocationMatch = (job: Job) => {
     const result = { match: false, score: 0, reason: "" };
     
     if (!userLocation || !job.location) return result;
     
+    // Location is set to "Remote" - gives a small bonus
     if (job.location === "Remote") {
       result.match = true;
       result.score = 5;
@@ -503,9 +526,11 @@ export const useJobRecommendations = (isEmployer = false) => {
     
     const jobLocation = job.location.toLowerCase();
     
+    // Check if locations contain similar parts (city, region, country)
     const userLocationParts = userLocation.split(',').map(part => part.trim());
     const jobLocationParts = jobLocation.split(',').map(part => part.trim());
     
+    // Check for location overlap (same city, region or country)
     const locationOverlap = userLocationParts.some(userPart => 
       jobLocationParts.some(jobPart => 
         userPart === jobPart || userPart.includes(jobPart) || jobPart.includes(userPart)
@@ -522,6 +547,7 @@ export const useJobRecommendations = (isEmployer = false) => {
   };
 
   const setFallbackJobs = () => {
+    // Don't show fallback jobs for employers
     if (isEmployer) {
       setJobs([]);
       return;
@@ -740,13 +766,13 @@ export const useJobRecommendations = (isEmployer = false) => {
     }
   };
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = () => {
     setIsRefreshing(true);
-    await fetchJobs(true);
-  }, [fetchJobs]);
+    fetchJobPostings();
+  };
 
   useEffect(() => {
-    fetchJobs();
+    fetchJobPostings();
   }, [userFields, educationFields, userLocation, isEmployer]);
 
   return {

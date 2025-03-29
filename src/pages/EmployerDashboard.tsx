@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Building, MessageCircle, BriefcaseIcon, LogOut, Trash2 } from "lucide-react"
+import { Building, MessageCircle, BriefcaseIcon, LogOut, Bell, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -15,12 +15,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { supabase } from "@/integrations/supabase/client"
 import EmployerChat from "@/components/employer/EmployerChat"
 import JobPostings from "@/components/employer/JobPostings"
 import Resume from "@/components/resume/Resume"
 import { getAvatarColors } from "@/lib/avatarUtils"
-import { NotificationsMenu } from "@/components/notifications/NotificationsMenu"
 
 type View = "dashboard" | "chat" | "job-postings" | "resume-viewer"
 
@@ -38,6 +43,7 @@ const EmployerDashboard = () => {
     cleanupFallbackJobs()
   }, [])
 
+  // Function to clean up any fallback jobs that might have been incorrectly associated with this employer
   const cleanupFallbackJobs = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -146,6 +152,7 @@ const EmployerDashboard = () => {
     // We'll pass the prompt in future enhancements
   }
 
+  // Get avatar color based on company type/industry
   const avatarColorClass = getAvatarColors(companyType);
 
   const renderContent = () => {
@@ -266,7 +273,27 @@ const EmployerDashboard = () => {
       <div className="flex-1">
         <div className="flex justify-end items-center p-4 border-b">
           <div className="flex items-center gap-4">
-            <NotificationsMenu />
+            <div className="relative">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative hover:bg-accent"
+                    >
+                      <Bell className="h-5 w-5" />
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        3
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Notifications coming soon</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <span className="font-medium">{companyName}</span>
             <Avatar>
               <AvatarImage src="" />

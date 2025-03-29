@@ -1,9 +1,14 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Menu } from "lucide-react"
+import { Bell, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { getAvatarColors } from "@/lib/avatarUtils"
-import { NotificationsMenu } from "@/components/notifications/NotificationsMenu"
 
 interface DashboardHeaderProps {
   userData: any;
@@ -32,7 +37,27 @@ const DashboardHeader = ({ userData, onMenuClick, showMenuButton = false }: Dash
       
       {/* Right side elements */}
       <div className="flex items-center gap-2 ml-auto">
-        <NotificationsMenu />
+        <div className="relative">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative hover:bg-accent"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    3
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Notifications coming soon</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <span className="font-medium hidden sm:inline">{userData?.full_name}</span>
         <Avatar>
           <AvatarImage src={userData?.avatar_url} />

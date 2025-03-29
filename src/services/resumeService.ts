@@ -56,15 +56,6 @@ export const saveResumeData = async (data: ResumeData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No authenticated user");
 
-  // Convert skills to the format expected by the database
-  const skillsData = data.skills && data.skills.length > 0 
-    ? data.skills.map(skill => JSON.stringify({
-        id: skill.id,
-        name: skill.name,
-        type: skill.type
-      }))
-    : [];
-
   const resumeData = {
     user_id: user.id,
     first_name: data.personalDetails.firstName,
@@ -93,8 +84,7 @@ export const saveResumeData = async (data: ResumeData) => {
       company: ref.company,
       email: ref.email,
       phone: ref.phone
-    })),
-    skills: skillsData
+    }))
   };
 
   const { error } = await supabase
