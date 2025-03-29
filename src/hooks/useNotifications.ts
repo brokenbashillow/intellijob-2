@@ -40,8 +40,14 @@ export const useNotifications = () => {
 
       if (error) throw error;
       
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
+      // Cast the string type to NotificationType to ensure type safety
+      const typedNotifications = data?.map(notification => ({
+        ...notification,
+        type: notification.type as NotificationType
+      })) || [];
+      
+      setNotifications(typedNotifications);
+      setUnreadCount(typedNotifications.filter(n => !n.read).length || 0);
     } catch (err: any) {
       console.error('Error fetching notifications:', err);
       setError(err.message);

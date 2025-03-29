@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { createJobRecommendationNotification } from "@/services/notificationService";
-import { useResumeData } from "@/hooks/useResumeData"; // Add the missing import
+import { useResumeData } from "@/hooks/useResumeData";
 
 export interface Job {
   id: string;
@@ -227,7 +226,7 @@ export const useJobRecommendations = (isEmployer = false) => {
         enhanceJobsWithAI(scoredJobs);
       }
       
-      if (isRefresh && data && data.length > 0) {
+      if (isRefresh && jobPostingsData && jobPostingsData.length > 0) {
         const { data: userData } = await supabase.auth.getUser();
         if (userData.user) {
           await createJobRecommendationNotification(userData.user.id);
