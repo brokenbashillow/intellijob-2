@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
@@ -132,7 +133,11 @@ const Dashboard = () => {
       case "chat":
         return <Chat />
       case "resume":
-        return <Resume onSave={handleResumeUpdate} />
+        return (
+          <div className="w-full overflow-auto pb-6">
+            <Resume onSave={handleResumeUpdate} />
+          </div>
+        )
       case "dashboard":
         return (
           <main className="flex-1 p-4 md:p-8 overflow-auto">

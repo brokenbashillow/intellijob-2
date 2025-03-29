@@ -14,9 +14,9 @@ export function CertificatesSection({
   setCertificates,
 }: CertificatesSectionProps) {
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-2 md:p-4">
       {certificates.map((cert, index) => (
-        <div key={index} className="space-y-4 p-4 border rounded-lg">
+        <div key={index} className="space-y-3 md:space-y-4 p-3 md:p-4 border rounded-lg">
           <Input
             placeholder="Certificate Name"
             value={cert.name}
@@ -35,21 +35,26 @@ export function CertificatesSection({
               setCertificates(newCertificates);
             }}
           />
-          <Input
-            type="date"
-            value={cert.dateObtained}
-            onChange={(e) => {
-              const newCertificates = [...certificates];
-              newCertificates[index].dateObtained = e.target.value;
-              setCertificates(newCertificates);
-            }}
-          />
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Date Obtained</label>
+            <Input
+              type="date"
+              value={cert.dateObtained}
+              onChange={(e) => {
+                const newCertificates = [...certificates];
+                newCertificates[index].dateObtained = e.target.value;
+                setCertificates(newCertificates);
+              }}
+            />
+          </div>
           <Button
             variant="destructive"
             onClick={() => {
               const newCertificates = certificates.filter((_, i) => i !== index);
               setCertificates(newCertificates);
             }}
+            className="w-full md:w-auto"
+            size="sm"
           >
             Remove
           </Button>

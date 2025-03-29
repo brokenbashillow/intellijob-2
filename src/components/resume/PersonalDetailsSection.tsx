@@ -20,10 +20,10 @@ export function PersonalDetailsSection({
   const avatarColorClass = getAvatarColors(personalDetails.educationField || personalDetails.industry);
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex items-center gap-6">
-        <div className="relative">
-          <Avatar className="h-24 w-24">
+    <div className="space-y-4 p-2 md:p-4">
+      <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+        <div className="relative mx-auto md:mx-0">
+          <Avatar className="h-20 w-20 md:h-24 md:w-24">
             <AvatarImage src={personalDetails.profilePicture} />
             <AvatarFallback className={avatarColorClass}>
               {personalDetails.firstName?.[0]}{personalDetails.lastName?.[0]}
@@ -36,7 +36,7 @@ export function PersonalDetailsSection({
             className="absolute inset-0 opacity-0 cursor-pointer"
           />
         </div>
-        <div className="flex-1 grid grid-cols-2 gap-4">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <Input
             placeholder="First Name"
             value={personalDetails.firstName}
@@ -60,7 +60,7 @@ export function PersonalDetailsSection({
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         <div className="space-y-2">
           <Label htmlFor="educationField">Education Field</Label>
           <Input
