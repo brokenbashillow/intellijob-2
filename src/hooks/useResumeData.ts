@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { createAssessmentNotification } from "@/services/notificationService";
+import { fetchAssessmentData, fetchResumeData, fetchUserProfile } from "@/services/resumeService";
 
 export interface PersonalDetails {
   firstName: string;
@@ -88,20 +90,15 @@ export const useResumeData = () => {
     }
   };
 
-  const fetchResumeData = async () => {
+  const fetchResumeAndAssessmentData = async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileError) throw profileError;
-
+      // Fetch profile data
+      const profileData = await fetchUserProfile();
+      
       if (profileData) {
         setPersonalDetails(prev => ({
           ...prev,
@@ -110,27 +107,23 @@ export const useResumeData = () => {
         }));
       }
 
-      const { data: resumeData, error: resumeError } = await supabase
-        .from('resumes')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Fetch resume data
+      const resumeData = await fetchResumeData();
 
       if (resumeData) {
-        if (resumeError) throw resumeError;
-        
         setEducation(parseJsonArray<EducationItem>(resumeData.education));
         setWorkExperience(parseJsonArray<WorkExperienceItem>(resumeData.work_experience));
         setCertificates(parseJsonArray<CertificateItem>(resumeData.certificates));
         setReferences(parseJsonArray<ReferenceItem>(resumeData.reference_list));
         
-        if (resumeData.skills) {
+        if (resumeData.skills && resumeData.skills.length > 0) {
           setSkills(parseJsonArray<SkillItem>(resumeData.skills));
         } else {
           await fetchUserSkills(user.id);
         }
         setHasResumeData(true);
       } else {
+        // No resume data found, check for assessment data
         await initializeFromAssessment(user.id);
         setHasResumeData(false);
       }
@@ -176,32 +169,36 @@ export const useResumeData = () => {
 
   const initializeFromAssessment = async (userId: string) => {
     try {
-      const { data: assessmentData, error: assessmentError } = await supabase
-        .from('seeker_assessments')
-        .select('education, experience')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (assessmentError) throw assessmentError;
+      // Fetch the latest assessment data
+      const assessmentData = await fetchAssessmentData();
 
       if (assessmentData) {
-        const initialEducation: EducationItem = {
-          degree: assessmentData.education || "",
-          school: "",
-          startDate: "",
-          endDate: "",
-        };
-        setEducation([initialEducation]);
+        console.log("Initializing from assessment data:", assessmentData);
+        
+        // Set education from assessment
+        if (assessmentData.education) {
+          const initialEducation: EducationItem = {
+            degree: assessmentData.education || "",
+            school: "",
+            startDate: "",
+            endDate: "",
+          };
+          setEducation([initialEducation]);
+        }
 
-        const initialWorkExperience: WorkExperienceItem = {
-          company: "",
-          title: "",
-          startDate: "",
-          endDate: "",
-          description: assessmentData.experience || "",
-        };
-        setWorkExperience([initialWorkExperience]);
+        // Set work experience from assessment
+        if (assessmentData.experience) {
+          const initialWorkExperience: WorkExperienceItem = {
+            company: "",
+            title: "",
+            startDate: "",
+            endDate: "",
+            description: assessmentData.experience || "",
+          };
+          setWorkExperience([initialWorkExperience]);
+        }
 
+        // Fetch skills from user_skills table
         await fetchUserSkills(userId);
       }
     } catch (error) {
@@ -215,51 +212,20 @@ export const useResumeData = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      const educationStrings = education.length > 0 ? education.map(item => JSON.stringify(item)) : null;
-      const workExperienceStrings = workExperience.length > 0 ? workExperience.map(item => JSON.stringify(item)) : null;
-      const certificatesStrings = certificates.length > 0 ? certificates.map(item => JSON.stringify(item)) : null;
-      const referencesStrings = references.length > 0 ? references.map(item => JSON.stringify(item)) : null;
-      const skillsStrings = skills.length > 0 ? skills.map(item => JSON.stringify(item)) : null;
+      // Prepare data for saving
+      const resumeData: ResumeData = {
+        personalDetails,
+        education,
+        workExperience,
+        certificates,
+        references,
+        skills
+      };
 
-      const { data: existingResume } = await supabase
-        .from('resumes')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Save to the database using the service function
+      await saveResumeData(resumeData);
 
-      let error;
-      if (existingResume) {
-        const { error: updateError } = await supabase
-          .from('resumes')
-          .update({
-            first_name: personalDetails.firstName,
-            last_name: personalDetails.lastName,
-            education: educationStrings,
-            work_experience: workExperienceStrings,
-            certificates: certificatesStrings,
-            reference_list: referencesStrings,
-            skills: skillsStrings,
-          })
-          .eq('user_id', user.id);
-        error = updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('resumes')
-          .insert({
-            first_name: personalDetails.firstName,
-            last_name: personalDetails.lastName,
-            education: educationStrings,
-            work_experience: workExperienceStrings,
-            certificates: certificatesStrings,
-            reference_list: referencesStrings,
-            skills: skillsStrings,
-            user_id: user.id,
-          });
-        error = insertError;
-      }
-
-      if (error) throw error;
-
+      // Update profile data
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -273,10 +239,12 @@ export const useResumeData = () => {
       setHasResumeData(true);
 
       try {
+        // Trigger re-analysis of the application
         await supabase.functions.invoke('analyze-application', {
           body: { userId: user.id }
         });
         
+        // Create notification for the assessment update
         await createAssessmentNotification(user.id);
         
       } catch (analyzeError) {
@@ -312,6 +280,10 @@ export const useResumeData = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  useEffect(() => {
+    fetchResumeAndAssessmentData();
+  }, []);
 
   return {
     personalDetails,

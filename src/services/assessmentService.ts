@@ -35,6 +35,19 @@ export const saveAssessmentData = async (formData: FormData): Promise<string> =>
   console.log("Created assessment:", assessmentData);
   const assessmentId = assessmentData.id;
 
+  // First delete any existing skills for this user to avoid duplicates
+  if (formData.technicalSkills.length > 0 || formData.softSkills.length > 0) {
+    const { error: deleteSkillsError } = await supabase
+      .from('user_skills')
+      .delete()
+      .eq('user_id', user.data.user.id);
+      
+    if (deleteSkillsError) {
+      console.error("Error deleting existing skills:", deleteSkillsError);
+      // Continue even if there's an error deleting
+    }
+  }
+
   // Save technical skills
   if (formData.technicalSkills && formData.technicalSkills.length > 0) {
     console.log("Saving technical skills:", formData.technicalSkills);
