@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +20,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { educationOptions } from "@/data/education-options";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EducationStepProps {
   education: string;
@@ -27,6 +29,7 @@ interface EducationStepProps {
 
 const EducationStep = ({ education, setEducation }: EducationStepProps) => {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   const filterOptions = (value: string) => {
     if (!value) return educationOptions;
@@ -57,16 +60,26 @@ const EducationStep = ({ education, setEducation }: EducationStepProps) => {
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
-          <Command>
+        <PopoverContent 
+          className="w-full p-0" 
+          align="start"
+          side={isMobile ? "bottom" : "bottom"}
+          sideOffset={5}
+          alignOffset={0}
+          avoidCollisions={true}
+          sticky="always"
+          style={{ width: isMobile ? "calc(100vw - 32px)" : undefined, maxWidth: "calc(100vw - 32px)" }}
+        >
+          <Command className="w-full">
             <CommandInput 
               placeholder="Search degree..." 
               value={education}
               onValueChange={setEducation}
+              className="w-full"
             />
-            <CommandList>
+            <CommandList className="w-full">
               <CommandEmpty>No degree found.</CommandEmpty>
-              <CommandGroup className="max-h-[300px] overflow-y-auto">
+              <CommandGroup className="max-h-[200px] overflow-y-auto w-full">
                 {filteredOptions.map((option) => (
                   <CommandItem
                     key={option}
@@ -75,6 +88,7 @@ const EducationStep = ({ education, setEducation }: EducationStepProps) => {
                       setEducation(option);
                       setOpen(false);
                     }}
+                    className="w-full"
                   >
                     <Check
                       className={cn(
@@ -82,7 +96,7 @@ const EducationStep = ({ education, setEducation }: EducationStepProps) => {
                         education === option ? "opacity-100" : "opacity-0"
                       )}
                     />
-                    {option}
+                    <span className="truncate">{option}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -102,7 +116,5 @@ const EducationStep = ({ education, setEducation }: EducationStepProps) => {
     </div>
   );
 };
-
-import { useState } from "react";
 
 export default EducationStep;
