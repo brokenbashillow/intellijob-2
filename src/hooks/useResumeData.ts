@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { createAssessmentNotification } from "@/services/notificationService";
 
 export interface PersonalDetails {
   firstName: string;
@@ -208,10 +209,6 @@ export const useResumeData = () => {
     }
   };
 
-  useEffect(() => {
-    fetchResumeData();
-  }, []);
-
   const handleSave = async () => {
     setIsLoading(true);
     try {
@@ -279,6 +276,9 @@ export const useResumeData = () => {
         await supabase.functions.invoke('analyze-application', {
           body: { userId: user.id }
         });
+        
+        await createAssessmentNotification(user.id);
+        
       } catch (analyzeError) {
         console.error("Error triggering assessment re-evaluation:", analyzeError);
       }

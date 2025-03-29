@@ -1,7 +1,9 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { createJobRecommendationNotification } from "@/services/notificationService";
+import { useResumeData } from "@/hooks/useResumeData"; // Add the missing import
 
 export interface Job {
   id: string;
